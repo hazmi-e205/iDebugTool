@@ -2,6 +2,9 @@ import sys
 import os
 import json
 from concurrent.futures import ThreadPoolExecutor
+from urllib.request import urlopen
+import tarfile, zipfile
+from io import BytesIO
 
 import utils
 import colorama
@@ -9,12 +12,15 @@ from termcolor import cprint
 
 
 script_dir      = os.path.dirname(os.path.abspath(__file__))
-base_dir        = os.path.abspath(script_dir + "/../../")
-prj_dir         = os.path.abspath(base_dir + "/prj/")
-build_dir       = os.path.abspath(base_dir + "/build/")
+base_dir        = os.path.abspath(script_dir + "/../")
+prj_dir         = os.path.abspath(base_dir + "/Prj/")
+build_dir       = os.path.abspath(base_dir + "/Build/")
 external_dir    = os.path.abspath(base_dir + "/Externals/")
 patch_dir       = os.path.abspath(base_dir + "/Externals/_Patches/")
 info_path       = os.path.abspath(base_dir + "/info.json")
+premake_path    = os.path.abspath(script_dir + "/premake5.exe")
+if sys.platform == "linux" or sys.platform == "linux2" or sys.platform == "darwin":
+    premake_path = os.path.abspath(script_dir + "/premake5")
 
 #flags
 is_checkout     = False
@@ -24,6 +30,34 @@ is_apply_patch  = False
 is_create_patch = False
 is_build        = False
 is_debug        = False
+
+
+def DownloadPremake():
+    request_releases = urlopen("https://api.github.com/repos/Premake/premake-core/releases").read()
+    premake_releases = json.loads(request_releases)
+    premake_latest   = premake_releases[0]["assets"]
+    premake_download = False
+    for asset in premake_latest:
+        if "windows" in asset["name"] and (sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"):
+            premake_download = True
+        elif "linux" in asset["name"] and (sys.platform == "linux" or sys.platform == "linux2"):
+            premake_download = True
+        elif "macosx" in asset["name"] and sys.platform == "darwin":
+            premake_download = True
+
+        if premake_download == True:
+            cprint("Download `" + asset["name"] + "`...", 'green', attrs=['reverse', 'blink'])
+            premake_file = urlopen(asset["browser_download_url"]).read()
+            if ".tar.gz" in asset["name"]:
+                t = tarfile.open(name=None, fileobj=BytesIO(premake_file))
+                t.extractall(script_dir)
+                t.close()
+            if ".zip" in asset["name"]:
+                z = zipfile.ZipFile(BytesIO(premake_file))
+                z.extractall(script_dir)
+                z.close()
+            cprint("Premake downloaded!", 'green', attrs=['reverse', 'blink'])
+            break
 
 
 def LoadInfo():
@@ -103,15 +137,44 @@ def Checkout():
     cprint("Update Externals End\n", 'cyan', attrs=['reverse', 'blink'])
 
 def ApplyPatch():
-    cprint("Please do something...", 'yellow', attrs=['reverse', 'blink'])
+    cprint("Apply patches...", 'green', attrs=['reverse', 'blink'])
+    repo_list = project_info["dependencies"]
+    for repo_item in repo_list:
+        patchpath = os.path.abspath(patch_dir + "/" + repo_item["name"] + ".patch")
+        filepath  = os.path.abspath(patch_dir + "/" + repo_item["name"])
+        libpath   = os.path.abspath(base_dir + "/" + repo_item["path"])
+        if os.path.exists(patchpath) and os.path.exists(libpath):
+            cprint("Found " + repo_item["name"] + ".patch and try to apply it...", 'yellow', attrs=['reverse', 'blink'])
+            if repo_item.type.lower() == "git":
+                utils.Git.apply_patch(lib_path=libpath, patch_path=patchpath)
+            cprint("Patch applied to '" + repo_item["name"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
+
+        if os.path.exists(filepath) and os.path.exists(libpath):
+            cprint("Found " + repo_item["name"] + " folder and try to copy it...", 'yellow', attrs=['reverse', 'blink'])
+            utils.copy_folder(filepath, libpath)
+            cprint("Files copied to '" + repo_item["name"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
+    cprint("Patches applied!\n", 'green', attrs=['reverse', 'blink'])
 
 
 def CreatePatch():
-    cprint("Please do something...", 'yellow', attrs=['reverse', 'blink'])
+    repo_list = project_info["dependencies"]
+    for repo_item in repo_list:
+        if repo_item["name"].lower() == libname_patch.lower():
+            libpath   = os.path.abspath(base_dir + "/" + repo_item["path"])
+            patchpath = os.path.abspath(patch_dir + "/" + repo_item["name"] + ".patch")
+            if not os.path.exists(patch_dir):
+                os.makedirs(patch_dir)
+            if repo_item.type.lower() == "git":
+                utils.Git.create_patch(lib_path=libpath, patch_path=patchpath)
+            cprint("Patch created '" + patchpath + "'!", 'green', attrs=['reverse', 'blink'])
 
 
 def Premake():
-    cprint("Please do something...", 'yellow', attrs=['reverse', 'blink'])
+    if not os.path.exists(premake_path):
+        DownloadPremake()
+    cprint("Generate projects...", 'magenta', attrs=['reverse', 'blink'])
+    utils.call([premake_path, "--to=Qt", "Qt"], prj_dir)
+    cprint("Projects generated !", 'magenta', attrs=['reverse', 'blink'])
 
 
 def Build():

@@ -46,3 +46,4 @@ assert.log
 /prj/android_fastbuild/**
 /prj/vs**
 /prj/xcode4/**
+/Scripts/premake5**
