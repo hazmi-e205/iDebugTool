@@ -100,6 +100,11 @@ solution "iDebugTool"
             "../Externals/openssl/crypto/ec/curve448",
             "../Externals/openssl/crypto/ec/curve448/arch_32",
         }
+
+        buildoptions
+        {
+            "-Wno-unused-variable",
+        }
     
     project "Openssl"
         kind "StaticLib"
