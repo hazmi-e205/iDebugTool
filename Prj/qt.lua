@@ -105,6 +105,14 @@ function qt.project_pro(prj)
     if #prj.defines > 0 then
         _p('DEFINES += ' .. table.concat(prj.defines, " "))
     end
+
+    -- compiler & linker flags
+    if #prj.buildoptions > 0 then
+        _p('QMAKE_CXXFLAGS += ' .. table.concat(prj.buildoptions, " "))
+    end
+    if #prj.linkoptions > 0 then
+        _p('QMAKE_LFLAGS += ' .. table.concat(prj.linkoptions, " "))
+    end
     _p('')
 
     -- files
@@ -162,7 +170,7 @@ function qt.project_pro(prj)
     _p('')
 
     -- debug or release
-    for cfg in project.eachconfig(prj) do        
+    for cfg in project.eachconfig(prj) do
         _p('CONFIG(' .. string.lower(cfg.buildcfg) .. ', debug|release) {')
         local defines = qt.remove_item_by_list(cfg.defines, prj.project.defines)
         if #defines > 0 then
@@ -179,7 +187,7 @@ function qt.project_pro(prj)
         qt.add_libdirs(1, libdirs)
         _p('}')
         _p('')
-    end    
+    end
 
     -- default rules
     _p('# Default rules for deployment.')
