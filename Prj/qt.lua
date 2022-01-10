@@ -168,7 +168,7 @@ function qt.project_pro(prj)
         end
 
         local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.project.includedirs, prj)
-        qt.add_includedirs(1, includedirs)
+        qt.add_includedirs(1, includedirs, prj)
 
         local links = qt.remove_item_by_list(cfg.links, prj.project.links)
         qt.add_links(1, links)
