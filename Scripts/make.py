@@ -140,28 +140,28 @@ def ApplyPatch():
     cprint("Apply patches...", 'green', attrs=['reverse', 'blink'])
     repo_list = project_info["dependencies"]
     for repo_item in repo_list:
-        patchpath = os.path.abspath(patch_dir + "/" + repo_item["name"] + ".patch")
-        filepath  = os.path.abspath(patch_dir + "/" + repo_item["name"])
+        patchpath = os.path.abspath(patch_dir + "/" + repo_item["project"] + ".patch")
+        filepath  = os.path.abspath(patch_dir + "/" + repo_item["project"])
         libpath   = os.path.abspath(base_dir + "/" + repo_item["path"])
         if os.path.exists(patchpath) and os.path.exists(libpath):
-            cprint("Found " + repo_item["name"] + ".patch and try to apply it...", 'yellow', attrs=['reverse', 'blink'])
+            cprint("Found " + repo_item["project"] + ".patch and try to apply it...", 'yellow', attrs=['reverse', 'blink'])
             if repo_item.type.lower() == "git":
                 utils.Git.apply_patch(lib_path=libpath, patch_path=patchpath)
-            cprint("Patch applied to '" + repo_item["name"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
+            cprint("Patch applied to '" + repo_item["project"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
 
         if os.path.exists(filepath) and os.path.exists(libpath):
-            cprint("Found " + repo_item["name"] + " folder and try to copy it...", 'yellow', attrs=['reverse', 'blink'])
+            cprint("Found " + repo_item["project"] + " folder and try to copy it...", 'yellow', attrs=['reverse', 'blink'])
             utils.copy_folder(filepath, libpath)
-            cprint("Files copied to '" + repo_item["name"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
+            cprint("Files copied to '" + repo_item["project"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
     cprint("Patches applied!\n", 'green', attrs=['reverse', 'blink'])
 
 
 def CreatePatch():
     repo_list = project_info["dependencies"]
     for repo_item in repo_list:
-        if repo_item["name"].lower() == libname_patch.lower():
+        if repo_item["project"].lower() == libname_patch.lower():
             libpath   = os.path.abspath(base_dir + "/" + repo_item["path"])
-            patchpath = os.path.abspath(patch_dir + "/" + repo_item["name"] + ".patch")
+            patchpath = os.path.abspath(patch_dir + "/" + repo_item["project"] + ".patch")
             if not os.path.exists(patch_dir):
                 os.makedirs(patch_dir)
             if repo_item.type.lower() == "git":
