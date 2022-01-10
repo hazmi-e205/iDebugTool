@@ -173,7 +173,7 @@ def Premake():
     if not os.path.exists(premake_path):
         DownloadPremake()
     cprint("Generate projects...", 'magenta', attrs=['reverse', 'blink'])
-    utils.call([premake_path, "--to=Qt", "Qt"], prj_dir)
+    utils.call([premake_path, "Qt"], prj_dir)
     cprint("Projects generated !", 'magenta', attrs=['reverse', 'blink'])
 
 
