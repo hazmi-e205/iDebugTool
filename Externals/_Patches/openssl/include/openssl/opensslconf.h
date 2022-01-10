@@ -27,14 +27,8 @@ extern "C" {
 #ifndef OPENSSL_SYS_MINGW64
 # define OPENSSL_SYS_MINGW64 1
 #endif
-#ifndef OPENSSL_NO_IDEA
-# define OPENSSL_NO_IDEA
-#endif
 #ifndef OPENSSL_NO_MD2
 # define OPENSSL_NO_MD2
-#endif
-#ifndef OPENSSL_NO_MDC2
-# define OPENSSL_NO_MDC2
 #endif
 #ifndef OPENSSL_NO_RC5
 # define OPENSSL_NO_RC5
@@ -109,6 +103,12 @@ extern "C" {
 # define OPENSSL_NO_DYNAMIC_ENGINE
 #endif
 
+/**
+ * These are set as predefined macros in openssl makefile.
+ * Added here to fix openssl & crypto build
+ */
+#define ENGINESDIR "/usr/local/ssl/lib/engines"
+#define OPENSSLDIR "/usr/local/ssl"
 
 /*
  * Sometimes OPENSSSL_NO_xxx ends up with an empty file and some compilers
