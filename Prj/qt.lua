@@ -67,9 +67,11 @@ function qt.add_libdirs(tab, table)
 end
 
 function qt.remove_item_by_list(full_table, remove_list)
-    for k,v in ipairs(full_table) do
-        if table.contains(remove_list, v) then
-            table.remove(full_table, k)
+    for i=1, #full_table do
+        for k,v in ipairs(full_table) do
+            if table.contains(remove_list, v) then
+                table.remove(full_table, k)
+            end
         end
     end
     return full_table

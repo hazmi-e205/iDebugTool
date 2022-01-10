@@ -50,7 +50,7 @@ solution "iDebugTool"
             "../Externals/openssl/crypto/rc5/rc5ofb64.c",
             "../Externals/openssl/crypto/rc5/rc5_ecb.c",
             "../Externals/openssl/crypto/rc5/rc5_enc.c",
-            "../Externals/openssl/crypto/rc5/rc5_skey.c"
+            "../Externals/openssl/crypto/rc5/rc5_skey.c",
         }
     
         if os.host() ~= "linux" then
@@ -77,7 +77,7 @@ solution "iDebugTool"
                 "../Externals/openssl/crypto/engine/tb_eckey.c",
                 "../Externals/openssl/crypto/engine/tb_pkmeth.c",
                 "../Externals/openssl/crypto/engine/tb_rand.c",
-                "../Externals/openssl/crypto/engine/tb_rsa.c"
+                "../Externals/openssl/crypto/engine/tb_rsa.c",
             }
         end
 
@@ -90,6 +90,7 @@ solution "iDebugTool"
 
         includedirs
         {
+            "../Externals/openssl",
             "../Externals/openssl/include",
             "../Externals/openssl/ssl",
             "../Externals/openssl/crypto",
@@ -98,9 +99,6 @@ solution "iDebugTool"
             "../Externals/openssl/crypto/modes",
             "../Externals/openssl/crypto/ec/curve448",
             "../Externals/openssl/crypto/ec/curve448/arch_32",
-            "../Externals/openssl/include",
-            "../Externals/openssl/crypto",
-            "../Externals/openssl",
         }
     
     project "Openssl"
@@ -123,8 +121,8 @@ solution "iDebugTool"
 
         includedirs
         {
+            "../Externals/openssl",
             "../Externals/openssl/include",
             "../Externals/openssl/ssl",
-            "../Externals/openssl",
             "../Externals/openssl/crypto",
         }
