@@ -78,6 +78,7 @@ solution "iDebugTool"
             "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
+            "OPENSSL_NO_ENGINE",
         }
 
         includedirs
@@ -122,6 +123,7 @@ solution "iDebugTool"
             "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
+            "OPENSSL_NO_ENGINE",
         }
 
         includedirs
@@ -145,6 +147,25 @@ solution "iDebugTool"
             "-Wall",
         }
 
+    project "Cnary"
+        kind "StaticLib"
+
+        files
+        {
+            "../Externals/libplist/libcnary/include/**.h",
+            "../Externals/libplist/libcnary/**.c",
+        }
+
+        excludes
+        {
+            "../Externals/libplist/libcnary/cnary.c",
+        }
+
+        includedirs
+        {
+            "../Externals/libplist/libcnary/include",
+        }
+
     project "Plist"
         kind "StaticLib"
 
@@ -155,14 +176,6 @@ solution "iDebugTool"
             "../Externals/libplist/src/**.cpp",
             "../Externals/libplist/src/**.h",
             "../Externals/libplist/*.h",
-            "../Externals/libplist/libcnary/include/**.h",
-            "../Externals/libplist/libcnary/*.h",
-            "../Externals/libplist/libcnary/*.c",
-        }
-
-        excludes
-        {
-            "../Externals/libplist/libcnary/cnary.c",
         }
 
         includedirs
@@ -170,7 +183,6 @@ solution "iDebugTool"
             "../Externals/libplist",
             "../Externals/libplist/include",
             "../Externals/libplist/src",
-            "../Externals/libplist/libcnary",
             "../Externals/libplist/libcnary/include",
         }
 
@@ -299,13 +311,22 @@ solution "iDebugTool"
 
         includedirs
         {
+            "../Externals/libimobiledevice",
             "../Externals/libimobiledevice/include",
+            "../Externals/libimobiledevice-glue/include",
+            "../Externals/libplist/include",
+            "../Externals/openssl/include",
+            "../Externals/libusbmuxd/include",
         }
 
         links
         {
+            "Iphlpapi",
+            "Ws2_32",
+            "Ole32",
             "Crypto",
             "Openssl",
+            "Cnary",
             "Plist",
             "imobiledevice-glue",
             "Usbmuxd",
@@ -317,6 +338,7 @@ solution "iDebugTool"
             {
                 "$$(PWD)/Crypto/debug",
                 "$$(PWD)/Openssl/debug",
+                "$$(PWD)/Cnary/debug",
                 "$$(PWD)/Plist/debug",
                 "$$(PWD)/imobiledevice-glue/debug",
                 "$$(PWD)/Usbmuxd/debug",
@@ -327,6 +349,7 @@ solution "iDebugTool"
             {
                 "$$(PWD)/Crypto/release",
                 "$$(PWD)/Openssl/release",
+                "$$(PWD)/Cnary/release",
                 "$$(PWD)/Plist/release",
                 "$$(PWD)/imobiledevice-glue/release",
                 "$$(PWD)/Usbmuxd/release",

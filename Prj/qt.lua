@@ -53,12 +53,11 @@ end
 function qt.add_links(tab, table)
     if #table > 0 then
         _p(tab, 'LIBS += \\')
+        _p(tab + 1, '-Wl,--start-group \\')
         for k,v in ipairs(table) do
-            if k ~= #table then
-                v = v .. ' \\'
-            end
-            _p(tab + 1, '-l' .. v)
+            _p(tab + 1, '-l' .. v .. ' \\')
         end
+        _p(tab + 1, '-Wl,--end-group')
     end
 end
 
