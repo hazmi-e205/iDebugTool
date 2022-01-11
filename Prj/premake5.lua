@@ -1,16 +1,8 @@
 include "common.lua"
 
 solution "iDebugTool"
-    project "iDebugTool"
-        kind "WindowedApp"
+    QtSlnConfigs {"ordered"}
 
-        files
-        {
-            "../Src/**.h",
-            "../Src/**.cpp",
-            "../Src/**.ui",
-        }
-    
     project "Crypto"
         kind "StaticLib"
 
@@ -52,7 +44,7 @@ solution "iDebugTool"
             "../Externals/openssl/crypto/rc5/rc5_enc.c",
             "../Externals/openssl/crypto/rc5/rc5_skey.c",
         }
-    
+
         if os.host() ~= "linux" then
             excludes
             {
@@ -104,8 +96,16 @@ solution "iDebugTool"
         buildoptions
         {
             "-Wno-unused-variable",
+            "-Wno-unused-parameter",
+            "-Wno-missing-field-initializers",
+            "-Wno-cast-function-type",
+            "-Wno-overflow",
+            "-Wno-incompatible-pointer-types",
+            "-Wno-extra",
+            "-Wno-sign-compare",
+            "-Wall",
         }
-    
+
     project "Openssl"
         kind "StaticLib"
 
@@ -131,3 +131,205 @@ solution "iDebugTool"
             "../Externals/openssl/ssl",
             "../Externals/openssl/crypto",
         }
+
+        buildoptions
+        {
+            "-Wno-unused-variable",
+            "-Wno-unused-parameter",
+            "-Wno-missing-field-initializers",
+            "-Wno-cast-function-type",
+            "-Wno-overflow",
+            "-Wno-incompatible-pointer-types",
+            "-Wno-extra",
+            "-Wno-sign-compare",
+            "-Wall",
+        }
+
+    project "Plist"
+        kind "StaticLib"
+
+        files
+        {
+            "../Externals/libplist/include/**.h",
+            "../Externals/libplist/src/**.c",
+            "../Externals/libplist/src/**.cpp",
+            "../Externals/libplist/src/**.h",
+            "../Externals/libplist/*.h",
+            "../Externals/libplist/libcnary/include/**.h",
+            "../Externals/libplist/libcnary/*.h",
+            "../Externals/libplist/libcnary/*.c",
+        }
+
+        excludes
+        {
+            "../Externals/libplist/libcnary/cnary.c",
+        }
+
+        includedirs
+        {
+            "../Externals/libplist",
+            "../Externals/libplist/include",
+            "../Externals/libplist/src",
+            "../Externals/libplist/libcnary",
+            "../Externals/libplist/libcnary/include",
+        }
+
+        defines
+        {
+            "HAVE_CONFIG_H",
+        }
+
+        buildoptions
+        {
+            "-Wno-unused-variable",
+            "-Wno-unused-parameter",
+            "-Wno-extra",
+        }
+
+    project "imobiledevice-glue"
+        kind "StaticLib"
+    
+        files
+        {
+            "../Externals/libimobiledevice-glue/include/**.h",
+            "../Externals/libimobiledevice-glue/src/**.c",
+            "../Externals/libimobiledevice-glue/src/**.h",
+            "../Externals/libimobiledevice-glue/*.h",
+        }
+
+        includedirs
+        {
+            "../Externals/libimobiledevice-glue",
+            "../Externals/libimobiledevice-glue/include",
+            "../Externals/libplist/include",
+        }
+
+        defines
+        {
+            "HAVE_CONFIG_H",
+        }
+
+        buildoptions
+        {
+            "-Wno-nonnull-compare",
+            "-Wno-unused-variable",
+            "-Wno-unused-parameter",
+            "-Wno-incompatible-pointer-types",
+            "-Wno-extra",
+            "-Wno-cast-function-type",
+            "-Wall",
+        }
+
+    project "Usbmuxd"
+        kind "StaticLib"
+
+        files
+        {
+            "../Externals/libusbmuxd/include/**.h",
+            "../Externals/libusbmuxd/src/**.c",
+            "../Externals/libusbmuxd/src/**.h",
+            "../Externals/libusbmuxd/*.h",
+        }
+
+        includedirs
+        {
+            "../Externals/libusbmuxd",
+            "../Externals/libusbmuxd/include",
+            "../Externals/libplist/include",
+            "../Externals/libimobiledevice-glue/include",
+        }
+
+        defines
+        {
+            "HAVE_CONFIG_H",
+        }
+
+        buildoptions
+        {
+            "-Wno-unused-parameter",
+        }
+
+    project "imobiledevice"
+        kind "StaticLib"
+    
+        files
+        {
+            "../Externals/libimobiledevice/include/**.h",
+            "../Externals/libimobiledevice/src/**.c",
+            "../Externals/libimobiledevice/src/**.h",
+            "../Externals/libimobiledevice/*.h",
+            "../Externals/libimobiledevice/common/*.c",
+            "../Externals/libimobiledevice/common/*.c",
+        }
+
+        includedirs
+        {
+            "../Externals/libimobiledevice",
+            "../Externals/libimobiledevice/include",
+            "../Externals/libimobiledevice/common",
+            "../Externals/libimobiledevice-glue/include",
+            "../Externals/libplist/include",
+            "../Externals/openssl/include",
+            "../Externals/libusbmuxd/include",
+        }
+
+        defines
+        {
+            "HAVE_CONFIG_H",
+        }
+
+        buildoptions
+        {
+            "-Wno-pointer-to-int-cast",
+            "-Wno-int-to-pointer-cast",
+            "-Wno-unused-variable",
+            "-Wno-unused-parameter",
+            "-Wno-implicit-function-declaration",
+        }
+
+    project "iDebugTool"
+        kind "WindowedApp"
+
+        files
+        {
+            "../Src/**.h",
+            "../Src/**.cpp",
+            "../Src/**.ui",
+        }
+
+        includedirs
+        {
+            "../Externals/libimobiledevice/include",
+        }
+
+        links
+        {
+            "Crypto",
+            "Openssl",
+            "Plist",
+            "imobiledevice-glue",
+            "Usbmuxd",
+            "imobiledevice",
+        }
+
+        filter {"Debug*"}
+            libdirs
+            {
+                "$$(PWD)/Crypto/debug",
+                "$$(PWD)/Openssl/debug",
+                "$$(PWD)/Plist/debug",
+                "$$(PWD)/imobiledevice-glue/debug",
+                "$$(PWD)/Usbmuxd/debug",
+                "$$(PWD)/imobiledevice/debug",
+            }
+        filter {"Release*"}
+            libdirs
+            {
+                "$$(PWD)/Crypto/release",
+                "$$(PWD)/Openssl/release",
+                "$$(PWD)/Plist/release",
+                "$$(PWD)/imobiledevice-glue/release",
+                "$$(PWD)/Usbmuxd/release",
+                "$$(PWD)/imobiledevice/release",
+            }
+        filter {}

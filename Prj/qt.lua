@@ -3,6 +3,11 @@ local api = p.api
 local project = p.project
 
 api.register {
+    name= "QtSlnConfigs",
+    scope = "solution",
+    kind = "list:string",
+}
+api.register {
     name= "QtConfigs",
     scope = "project",
     kind = "list:string",
@@ -19,6 +24,9 @@ local qt = p.modules.qt
 function qt.solution_pro(sln)
     _p('TEMPLATE = subdirs')
     _p('')
+    if #sln.QtSlnConfigs > 0 then
+        _p('CONFIG += ' .. table.concat(sln.QtSlnConfigs, " "))
+    end
     _p('SUBDIRS += \\')
     for k,v in ipairs(sln.projects) do
         local prj_dir = path.getrelative(sln.location, sln.projects[k].location .. "/" .. sln.projects[k].name)
@@ -108,6 +116,7 @@ function qt.project_pro(prj)
 
     -- compiler & linker flags
     if #prj.buildoptions > 0 then
+        _p('QMAKE_CFLAGS += ' .. table.concat(prj.buildoptions, " "))
         _p('QMAKE_CXXFLAGS += ' .. table.concat(prj.buildoptions, " "))
     end
     if #prj.linkoptions > 0 then
