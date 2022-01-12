@@ -301,6 +301,16 @@ solution "iDebugTool"
 
     project "iDebugTool"
         kind "WindowedApp"
+        AppName "iDebugTool"
+        AppCompany "hazmi-e205 Indonesia"
+        AppCopyright "Copyright (c) hazmi-e205 Indonesia 2022"
+        AppDescription "The cross platform of iOS debugging tool"
+        AppIcon "bulb.ico"
+
+        local info_str = io.readfile("../info.json")
+        info_json, err = json.decode(info_str)
+        AppVersion(info_json.version)
+        defines {"APP_STATUS=\\\"\\\\\\\"" .. info_json.status .. "\\\\\\\"\\\""}
 
         files
         {

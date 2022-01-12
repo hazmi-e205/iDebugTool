@@ -17,6 +17,36 @@ api.register {
     scope = "project",
     kind = "list:string",
 }
+api.register {
+    name= "AppName",
+    scope = "project",
+    kind = "string",
+}
+api.register {
+    name= "AppCompany",
+    scope = "project",
+    kind = "string",
+}
+api.register {
+    name= "AppCopyright",
+    scope = "project",
+    kind = "string",
+}
+api.register {
+    name= "AppDescription",
+    scope = "project",
+    kind = "string",
+}
+api.register {
+    name= "AppVersion",
+    scope = "project",
+    kind = "string",
+}
+api.register {
+    name= "AppIcon",
+    scope = "project",
+    kind = "path",
+}
 
 p.modules.qt = {}
 local qt = p.modules.qt
@@ -37,39 +67,42 @@ function qt.solution_pro(sln)
     end
 end
 
-function qt.add_includedirs(tab, table, prj)
-    if #table > 0 then
+function qt.add_includedirs(tab, datatable, prj)
+    if #datatable > 0 then
         _p(tab, 'INCLUDEPATH += \\')
-        for k,v in ipairs(table) do
+        for k,v in ipairs(datatable) do
             local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
-            if k ~= #table then
+            if k ~= #datatable then
                 relative_str = relative_str .. ' \\'
             end
             _p(tab + 1, relative_str)
         end
+        _p('')
     end
 end
 
-function qt.add_links(tab, table)
-    if #table > 0 then
+function qt.add_links(tab, datatable)
+    if #datatable > 0 then
         _p(tab, 'LIBS += \\')
         _p(tab + 1, '-Wl,--start-group \\')
-        for k,v in ipairs(table) do
+        for k,v in ipairs(datatable) do
             _p(tab + 1, '-l' .. v .. ' \\')
         end
         _p(tab + 1, '-Wl,--end-group')
+        _p('')
     end
 end
 
-function qt.add_libdirs(tab, table)
-    if #table > 0 then
+function qt.add_libdirs(tab, datatable)
+    if #datatable > 0 then
         _p(tab, 'LIBS += \\')
-        for k,v in ipairs(table) do
-            if k ~= #table then
+        for k,v in ipairs(datatable) do
+            if k ~= #datatable then
                 v = v .. ' \\'
             end
             _p(tab + 1, '-L' .. v)
         end
+        _p('')
     end
 end
 
@@ -196,6 +229,28 @@ function qt.project_pro(prj)
         _p('}')
         _p('')
     end
+
+    -- app properties
+    if prj.AppName then
+        _p('QMAKE_TARGET_PRODUCT = \"' .. prj.AppName .. "\"")
+    end
+    if prj.AppCompany then
+        _p('QMAKE_TARGET_COMPANY = \"' .. prj.AppCompany .. "\"")
+    end
+    if prj.AppCopyright then
+        _p('QMAKE_TARGET_COPYRIGHT = \"' .. prj.AppCopyright .. "\"")
+    end
+    if prj.AppDescription then
+        _p('QMAKE_TARGET_DESCRIPTION = \"' .. prj.AppDescription .. "\"")
+    end
+    if prj.AppVersion then
+        _p('VERSION = \"' .. prj.AppVersion .. "\"")
+    end
+    if prj.AppIcon then
+        local relative_str = path.getrelative(prj.location .. "/" .. prj.name, prj.AppIcon)
+        _p('RC_ICONS += ' .. relative_str)
+    end
+    _p('')
 
     -- default rules
     _p('# Default rules for deployment.')

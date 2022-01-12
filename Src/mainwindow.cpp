@@ -3,6 +3,7 @@
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <iostream>
+#include <string>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -22,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
         for (i = 0; dev_list[i] != NULL; i++) {
             if (dev_list[i]->conn_type == CONNECTION_USBMUXD && !include_usb) continue;
             if (dev_list[i]->conn_type == CONNECTION_NETWORK && !include_network) continue;
-            std::cout << dev_list[i]->udid;
+            std::cout<< std::string(APP_STATUS) << " " << dev_list[i]->udid;
 
             if (include_usb && include_network) {
                 if (dev_list[i]->conn_type == CONNECTION_NETWORK) {
