@@ -47,6 +47,11 @@ api.register {
     scope = "project",
     kind = "path",
 }
+api.register {
+    name= "QtResources",
+    scope = "project",
+    kind = "list:path",
+}
 
 p.modules.qt = {}
 local qt = p.modules.qt
@@ -115,6 +120,17 @@ function qt.remove_item_by_list(full_table, remove_list)
         end
     end
     return full_table
+end
+
+function qt.add_resources(prj)
+    _p('<RCC>')
+    _p(1, '<qresource prefix="/res">')
+    for k,v in ipairs(prj.QtResources) do
+        local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
+        _p(2, '<file>' .. relative_str .. '</file>')
+    end
+    _p(1, '</qresource>')
+    _p('</RCC>')
 end
 
 function qt.project_pro(prj)
@@ -249,6 +265,11 @@ function qt.project_pro(prj)
     if prj.AppIcon then
         local relative_str = path.getrelative(prj.location .. "/" .. prj.name, prj.AppIcon)
         _p('RC_ICONS += ' .. relative_str)
+    end
+    if #prj.QtResources > 0 then
+        local qt_resfile = "resources.qrc"
+        p.generate(prj, prj.name .. "/" .. qt_resfile, qt.add_resources)
+        _p('RESOURCES += ' .. qt_resfile)
     end
     _p('')
 

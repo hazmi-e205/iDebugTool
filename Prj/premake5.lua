@@ -3,7 +3,7 @@ include "common.lua"
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
 
-    project "Crypto"
+    project "crypto"
         kind "StaticLib"
 
         files
@@ -78,7 +78,7 @@ solution "iDebugTool"
             "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
-            "OPENSSL_NO_ENGINE",
+            "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
 
         includedirs
@@ -107,7 +107,7 @@ solution "iDebugTool"
             "-Wall",
         }
 
-    project "Openssl"
+    project "openssl"
         kind "StaticLib"
 
         files
@@ -123,7 +123,7 @@ solution "iDebugTool"
             "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
-            "OPENSSL_NO_ENGINE",
+            "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
 
         includedirs
@@ -147,7 +147,7 @@ solution "iDebugTool"
             "-Wall",
         }
 
-    project "Cnary"
+    project "cnary"
         kind "StaticLib"
 
         files
@@ -166,7 +166,7 @@ solution "iDebugTool"
             "../Externals/libplist/libcnary/include",
         }
 
-    project "Plist"
+    project "plist"
         kind "StaticLib"
 
         files
@@ -232,7 +232,7 @@ solution "iDebugTool"
             "-Wall",
         }
 
-    project "Usbmuxd"
+    project "usbmuxd"
         kind "StaticLib"
 
         files
@@ -307,10 +307,10 @@ solution "iDebugTool"
         AppDescription "The cross platform of iOS debugging tool"
         AppIcon "bulb.ico"
 
-        local info_str = io.readfile("../info.json")
-        info_json, err = json.decode(info_str)
-        AppVersion(info_json.version)
-        defines {"APP_STATUS=\\\"\\\\\\\"" .. info_json.status .. "\\\\\\\"\\\""}
+        QtResources
+        {
+            "../info.json",
+        }
 
         files
         {
@@ -334,12 +334,12 @@ solution "iDebugTool"
             "Iphlpapi",
             "Ws2_32",
             "Ole32",
-            "Crypto",
-            "Openssl",
-            "Cnary",
-            "Plist",
+            "crypto",
+            "openssl",
+            "cnary",
+            "plist",
             "imobiledevice-glue",
-            "Usbmuxd",
+            "usbmuxd",
             "imobiledevice",
         }
 
