@@ -43,43 +43,40 @@ solution "iDebugTool"
             "../Externals/openssl/crypto/rc5/rc5_ecb.c",
             "../Externals/openssl/crypto/rc5/rc5_enc.c",
             "../Externals/openssl/crypto/rc5/rc5_skey.c",
+            "../Externals/openssl/crypto/engine/eng_all.c",
+            "../Externals/openssl/crypto/engine/eng_cnf.c",
+            "../Externals/openssl/crypto/engine/eng_ctrl.c",
+            "../Externals/openssl/crypto/engine/eng_dyn.c",
+            "../Externals/openssl/crypto/engine/eng_err.c",
+            "../Externals/openssl/crypto/engine/eng_fat.c",
+            "../Externals/openssl/crypto/engine/eng_init.c",
+            "../Externals/openssl/crypto/engine/eng_lib.c",
+            "../Externals/openssl/crypto/engine/eng_list.c",
+            "../Externals/openssl/crypto/engine/eng_openssl.c",
+            "../Externals/openssl/crypto/engine/eng_pkey.c",
+            "../Externals/openssl/crypto/engine/eng_rdrand.c",
+            "../Externals/openssl/crypto/engine/eng_table.c",
+            "../Externals/openssl/crypto/engine/tb_asnmth.c",
+            "../Externals/openssl/crypto/engine/tb_cipher.c",
+            "../Externals/openssl/crypto/engine/tb_dh.c",
+            "../Externals/openssl/crypto/engine/tb_digest.c",
+            "../Externals/openssl/crypto/engine/tb_dsa.c",
+            "../Externals/openssl/crypto/engine/tb_eckey.c",
+            "../Externals/openssl/crypto/engine/tb_pkmeth.c",
+            "../Externals/openssl/crypto/engine/tb_rand.c",
+            "../Externals/openssl/crypto/engine/tb_rsa.c",
         }
-
-        if os.host() ~= "linux" then
-            excludes
-            {
-                "../Externals/openssl/crypto/engine/eng_all.c",
-                "../Externals/openssl/crypto/engine/eng_cnf.c",
-                "../Externals/openssl/crypto/engine/eng_ctrl.c",
-                "../Externals/openssl/crypto/engine/eng_dyn.c",
-                "../Externals/openssl/crypto/engine/eng_err.c",
-                "../Externals/openssl/crypto/engine/eng_fat.c",
-                "../Externals/openssl/crypto/engine/eng_init.c",
-                "../Externals/openssl/crypto/engine/eng_lib.c",
-                "../Externals/openssl/crypto/engine/eng_list.c",
-                "../Externals/openssl/crypto/engine/eng_openssl.c",
-                "../Externals/openssl/crypto/engine/eng_pkey.c",
-                "../Externals/openssl/crypto/engine/eng_rdrand.c",
-                "../Externals/openssl/crypto/engine/eng_table.c",
-                "../Externals/openssl/crypto/engine/tb_asnmth.c",
-                "../Externals/openssl/crypto/engine/tb_cipher.c",
-                "../Externals/openssl/crypto/engine/tb_dh.c",
-                "../Externals/openssl/crypto/engine/tb_digest.c",
-                "../Externals/openssl/crypto/engine/tb_dsa.c",
-                "../Externals/openssl/crypto/engine/tb_eckey.c",
-                "../Externals/openssl/crypto/engine/tb_pkmeth.c",
-                "../Externals/openssl/crypto/engine/tb_rand.c",
-                "../Externals/openssl/crypto/engine/tb_rsa.c",
-            }
-        end
 
         defines
         {
-            "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
             "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
+
+        if os.host() == "windows" then
+            defines {"WIN32_LEAN_AND_MEAN"}
+        end
 
         includedirs
         {
@@ -120,11 +117,14 @@ solution "iDebugTool"
 
         defines
         {
-            "WIN32_LEAN_AND_MEAN",
             "L_ENDIAN",
             "OPENSSL_PIC",
             "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
+
+        if os.host() == "windows" then
+            defines {"WIN32_LEAN_AND_MEAN"}
+        end
 
         includedirs
         {
@@ -331,9 +331,6 @@ solution "iDebugTool"
 
         links
         {
-            "Iphlpapi",
-            "Ws2_32",
-            "Ole32",
             "crypto",
             "openssl",
             "cnary",
@@ -343,26 +340,50 @@ solution "iDebugTool"
             "imobiledevice",
         }
 
-        filter {"Debug*"}
+        if os.host() == "windows" then
+            links
+            {
+                "Iphlpapi",
+                "Ws2_32",
+                "Ole32",
+            }
+
+            filter {"Debug*"}
+                libdirs
+                {
+                    "$$(PWD)/crypto/debug",
+                    "$$(PWD)/openssl/debug",
+                    "$$(PWD)/cnary/debug",
+                    "$$(PWD)/plist/debug",
+                    "$$(PWD)/imobiledevice-glue/debug",
+                    "$$(PWD)/usbmuxd/debug",
+                    "$$(PWD)/imobiledevice/debug",
+                }
+            filter {"Release*"}
+                libdirs
+                {
+                    "$$(PWD)/crypto/release",
+                    "$$(PWD)/openssl/release",
+                    "$$(PWD)/cnary/release",
+                    "$$(PWD)/plist/release",
+                    "$$(PWD)/imobiledevice-glue/release",
+                    "$$(PWD)/usbmuxd/release",
+                    "$$(PWD)/imobiledevice/release",
+                }
+            filter {}
+        else
+            links
+            {
+                "dl",
+            }
             libdirs
             {
-                "$$(PWD)/Crypto/debug",
-                "$$(PWD)/Openssl/debug",
-                "$$(PWD)/Cnary/debug",
-                "$$(PWD)/Plist/debug",
-                "$$(PWD)/imobiledevice-glue/debug",
-                "$$(PWD)/Usbmuxd/debug",
-                "$$(PWD)/imobiledevice/debug",
+                "$$(PWD)/../crypto",
+                "$$(PWD)/../openssl",
+                "$$(PWD)/../cnary",
+                "$$(PWD)/../plist",
+                "$$(PWD)/../imobiledevice-glue",
+                "$$(PWD)/../usbmuxd",
+                "$$(PWD)/../imobiledevice",
             }
-        filter {"Release*"}
-            libdirs
-            {
-                "$$(PWD)/Crypto/release",
-                "$$(PWD)/Openssl/release",
-                "$$(PWD)/Cnary/release",
-                "$$(PWD)/Plist/release",
-                "$$(PWD)/imobiledevice-glue/release",
-                "$$(PWD)/Usbmuxd/release",
-                "$$(PWD)/imobiledevice/release",
-            }
-        filter {}
+        end
