@@ -74,7 +74,7 @@ solution "iDebugTool"
             "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
 
-        if os.host() == "windows" then
+        if IsWindows() then
             defines {"WIN32_LEAN_AND_MEAN"}
         end
 
@@ -122,7 +122,7 @@ solution "iDebugTool"
             "OPENSSLDIR=\\\"\\\\\\\"/usr/local/ssl\\\\\\\"\\\"",
         }
 
-        if os.host() == "windows" then
+        if IsWindows() then
             defines {"WIN32_LEAN_AND_MEAN"}
         end
 
@@ -340,7 +340,7 @@ solution "iDebugTool"
             "imobiledevice",
         }
 
-        if os.host() == "windows" then
+        if IsWindows() then
             links
             {
                 "Iphlpapi",

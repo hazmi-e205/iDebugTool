@@ -18,9 +18,9 @@ build_dir       = os.path.abspath(base_dir + "/Build/")
 external_dir    = os.path.abspath(base_dir + "/Externals/")
 patch_dir       = os.path.abspath(base_dir + "/Externals/_Patches/")
 info_path       = os.path.abspath(base_dir + "/info.json")
-premake_path    = os.path.abspath(script_dir + "/premake5.exe")
-if sys.platform == "linux" or sys.platform == "linux2" or sys.platform == "darwin":
-    premake_path = os.path.abspath(script_dir + "/premake5")
+premake_path    = os.path.abspath(script_dir + "/premake5")
+if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys":
+    premake_path = premake_path + ".exe"
 
 #flags
 is_checkout     = False
@@ -173,7 +173,8 @@ def Premake():
     if not os.path.exists(premake_path):
         DownloadPremake()
     cprint("Generate projects...", 'magenta', attrs=['reverse', 'blink'])
-    utils.call([premake_path, "Qt"], prj_dir)
+    utils.call([premake_path, "Qt", "--target=linux", "--to=Qt-linux"], prj_dir)
+    utils.call([premake_path, "Qt", "--target=windows", "--to=Qt-windows"], prj_dir)
     cprint("Projects generated !", 'magenta', attrs=['reverse', 'blink'])
 
 

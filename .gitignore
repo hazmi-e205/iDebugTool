@@ -46,5 +46,5 @@ assert.log
 /prj/android_fastbuild/**
 /prj/vs**
 /prj/xcode4/**
-/prj/Qt/**
+/prj/Qt**
 /Scripts/premake5**

@@ -5,6 +5,32 @@ newoption
 	description = "Set the output location for the generated files"
 }
 
+newoption
+{
+	trigger = "target",
+	value   = "String",
+	description = "Target of platform"
+}
+
+function IsTarget(_target)
+	if _OPTIONS["target"] then
+		return _OPTIONS["target"] == _target
+	end
+    return os.host() == _target
+end
+
+function IsLinux()
+    return IsTarget("linux")
+end
+
+function IsWindows()
+    return IsTarget("windows")
+end
+
+function IsMac()
+    return IsTarget("macosx")
+end
+
 function IsQt()
     return _ACTION == "Qt"
 end
