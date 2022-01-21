@@ -46,7 +46,7 @@ def DownloadPremake():
             premake_download = True
 
         if premake_download == True:
-            cprint("Download `" + asset["name"] + "`...", 'green', attrs=['reverse', 'blink'])
+            cprint("Download `" + asset["name"] + "`...", 'magenta', attrs=['reverse', 'blink'])
             premake_file = urlopen(asset["browser_download_url"]).read()
             if ".tar.gz" in asset["name"]:
                 t = tarfile.open(name=None, fileobj=BytesIO(premake_file))
@@ -56,7 +56,7 @@ def DownloadPremake():
                 z = zipfile.ZipFile(BytesIO(premake_file))
                 z.extractall(script_dir)
                 z.close()
-            cprint("Premake downloaded!", 'green', attrs=['reverse', 'blink'])
+            cprint("Premake downloaded!", 'magenta', attrs=['reverse', 'blink'])
             break
 
 

@@ -303,13 +303,14 @@ solution "iDebugTool"
         kind "WindowedApp"
         AppName "iDebugTool"
         AppCompany "hazmi-e205 Indonesia"
-        AppCopyright "Copyright (c) hazmi-e205 Indonesia 2022"
+        AppCopyright ("Copyright (c) hazmi-e205 Indonesia " .. os.date("%Y"))
         AppDescription "The cross platform of iOS debugging tool"
         AppIcon "bulb.ico"
 
         QtResources
         {
             "../info.json",
+            "bulb.ico",
         }
 
         files
@@ -376,6 +377,7 @@ solution "iDebugTool"
             {
                 "dl",
             }
+
             libdirs
             {
                 "$$(PWD)/../crypto",

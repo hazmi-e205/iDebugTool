@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
 
     //get devices list sample
     idevice_info_t *dev_list = NULL;
