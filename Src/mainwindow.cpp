@@ -1,57 +1,36 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <libimobiledevice/libimobiledevice.h>
-#include <libimobiledevice/lockdown.h>
 #include <iostream>
-#include <QFile>
-#include <QTextStream>
-#include <QJsonDocument>
+#include "appinfo.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    m_appInfo = new AppInfo(this);
+    QMainWindow::setWindowTitle(m_appInfo->GetFullname());
     QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
-
-    //get devices list sample
-    idevice_info_t *dev_list = NULL;
-    int i;
-    if (idevice_get_device_list_extended(&dev_list, &i) < 0)
-    {
-        std::cout << "ERROR: Unable to retrieve device list!" << std::endl;
-    }
-    else
-    {
-        for (i = 0; dev_list[i] != NULL; i++)
-        {
-            std::cout << dev_list[i]->udid;
-            if (dev_list[i]->conn_type == CONNECTION_NETWORK)
-            {
-                std::cout << " (Network)" << std::endl;
-            }
-            else
-            {
-                std::cout << " (USB)" << std::endl;
-            }
-        }
-        idevice_device_list_extended_free(dev_list);
-    }
-
-    //read from resources sample
-    QFile mFile(":res/info.json");
-    if(!mFile.open(QFile::ReadOnly | QFile::Text))
-    {
-        std::cout << "Can't access file from resource!" << std::endl;
-        return;
-    }
-    QTextStream in(&mFile);
-    QJsonDocument doc = QJsonDocument::fromJson(in.readAll().toUtf8());
-    std::cout << doc["status"].toString().toStdString() << std::endl;
-    mFile.close();
+    DeviceBridge::Get()->Init();
+    connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::vector<Device>)),this,SLOT(OnUpdateDevices(std::vector<Device>)));
+    connect(DeviceBridge::Get(), SIGNAL(DeviceInfo(QJsonDocument)),this,SLOT(OnDeviceInfo(QJsonDocument)));
 }
 
 MainWindow::~MainWindow()
 {
+    DeviceBridge::Destroy();
+    delete m_appInfo;
     delete ui;
+}
+
+void MainWindow::OnUpdateDevices(std::vector<Device> devices)
+{
+    if(devices.size() > 0)
+        DeviceBridge::Get()->ConnectToDevice(devices[0]);
+}
+
+void MainWindow::OnDeviceInfo(QJsonDocument info)
+{
+    qDebug() << info["DeviceName"].toString();
 }
