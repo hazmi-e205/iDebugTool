@@ -23,12 +23,12 @@ class DeviceBridge : public QObject
 {
     Q_OBJECT
 public:
-    explicit DeviceBridge(QObject *parent = 0);
+    DeviceBridge();
     ~DeviceBridge();
 
     std::vector<Device> GetDevices();
     void ConnectToDevice(Device device);
-    void Init();
+    void Init(QWidget *parent);
     void TriggerUpdateDevices();
     static DeviceBridge *Get();
     static void Destroy();
@@ -41,6 +41,7 @@ private:
     idevice_t m_device;
     lockdownd_client_t m_client;
     QJsonDocument m_deviceInfo;
+    QWidget *m_mainWidget;
     static DeviceBridge *m_instance;
 
 signals:

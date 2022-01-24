@@ -9,9 +9,7 @@ AppInfo::AppInfo(QWidget *parent)
     QFile mFile(":res/info.json");
     if(!mFile.open(QFile::ReadOnly | QFile::Text))
     {
-        QMessageBox::critical(parent, "Error", "Application detail info file missing!", QMessageBox::Abort);
-        QCoreApplication::exit(1);
-
+        QMessageBox::critical(parent, "Error", "Application detail info file missing!", QMessageBox::Ok);
     }
     QTextStream in(&mFile);
     m_infoJson = QJsonDocument::fromJson(in.readAll().toUtf8());

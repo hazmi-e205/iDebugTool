@@ -1,6 +1,7 @@
 #include "devicebridge.h"
 #include "utils.h"
 #include <QDebug>
+#include <QMessageBox>
 
 DeviceBridge *DeviceBridge::m_instance = nullptr;
 DeviceBridge *DeviceBridge::Get()
@@ -16,10 +17,10 @@ void DeviceBridge::Destroy()
         delete m_instance;
 }
 
-DeviceBridge::DeviceBridge(QObject *parent) :
-    QObject(parent),
+DeviceBridge::DeviceBridge() :
     m_device(nullptr),
-    m_client(nullptr)
+    m_client(nullptr),
+    m_mainWidget(nullptr)
 {
 }
 
@@ -29,8 +30,9 @@ DeviceBridge::~DeviceBridge()
     ResetConnection();
 }
 
-void DeviceBridge::Init()
+void DeviceBridge::Init(QWidget *parent)
 {
+    m_mainWidget = parent;
     idevice_event_subscribe(DeviceEventCallback, nullptr);
 }
 
@@ -41,7 +43,7 @@ std::vector<Device> DeviceBridge::GetDevices()
     int i;
     if (idevice_get_device_list_extended(&dev_list, &i) < 0)
     {
-        qDebug() << "ERROR: Unable to retrieve device list!";
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to retrieve device list!", QMessageBox::Ok);
     }
     else
     {
@@ -76,12 +78,12 @@ void DeviceBridge::ConnectToDevice(Device device)
     //connect to udid
     idevice_new_with_options(&m_device, device.udid.toStdString().c_str(), device.type == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
     if (!m_device) {
-        qDebug() << "ERROR: No device with UDID " + device.udid + " attached.";
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + device.udid, QMessageBox::Ok);
         return;
     }
-    if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(m_device, &m_client, TOOL_NAME)) {
+    if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
         idevice_free(m_device);
-        qDebug() << "ERROR: Connecting to device failed!";
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + device.udid + " failed!", QMessageBox::Ok);
         return;
     }
 
@@ -103,11 +105,7 @@ void DeviceBridge::UpdateDeviceInfo()
 
 void DeviceBridge::TriggerUpdateDevices()
 {
-    std::vector<Device> pDevices = GetDevices();
-    if (pDevices.size() == 0)
-        ResetConnection();
-
-    emit UpdateDevices(pDevices);
+    emit UpdateDevices(GetDevices());
 }
 
 void DeviceBridge::DeviceEventCallback(const idevice_event_t *event, void *userdata)

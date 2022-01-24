@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_appInfo = new AppInfo(this);
     QMainWindow::setWindowTitle(m_appInfo->GetFullname());
     QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
-    DeviceBridge::Get()->Init();
+    DeviceBridge::Get()->Init(this);
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::vector<Device>)),this,SLOT(OnUpdateDevices(std::vector<Device>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceInfo(QJsonDocument)),this,SLOT(OnDeviceInfo(QJsonDocument)));
 }
