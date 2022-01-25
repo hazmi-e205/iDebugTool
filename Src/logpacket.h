@@ -7,6 +7,7 @@ class LogPacket
 {
 public:
     LogPacket();
+    LogPacket(QString rawString);
     LogPacket(QString detaTime, QString deviceName, QString processID, QString logType, QString logMessage);
 
     void Parse(QString rawString);

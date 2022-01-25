@@ -166,9 +166,7 @@ bool ParseSystemLogs(char &in, LogPacket &out)
     switch(in){
     case '\0':
     {
-        LogPacket pPacket;
-        pPacket.Parse(m_logTemp);
-        out = pPacket;
+        out = LogPacket(m_logTemp);
         m_logTemp = "";
         return true;
     }

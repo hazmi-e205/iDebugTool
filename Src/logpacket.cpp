@@ -6,6 +6,12 @@ LogPacket::LogPacket()
     SetRegexValue();
 }
 
+LogPacket::LogPacket(QString rawString)
+{
+    SetRegexValue();
+    Parse(rawString);
+}
+
 LogPacket::LogPacket(QString detaTime, QString deviceName, QString processID, QString logType, QString logMessage) :
     m_DateTime(detaTime),
     m_DeviceName(deviceName),
