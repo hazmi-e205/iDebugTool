@@ -307,6 +307,10 @@ solution "iDebugTool"
         AppDescription "The cross platform of iOS debugging tool"
         AppIcon "bulb.ico"
 
+        local info_str = io.readfile("../info.json")
+        info_json, err = json.decode(info_str)
+        AppVersion (info_json.version)
+
         QtResources
         {
             "../info.json",
