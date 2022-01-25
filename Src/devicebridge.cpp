@@ -20,6 +20,7 @@ void DeviceBridge::Destroy()
 DeviceBridge::DeviceBridge() :
     m_device(nullptr),
     m_client(nullptr),
+    m_syslog(nullptr),
     m_mainWidget(nullptr)
 {
 }
@@ -58,6 +59,12 @@ std::vector<Device> DeviceBridge::GetDevices()
 
 void DeviceBridge::ResetConnection()
 {
+    if (m_syslog)
+    {
+        syslog_relay_client_free(m_syslog);
+        m_syslog = nullptr;
+    }
+
     if(m_client)
     {
         lockdownd_client_free(m_client);
@@ -88,6 +95,7 @@ void DeviceBridge::ConnectToDevice(Device device)
     }
 
     UpdateDeviceInfo();
+    StartSystemLogs();
 }
 
 void DeviceBridge::UpdateDeviceInfo()
@@ -103,12 +111,59 @@ void DeviceBridge::UpdateDeviceInfo()
     }
 }
 
+void DeviceBridge::StartSystemLogs()
+{
+    /* start syslog_relay service */
+    lockdownd_service_descriptor_t svc = nullptr;
+    lockdownd_error_t lerr = lockdownd_start_service(m_client, SYSLOG_RELAY_SERVICE_NAME, &svc);
+    if (lerr == LOCKDOWN_E_PASSWORD_PROTECTED) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Device is passcode protected, enter passcode on the device to continue.", QMessageBox::Ok);
+        return;
+    }
+    if (lerr != LOCKDOWN_E_SUCCESS) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to lockdownd: " + QString::number(lerr), QMessageBox::Ok);
+        return;
+    }
+
+    /* connect to syslog_relay service */
+    syslog_relay_error_t serr = SYSLOG_RELAY_E_UNKNOWN_ERROR;
+    serr = syslog_relay_client_new(m_device, svc, &m_syslog);
+    lockdownd_service_descriptor_free(svc);
+    if (serr != SYSLOG_RELAY_E_SUCCESS) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not start service com.apple.syslog_relay.", QMessageBox::Ok);
+        return;
+    }
+
+    /* start capturing syslog */
+    serr = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
+    if (serr != SYSLOG_RELAY_E_SUCCESS) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to start capturing syslog.", QMessageBox::Ok);
+        syslog_relay_client_free(m_syslog);
+        m_syslog = nullptr;
+        return;
+    }
+}
+
 void DeviceBridge::TriggerUpdateDevices()
 {
     emit UpdateDevices(GetDevices());
 }
 
+void DeviceBridge::TriggerSystemLogsReceived(LogPacket log)
+{
+    emit SystemLogsReceived(log);
+}
+
 void DeviceBridge::DeviceEventCallback(const idevice_event_t *event, void *userdata)
 {
     DeviceBridge::Get()->TriggerUpdateDevices();
+}
+
+void DeviceBridge::SystemLogsCallback(char c, void *user_data)
+{
+    LogPacket packet;
+    if(ParseSystemLogs(c, packet))
+    {
+        DeviceBridge::Get()->TriggerSystemLogsReceived(packet);
+    }
 }

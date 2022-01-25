@@ -24,5 +24,6 @@ private:
 private slots:
     void OnUpdateDevices(std::vector<Device> devices);
     void OnDeviceInfo(QJsonDocument info);
+    void OnSystemLogsReceived(LogPacket log);
 };
 #endif // MAINWINDOW_H

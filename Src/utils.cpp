@@ -38,8 +38,8 @@ QString Base64Encode(QString string)
 QJsonValue PlistNodeToJsonValue(plist_t node)
 {
     QJsonValue jsonValue;
-    char *s = NULL;
-    char *data = NULL;
+    char *s = nullptr;
+    char *data = nullptr;
     double d;
     uint8_t b;
     uint64_t u = 0;
@@ -98,7 +98,7 @@ QJsonValue PlistNodeToJsonValue(plist_t node)
                 memset(s, 0, 24);
                 if (strftime(s, 24, "%Y-%m-%dT%H:%M:%SZ", btime) <= 0) {
                     free (s);
-                    s = NULL;
+                    s = nullptr;
                 }
             }
         }
@@ -148,7 +148,7 @@ QJsonValue PlistArrayToJsonValue(plist_t node)
 {
     QJsonValue jsonValue;
     int i, count;
-    plist_t subnode = NULL;
+    plist_t subnode = nullptr;
 
     count = plist_array_get_size(node);
     QJsonArray arr;
@@ -158,4 +158,22 @@ QJsonValue PlistArrayToJsonValue(plist_t node)
     }
     jsonValue = arr;
     return jsonValue;
+}
+
+bool ParseSystemLogs(char &in, LogPacket &out)
+{
+    static QString m_logTemp = "";
+    switch(in){
+    case '\0':
+    {
+        LogPacket pPacket;
+        pPacket.Parse(m_logTemp);
+        out = pPacket;
+        m_logTemp = "";
+        return true;
+    }
+    default:
+        m_logTemp += in;
+    }
+    return false;
 }

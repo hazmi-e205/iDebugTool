@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <iostream>
 #include "appinfo.h"
+#include "logpacket.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -15,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     DeviceBridge::Get()->Init(this);
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::vector<Device>)),this,SLOT(OnUpdateDevices(std::vector<Device>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceInfo(QJsonDocument)),this,SLOT(OnDeviceInfo(QJsonDocument)));
+    connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)),this,SLOT(OnSystemLogsReceived(LogPacket)));
 }
 
 MainWindow::~MainWindow()
@@ -33,4 +35,9 @@ void MainWindow::OnUpdateDevices(std::vector<Device> devices)
 void MainWindow::OnDeviceInfo(QJsonDocument info)
 {
     qDebug() << info["DeviceName"].toString();
+}
+
+void MainWindow::OnSystemLogsReceived(LogPacket log)
+{
+    qDebug() << log.getLogMessage();
 }

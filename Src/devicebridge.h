@@ -8,6 +8,8 @@
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice-glue/utils.h>
+#include <libimobiledevice/syslog_relay.h>
+#include "logpacket.h"
 
 #define TOOL_NAME "idebugtool"
 
@@ -29,17 +31,21 @@ public:
     std::vector<Device> GetDevices();
     void ConnectToDevice(Device device);
     void Init(QWidget *parent);
-    void TriggerUpdateDevices();
     static DeviceBridge *Get();
     static void Destroy();
 
 private:
     void ResetConnection();
     void UpdateDeviceInfo();
+    void StartSystemLogs();
+    void TriggerUpdateDevices();
+    void TriggerSystemLogsReceived(LogPacket log);
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
+    static void SystemLogsCallback(char c, void *user_data);
 
     idevice_t m_device;
     lockdownd_client_t m_client;
+    syslog_relay_client_t m_syslog;
     QJsonDocument m_deviceInfo;
     QWidget *m_mainWidget;
     static DeviceBridge *m_instance;
@@ -47,6 +53,7 @@ private:
 signals:
      void UpdateDevices(std::vector<Device> devices);
      void DeviceInfo(QJsonDocument info);
+     void SystemLogsReceived(LogPacket log);
 };
 
 #endif // DEVICEBRIDGE_H
