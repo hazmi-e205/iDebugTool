@@ -37,6 +37,20 @@
             "branch": "OpenSSL_1_1_1m",
             "path": "Externals/openssl",
             "use_submodules": false
+        },
+        {
+            "project": "libzip",
+            "url": "https://github.com/nih-at/libzip",
+            "branch": "v1.8.0",
+            "path": "Externals/libzip",
+            "use_submodules": false
+        },
+        {
+            "project": "zlib",
+            "url": "https://github.com/madler/zlib",
+            "branch": "v1.2.11",
+            "path": "Externals/zlib",
+            "use_submodules": false
         }
     ]
 }

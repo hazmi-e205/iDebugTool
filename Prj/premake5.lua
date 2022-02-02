@@ -3,6 +3,7 @@ include "common.lua"
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
     include "openssl.lua"
+    include "libzip.lua"
     include "libplist.lua"
     include "libusbmuxd.lua"
     include "libimobiledevice.lua"
@@ -41,6 +42,9 @@ project "iDebugTool"
         "../Externals/libplist/include",
         "../Externals/openssl/include",
         "../Externals/libusbmuxd/include",
+        "../Externals/libzip/lib",
+        "../Externals/libzip/build",
+        "../Externals/zlib",
     }
 
     links
@@ -52,6 +56,8 @@ project "iDebugTool"
         "imobiledevice-glue",
         "usbmuxd",
         "imobiledevice",
+        "zip",
+        "zlib",
     }
 
     if IsWindows() then
@@ -72,6 +78,8 @@ project "iDebugTool"
                 "$$(PWD)/imobiledevice-glue/debug",
                 "$$(PWD)/usbmuxd/debug",
                 "$$(PWD)/imobiledevice/debug",
+                "$$(PWD)/zip/debug",
+                "$$(PWD)/zlib/debug",
             }
         filter {"Release*"}
             libdirs
@@ -83,6 +91,8 @@ project "iDebugTool"
                 "$$(PWD)/imobiledevice-glue/release",
                 "$$(PWD)/usbmuxd/release",
                 "$$(PWD)/imobiledevice/release",
+                "$$(PWD)/zip/release",
+                "$$(PWD)/zlib/release",
             }
         filter {}
     else
@@ -100,5 +110,7 @@ project "iDebugTool"
             "$$(PWD)/../imobiledevice-glue",
             "$$(PWD)/../usbmuxd",
             "$$(PWD)/../imobiledevice",
+            "$$(PWD)/../zip",
+            "$$(PWD)/../zlib",
         }
     end
