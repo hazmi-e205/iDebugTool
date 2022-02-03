@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_ratioTopWidth(0.4f)
     , m_devicesModel(nullptr)
     , m_logModel(nullptr)
-    , m_autoScroll(false)
+    , m_scrollTimer(nullptr)
 {
     ui->setupUi(this);
 
@@ -31,13 +31,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pidEdit, SIGNAL(textChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
     connect(ui->excludeEdit, SIGNAL(textChanged(QString)), this, SLOT(OnExcludeFilterChanged(QString)));
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
+    connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
+    connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
+
+    m_scrollTimer = new QTimer(this);
+    connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
 
     SetupDevicesTable();
     SetupLogsTable();
+    UpdateStatusbar();
 }
 
 MainWindow::~MainWindow()
 {
+    m_scrollTimer->stop();
+    delete m_scrollTimer;
     DeviceBridge::Destroy();
     delete m_appInfo;
     delete m_devicesModel;
@@ -110,9 +118,6 @@ void MainWindow::UpdateLogsFilter()
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
-    if (m_autoScroll) {
-        ui->logTable->scrollToBottom();
-    }
     QList<QStandardItem*> rowData;
     rowData << new QStandardItem(log.getDateTime());
     rowData << new QStandardItem(log.getDeviceName());
@@ -120,6 +125,16 @@ void MainWindow::AddLogToTable(LogPacket log)
     rowData << new QStandardItem(log.getLogType());
     rowData << new QStandardItem(log.getLogMessage());
     m_logModel->appendRow(rowData);
+}
+
+void MainWindow::UpdateStatusbar()
+{
+    if (m_currentUdid.isEmpty()) {
+        ui->statusbar->showMessage("Idle");
+    } else {
+        QString name = m_infoCache[m_currentUdid]["DeviceName"].toString();
+        ui->statusbar->showMessage("Connected to " + (name.length() > 0 ? name : m_currentUdid));
+    }
 }
 
 void MainWindow::OnTopSplitterMoved(int pos, int index)
@@ -146,7 +161,6 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
     m_devicesModel->clear();
     SetupDevicesTable();
 
-    //m_devices = devices;
     bool currentUdidFound = false;
 
     for(std::map<QString, idevice_connection_type>::iterator it = devices.begin(); it != devices.end(); ++it) {
@@ -165,7 +179,7 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
     if(devices.size() == 0 || !currentUdidFound)
     {
         m_currentUdid = "";
-        ui->statusbar->showMessage("Idle");
+        UpdateStatusbar();
     }
 }
 
@@ -173,8 +187,8 @@ void MainWindow::OnDeviceInfoReceived(QJsonDocument info)
 {
     m_infoCache[m_currentUdid] = info;
 
-    QString name = m_infoCache[m_currentUdid]["DeviceName"].toString();
-    ui->statusbar->showMessage("Connected to " + (name.length() > 0 ? name : m_currentUdid));
+    UpdateStatusbar();
+    OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
 }
 
 void MainWindow::OnSystemLogsReceived(LogPacket log)
@@ -205,5 +219,26 @@ void MainWindow::OnExcludeFilterChanged(QString text)
 
 void MainWindow::OnAutoScrollChecked(int state)
 {
-    m_autoScroll = state == 0 ? false : true;
+    bool autoScroll = state == 0 ? false : true;
+    if (autoScroll) {
+        m_scrollTimer->start(100);
+    } else {
+        m_scrollTimer->stop();
+    }
+}
+
+void MainWindow::OnClearClicked()
+{
+    m_liveLogs.clear();
+    m_logModel->clear();
+    SetupLogsTable();
+}
+
+void MainWindow::OnSaveClicked()
+{
+}
+
+void MainWindow::OnScrollTimerTick()
+{
+    ui->logTable->scrollToBottom();
 }

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QResizeEvent>
 #include <QStandardItemModel>
+#include <QTimer>
 #include "devicebridge.h"
 
 QT_BEGIN_NAMESPACE
@@ -27,6 +28,7 @@ private:
     void SetupLogsTable();
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
+    void UpdateStatusbar();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     QStandardItemModel *m_logModel;
@@ -39,7 +41,7 @@ private:
     QString m_excludeFilter;
     std::vector<LogPacket> m_liveLogs;
     std::map<QString, QJsonDocument> m_infoCache;
-    bool m_autoScroll;
+    QTimer *m_scrollTimer;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -52,5 +54,8 @@ private slots:
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
     void OnAutoScrollChecked(int state);
+    void OnClearClicked();
+    void OnSaveClicked();
+    void OnScrollTimerTick();
 };
 #endif // MAINWINDOW_H
