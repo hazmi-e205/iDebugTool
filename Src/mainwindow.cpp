@@ -10,9 +10,9 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_ratioTopWidth(0.4f)
     , m_devicesModel(nullptr)
     , m_logModel(nullptr)
+    , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
 {
     ui->setupUi(this);
@@ -77,6 +77,9 @@ void MainWindow::SetupDevicesTable()
     m_devicesModel->setHorizontalHeaderItem(0, new QStandardItem("UDID"));
     m_devicesModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
     m_devicesModel->setHorizontalHeaderItem(2, new QStandardItem("Connection"));
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 }
 
 void MainWindow::SetupLogsTable()
@@ -87,12 +90,16 @@ void MainWindow::SetupLogsTable()
         ui->logTable->setSelectionBehavior(QAbstractItemView::SelectRows);
         ui->logTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->logTable->setSelectionMode(QAbstractItemView::MultiSelection);
+        ui->logTable->setWordWrap(false);
+        ui->logTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        ui->logTable->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     }
     m_logModel->setHorizontalHeaderItem(0, new QStandardItem("DateTime"));
     m_logModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
     m_logModel->setHorizontalHeaderItem(2, new QStandardItem("ProcessID"));
     m_logModel->setHorizontalHeaderItem(3, new QStandardItem("Type"));
     m_logModel->setHorizontalHeaderItem(4, new QStandardItem("Messages"));
+    ui->logTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
 }
 
 void MainWindow::UpdateLogsFilter()
@@ -221,7 +228,7 @@ void MainWindow::OnAutoScrollChecked(int state)
 {
     bool autoScroll = state == 0 ? false : true;
     if (autoScroll) {
-        m_scrollTimer->start(100);
+        m_scrollTimer->start(250);
     } else {
         m_scrollTimer->stop();
     }
