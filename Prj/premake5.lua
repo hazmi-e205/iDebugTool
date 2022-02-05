@@ -15,7 +15,7 @@ project "iDebugTool"
     AppCompany "hazmi-e205 Indonesia"
     AppCopyright ("Copyright (c) hazmi-e205 Indonesia " .. os.date("%Y"))
     AppDescription "The cross platform of iOS debugging tool"
-    AppIcon "bulb.ico"
+    AppIcon "../Assets/bulb.ico"
 
     local info_str = io.readfile("../info.json")
     info_json, err = json.decode(info_str)
@@ -24,7 +24,7 @@ project "iDebugTool"
     QtResources
     {
         "../info.json",
-        "bulb.ico",
+        "../Assets/bulb.ico",
     }
 
     files
