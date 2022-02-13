@@ -6,6 +6,7 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include "devicebridge.h"
+#include "customkeyfiler.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,6 +23,8 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *e) override;
+    void dropEvent(QDropEvent *e) override;
 
 private:
     void SetupDevicesTable();
@@ -29,6 +32,7 @@ private:
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
     void UpdateStatusbar();
+    void UpdateInfoWidget();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     QStandardItemModel *m_logModel;
@@ -42,6 +46,8 @@ private:
     std::vector<LogPacket> m_liveLogs;
     std::map<QString, QJsonDocument> m_infoCache;
     QTimer *m_scrollTimer;
+    CustomKeyFiler *m_installDropEvent;
+    unsigned int m_maxCachedLogs, m_maxShownLogs;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -56,6 +62,9 @@ private slots:
     void OnAutoScrollChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
+    void OnInstallBoxClicked();
+    void OnInstallClicked();
     void OnScrollTimerTick();
+    void OnConfigureClicked();
 };
 #endif // MAINWINDOW_H

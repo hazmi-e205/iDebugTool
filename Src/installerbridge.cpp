@@ -330,4 +330,14 @@ void DeviceBridge::InstallApp(InstallMode cmd, QString path)
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)
 {
+    QJsonDocument json = PlistToJson(command);
+    qDebug("command:");
+    qDebug("%s", json.toJson().toStdString().c_str());
+    qDebug("");
+
+
+    json = PlistToJson(status);
+    qDebug("status:");
+    qDebug("%s", json.toJson().toStdString().c_str());
+    qDebug("");
 }

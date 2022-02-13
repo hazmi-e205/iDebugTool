@@ -45,12 +45,12 @@ api.register {
 api.register {
     name= "AppIcon",
     scope = "project",
-    kind = "path",
+    kind = "file",
 }
 api.register {
     name= "QtResources",
     scope = "project",
-    kind = "list:path",
+    kind = "list:file",
 }
 
 p.modules.qt = {}

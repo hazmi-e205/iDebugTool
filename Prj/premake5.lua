@@ -24,7 +24,7 @@ project "iDebugTool"
     QtResources
     {
         "../info.json",
-        "../Assets/bulb.ico",
+        "../Assets/**",
     }
 
     files

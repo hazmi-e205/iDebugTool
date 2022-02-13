@@ -6,6 +6,7 @@
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
+#include <QMimeData>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,6 +15,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_logModel(nullptr)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
+    , m_installDropEvent(nullptr)
+    , m_maxCachedLogs(100)
+    , m_maxShownLogs(100)
 {
     ui->setupUi(this);
 
@@ -40,10 +44,23 @@ MainWindow::MainWindow(QWidget *parent)
     SetupDevicesTable();
     SetupLogsTable();
     UpdateStatusbar();
+
+    setAcceptDrops(true);
+    ui->installBar->setAlignment(Qt::AlignCenter);
+
+    m_installDropEvent = new CustomKeyFiler();
+    ui->installDrop->installEventFilter(m_installDropEvent);
+    connect(m_installDropEvent, SIGNAL(pressed()), this, SLOT(OnInstallBoxClicked()));
+    connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
+
+    ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
+    ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
+    connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
 }
 
 MainWindow::~MainWindow()
 {
+    delete m_installDropEvent;
     m_scrollTimer->stop();
     delete m_scrollTimer;
     DeviceBridge::Destroy();
@@ -63,6 +80,21 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
     newTopSize = m_topWidth - newTopSize;
     ui->featureWidget->resize(newTopSize, 0);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *e)
+{
+    if (e->mimeData()->hasUrls()) {
+        e->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *e)
+{
+    foreach (const QUrl &url, e->mimeData()->urls()) {
+        QString fileName = url.toLocalFile();
+        ui->installPath->setText(fileName);
+    }
 }
 
 void MainWindow::SetupDevicesTable()
@@ -132,6 +164,11 @@ void MainWindow::AddLogToTable(LogPacket log)
     rowData << new QStandardItem(log.getLogType());
     rowData << new QStandardItem(log.getLogMessage());
     m_logModel->appendRow(rowData);
+
+    if ((unsigned int)m_logModel->rowCount() > m_maxShownLogs)
+    {
+        m_logModel->removeRow(0);
+    }
 }
 
 void MainWindow::UpdateStatusbar()
@@ -144,6 +181,15 @@ void MainWindow::UpdateStatusbar()
     }
 }
 
+void MainWindow::UpdateInfoWidget()
+{
+    ui->ProductType->setText(m_infoCache[m_currentUdid]["ProductType"].toString());
+    ui->OSName->setText(m_infoCache[m_currentUdid]["ProductName"].toString());
+    ui->OSVersion->setText(m_infoCache[m_currentUdid]["ProductVersion"].toString());
+    ui->CPUArch->setText(m_infoCache[m_currentUdid]["CPUArchitecture"].toString());
+    ui->UDID->setText(m_infoCache[m_currentUdid]["UniqueDeviceID"].toString());
+}
+
 void MainWindow::OnTopSplitterMoved(int pos, int index)
 {
     m_ratioTopWidth = (float)ui->deviceWidget->width() / m_topWidth;
@@ -153,6 +199,8 @@ void MainWindow::OnDevicesTableClicked(QModelIndex index)
 {
     if (index.isValid()) {
         m_currentUdid = index.model()->index(0,0).data().toString();
+        UpdateInfoWidget();
+
         auto type = index.model()->index(0,2).data().toString() == "network" ? idevice_connection_type::CONNECTION_NETWORK : idevice_connection_type::CONNECTION_USBMUXD;
         DeviceBridge::Get()->ConnectToDevice(m_currentUdid, type);
     }
@@ -195,13 +243,20 @@ void MainWindow::OnDeviceInfoReceived(QJsonDocument info)
     m_infoCache[m_currentUdid] = info;
 
     UpdateStatusbar();
+    UpdateInfoWidget();
     OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
 }
 
 void MainWindow::OnSystemLogsReceived(LogPacket log)
 {
     m_liveLogs.push_back(log);
-    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter)) {
+    if ((unsigned int)m_liveLogs.size() > m_maxCachedLogs)
+    {
+        m_liveLogs.erase(m_liveLogs.begin());
+    }
+
+    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter))
+    {
         AddLogToTable(log);
     }
 }
@@ -243,9 +298,26 @@ void MainWindow::OnClearClicked()
 
 void MainWindow::OnSaveClicked()
 {
+    qDebug() << "save clicked";
+}
+
+void MainWindow::OnInstallBoxClicked()
+{
+    qDebug() << "installbox clicked";
+}
+
+void MainWindow::OnInstallClicked()
+{
+    DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallMode::CMD_UPGRADE : InstallMode::CMD_INSTALL, ui->installPath->text());
 }
 
 void MainWindow::OnScrollTimerTick()
 {
     ui->logTable->scrollToBottom();
+}
+
+void MainWindow::OnConfigureClicked()
+{
+    m_maxCachedLogs = ui->maxCachedLogs->text().toUInt();
+    m_maxShownLogs = ui->maxShownLogs->text().toUInt();
 }
