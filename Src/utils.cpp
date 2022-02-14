@@ -30,7 +30,20 @@ QJsonObject PlistToJsonObject(plist_t node)
 QJsonDocument PlistToJson(plist_t node)
 {
     QJsonDocument jsonDoc;
-    jsonDoc.setObject(PlistToJsonObject(node));
+    plist_type t = plist_get_node_type(node);
+    switch (t) {
+    case PLIST_ARRAY:
+        {
+            QJsonArray arr = PlistToJsonArray(node);
+            jsonDoc.setArray(arr);
+        }
+        break;
+
+    default:
+        jsonDoc.setObject(PlistToJsonObject(node));
+        break;
+    }
+
     return jsonDoc;
 }
 

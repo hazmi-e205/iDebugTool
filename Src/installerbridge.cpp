@@ -6,11 +6,11 @@
 #include <stdio.h>
 #include "utils.h"
 
-QJsonArray DeviceBridge::GetInstalledApps()
+QJsonDocument DeviceBridge::GetInstalledApps()
 {
     StartInstaller();
 
-    QJsonArray jsonArray;
+    QJsonDocument jsonArray;
     plist_t client_opts = instproxy_client_options_new();
     instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
 
@@ -21,7 +21,7 @@ QJsonArray DeviceBridge::GetInstalledApps()
         return jsonArray;
     }
 
-    jsonArray = PlistToJsonArray(apps);
+    jsonArray = PlistToJson(apps);
     plist_free(apps);
     return jsonArray;
 }
@@ -199,7 +199,7 @@ void DeviceBridge::InstallApp(InstallMode cmd, QString path)
         plist_free(info);
         info = NULL;
     } else {
-        zf = zip_open(path.toUtf8().data(), 0, &errp);
+        zf = zip_open(path.toUtf8().data(), ZIP_RDONLY, &errp);
         if (!zf) {
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: zip_open: " + path + ": " + QString::number(errp), QMessageBox::Ok);
             return;

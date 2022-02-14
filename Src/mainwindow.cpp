@@ -7,6 +7,7 @@
 #include <QTableView>
 #include <QAbstractItemView>
 #include <QMimeData>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_installDropEvent(nullptr)
     , m_maxCachedLogs(100)
     , m_maxShownLogs(100)
+    , m_scrollInterval(250)
 {
     ui->setupUi(this);
 
@@ -50,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_installDropEvent = new CustomKeyFiler();
     ui->installDrop->installEventFilter(m_installDropEvent);
-    connect(m_installDropEvent, SIGNAL(pressed()), this, SLOT(OnInstallBoxClicked()));
+    connect(m_installDropEvent, SIGNAL(pressed()), this, SLOT(OnInstallDropClicked()));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
 
     ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
@@ -165,7 +167,7 @@ void MainWindow::AddLogToTable(LogPacket log)
     rowData << new QStandardItem(log.getLogMessage());
     m_logModel->appendRow(rowData);
 
-    if ((unsigned int)m_logModel->rowCount() > m_maxShownLogs)
+    while ((unsigned int)m_logModel->rowCount() > m_maxShownLogs)
     {
         m_logModel->removeRow(0);
     }
@@ -250,7 +252,7 @@ void MainWindow::OnDeviceInfoReceived(QJsonDocument info)
 void MainWindow::OnSystemLogsReceived(LogPacket log)
 {
     m_liveLogs.push_back(log);
-    if ((unsigned int)m_liveLogs.size() > m_maxCachedLogs)
+    while ((unsigned int)m_liveLogs.size() > m_maxCachedLogs)
     {
         m_liveLogs.erase(m_liveLogs.begin());
     }
@@ -283,7 +285,7 @@ void MainWindow::OnAutoScrollChecked(int state)
 {
     bool autoScroll = state == 0 ? false : true;
     if (autoScroll) {
-        m_scrollTimer->start(250);
+        m_scrollTimer->start(m_scrollInterval);
     } else {
         m_scrollTimer->stop();
     }
@@ -301,9 +303,10 @@ void MainWindow::OnSaveClicked()
     qDebug() << "save clicked";
 }
 
-void MainWindow::OnInstallBoxClicked()
+void MainWindow::OnInstallDropClicked()
 {
-    qDebug() << "installbox clicked";
+    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+    ui->installPath->setText(filename);
 }
 
 void MainWindow::OnInstallClicked()

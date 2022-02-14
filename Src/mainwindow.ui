@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1643</width>
-    <height>1177</height>
+    <width>1212</width>
+    <height>724</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -54,37 +54,67 @@
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_3">
                <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
-                 <item>
-                  <spacer name="horizontalSpacer">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="refreshBtn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="text">
-                    <string>Refresh</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
+                <widget class="QWidget" name="widget_35" native="true">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <spacer name="horizontalSpacer">
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>40</width>
+                      <height>20</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="refreshBtn">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="text">
+                     <string>Refresh</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
                </item>
                <item>
-                <widget class="QTableView" name="deviceTable"/>
+                <widget class="QTableView" name="deviceTable">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -243,7 +273,7 @@ color: rgb(255, 255, 255);</string>
                            </property>
                            <property name="minimumSize">
                             <size>
-                             <width>0</width>
+                             <width>50</width>
                              <height>0</height>
                             </size>
                            </property>
@@ -259,230 +289,256 @@ color: rgb(255, 255, 255);</string>
                           </widget>
                          </item>
                          <item>
-                          <widget class="QWidget" name="widget_8" native="true">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <layout class="QVBoxLayout" name="verticalLayout_5">
-                            <property name="leftMargin">
-                             <number>0</number>
-                            </property>
-                            <property name="rightMargin">
-                             <number>0</number>
-                            </property>
+                          <widget class="QWidget" name="widget_19" native="true">
+                           <layout class="QHBoxLayout" name="horizontalLayout_16">
                             <item>
-                             <widget class="QWidget" name="widget_10" native="true">
+                             <widget class="QWidget" name="widget_8" native="true">
                               <property name="sizePolicy">
                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                                </sizepolicy>
                               </property>
-                              <layout class="QHBoxLayout" name="horizontalLayout_11">
-                               <property name="leftMargin">
-                                <number>0</number>
-                               </property>
-                               <property name="rightMargin">
-                                <number>0</number>
-                               </property>
+                              <layout class="QVBoxLayout" name="verticalLayout_5">
                                <item>
-                                <widget class="QWidget" name="widget_20" native="true">
+                                <widget class="QWidget" name="widget_10" native="true">
                                  <property name="sizePolicy">
-                                  <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                    <horstretch>0</horstretch>
                                    <verstretch>0</verstretch>
                                   </sizepolicy>
                                  </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_6">
+                                 <layout class="QHBoxLayout" name="horizontalLayout_11">
+                                  <property name="leftMargin">
+                                   <number>0</number>
+                                  </property>
+                                  <property name="rightMargin">
+                                   <number>0</number>
+                                  </property>
                                   <item>
-                                   <widget class="QLabel" name="label_5">
+                                   <widget class="QWidget" name="widget_20" native="true">
                                     <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                       <horstretch>0</horstretch>
                                       <verstretch>0</verstretch>
                                      </sizepolicy>
                                     </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>Product Type</string>
-                                    </property>
+                                    <layout class="QVBoxLayout" name="verticalLayout_6">
+                                     <property name="spacing">
+                                      <number>4</number>
+                                     </property>
+                                     <property name="leftMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="topMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="rightMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="bottomMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <item>
+                                      <widget class="QLabel" name="label_5">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="font">
+                                        <font>
+                                         <pointsize>9</pointsize>
+                                         <weight>75</weight>
+                                         <bold>true</bold>
+                                        </font>
+                                       </property>
+                                       <property name="text">
+                                        <string>Product Type</string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="label_6">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="font">
+                                        <font>
+                                         <pointsize>9</pointsize>
+                                         <weight>75</weight>
+                                         <bold>true</bold>
+                                        </font>
+                                       </property>
+                                       <property name="text">
+                                        <string>OS Name</string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="label_8">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="font">
+                                        <font>
+                                         <pointsize>9</pointsize>
+                                         <weight>75</weight>
+                                         <bold>true</bold>
+                                        </font>
+                                       </property>
+                                       <property name="text">
+                                        <string>OS Version</string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="label_13">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="font">
+                                        <font>
+                                         <pointsize>9</pointsize>
+                                         <weight>75</weight>
+                                         <bold>true</bold>
+                                        </font>
+                                       </property>
+                                       <property name="text">
+                                        <string>CPU Arch</string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="label_14">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="font">
+                                        <font>
+                                         <pointsize>9</pointsize>
+                                         <weight>75</weight>
+                                         <bold>true</bold>
+                                        </font>
+                                       </property>
+                                       <property name="text">
+                                        <string>UDID</string>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                    </layout>
                                    </widget>
                                   </item>
                                   <item>
-                                   <widget class="QLabel" name="label_6">
+                                   <widget class="QWidget" name="widget_21" native="true">
                                     <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                     <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
                                       <horstretch>0</horstretch>
                                       <verstretch>0</verstretch>
                                      </sizepolicy>
                                     </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>OS Name</string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="label_8">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>OS Version</string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="label_13">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>CPU Arch</string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="label_14">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>UDID</string>
-                                    </property>
+                                    <layout class="QVBoxLayout" name="verticalLayout_8">
+                                     <property name="spacing">
+                                      <number>4</number>
+                                     </property>
+                                     <property name="leftMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="topMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="rightMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="bottomMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <item>
+                                      <widget class="QLabel" name="ProductType">
+                                       <property name="text">
+                                        <string>....</string>
+                                       </property>
+                                       <property name="textFormat">
+                                        <enum>Qt::PlainText</enum>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="OSName">
+                                       <property name="text">
+                                        <string>....</string>
+                                       </property>
+                                       <property name="textFormat">
+                                        <enum>Qt::PlainText</enum>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="OSVersion">
+                                       <property name="text">
+                                        <string>....</string>
+                                       </property>
+                                       <property name="textFormat">
+                                        <enum>Qt::PlainText</enum>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLabel" name="CPUArch">
+                                       <property name="text">
+                                        <string>....</string>
+                                       </property>
+                                       <property name="textFormat">
+                                        <enum>Qt::PlainText</enum>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QLineEdit" name="UDID">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <property name="readOnly">
+                                        <bool>true</bool>
+                                       </property>
+                                      </widget>
+                                     </item>
+                                    </layout>
                                    </widget>
                                   </item>
                                  </layout>
                                 </widget>
                                </item>
                                <item>
-                                <widget class="QWidget" name="widget_21" native="true">
+                                <widget class="QPushButton" name="pushButton">
                                  <property name="sizePolicy">
-                                  <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                    <horstretch>0</horstretch>
                                    <verstretch>0</verstretch>
                                   </sizepolicy>
                                  </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_8">
-                                  <item>
-                                   <widget class="QLabel" name="ProductType">
-                                    <property name="text">
-                                     <string>....</string>
-                                    </property>
-                                    <property name="textFormat">
-                                     <enum>Qt::PlainText</enum>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="OSName">
-                                    <property name="text">
-                                     <string>....</string>
-                                    </property>
-                                    <property name="textFormat">
-                                     <enum>Qt::PlainText</enum>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="OSVersion">
-                                    <property name="text">
-                                     <string>....</string>
-                                    </property>
-                                    <property name="textFormat">
-                                     <enum>Qt::PlainText</enum>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLabel" name="CPUArch">
-                                    <property name="text">
-                                     <string>....</string>
-                                    </property>
-                                    <property name="textFormat">
-                                     <enum>Qt::PlainText</enum>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLineEdit" name="UDID">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="readOnly">
-                                     <bool>true</bool>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                 </layout>
+                                 <property name="text">
+                                  <string>System information...</string>
+                                 </property>
                                 </widget>
                                </item>
                               </layout>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QWidget" name="widget_19" native="true">
-                              <widget class="QPushButton" name="pushButton">
-                               <property name="geometry">
-                                <rect>
-                                 <x>10</x>
-                                 <y>0</y>
-                                 <width>121</width>
-                                 <height>21</height>
-                                </rect>
-                               </property>
-                               <property name="text">
-                                <string>System information...</string>
-                               </property>
-                              </widget>
                              </widget>
                             </item>
                            </layout>
@@ -553,6 +609,12 @@ color: rgb(255, 255, 255);</string>
                         <layout class="QVBoxLayout" name="verticalLayout_15">
                          <item>
                           <widget class="QWidget" name="installDrop" native="true">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
                            <property name="styleSheet">
                             <string notr="true">background-color: rgb(227, 129, 0);</string>
                            </property>
@@ -708,7 +770,7 @@ color: rgb(255, 255, 255);</string>
                             <item>
                              <widget class="QLineEdit" name="installPath">
                               <property name="sizePolicy">
-                               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                                </sizepolicy>
@@ -774,7 +836,7 @@ color: rgb(255, 255, 255);</string>
                             <item>
                              <widget class="QProgressBar" name="installBar">
                               <property name="sizePolicy">
-                               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                 <horstretch>0</horstretch>
                                 <verstretch>0</verstretch>
                                </sizepolicy>
@@ -907,7 +969,7 @@ color: rgb(255, 255, 255);</string>
                          <string notr="true">background-color: rgb(255, 146, 1);
 color: rgb(255, 255, 255);</string>
                         </property>
-                        <layout class="QHBoxLayout" name="horizontalLayout_18">
+                        <layout class="QHBoxLayout" name="horizontalLayout_17">
                          <item>
                           <widget class="QWidget" name="widget_23" native="true">
                            <property name="sizePolicy">
@@ -924,7 +986,7 @@ color: rgb(255, 255, 255);</string>
                            </property>
                            <property name="maximumSize">
                             <size>
-                             <width>120</width>
+                             <width>100</width>
                              <height>16777215</height>
                             </size>
                            </property>
@@ -935,121 +997,197 @@ color: rgb(255, 255, 255);</string>
                          </item>
                          <item>
                           <widget class="QWidget" name="widget_28" native="true">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <layout class="QVBoxLayout" name="verticalLayout_19">
-                            <property name="leftMargin">
-                             <number>0</number>
-                            </property>
-                            <property name="rightMargin">
-                             <number>0</number>
-                            </property>
+                           <layout class="QHBoxLayout" name="horizontalLayout_20">
                             <item>
                              <widget class="QWidget" name="widget_31" native="true">
-                              <property name="sizePolicy">
-                               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                <horstretch>0</horstretch>
-                                <verstretch>0</verstretch>
-                               </sizepolicy>
-                              </property>
-                              <layout class="QHBoxLayout" name="horizontalLayout_17">
+                              <layout class="QVBoxLayout" name="verticalLayout_25">
+                               <property name="spacing">
+                                <number>0</number>
+                               </property>
                                <property name="leftMargin">
+                                <number>0</number>
+                               </property>
+                               <property name="topMargin">
                                 <number>0</number>
                                </property>
                                <property name="rightMargin">
                                 <number>0</number>
                                </property>
+                               <property name="bottomMargin">
+                                <number>0</number>
+                               </property>
                                <item>
-                                <widget class="QWidget" name="widget_32" native="true">
+                                <widget class="QWidget" name="widget_36" native="true">
                                  <property name="sizePolicy">
-                                  <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                    <horstretch>0</horstretch>
                                    <verstretch>0</verstretch>
                                   </sizepolicy>
                                  </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_20">
+                                 <layout class="QVBoxLayout" name="verticalLayout_22">
+                                  <property name="spacing">
+                                   <number>4</number>
+                                  </property>
+                                  <property name="leftMargin">
+                                   <number>0</number>
+                                  </property>
+                                  <property name="topMargin">
+                                   <number>0</number>
+                                  </property>
+                                  <property name="rightMargin">
+                                   <number>0</number>
+                                  </property>
+                                  <property name="bottomMargin">
+                                   <number>0</number>
+                                  </property>
                                   <item>
-                                   <widget class="QLabel" name="label_26">
+                                   <widget class="QWidget" name="widget_37" native="true">
                                     <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                       <horstretch>0</horstretch>
                                       <verstretch>0</verstretch>
                                      </sizepolicy>
                                     </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>Max Cached Logs</string>
-                                    </property>
+                                    <layout class="QHBoxLayout" name="horizontalLayout_19">
+                                     <property name="leftMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <property name="rightMargin">
+                                      <number>0</number>
+                                     </property>
+                                     <item>
+                                      <widget class="QWidget" name="widget_38" native="true">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <layout class="QVBoxLayout" name="verticalLayout_23">
+                                        <property name="spacing">
+                                         <number>6</number>
+                                        </property>
+                                        <property name="leftMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="topMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="rightMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="bottomMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <item>
+                                         <widget class="QLabel" name="label_28">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="font">
+                                           <font>
+                                            <pointsize>9</pointsize>
+                                            <weight>75</weight>
+                                            <bold>true</bold>
+                                           </font>
+                                          </property>
+                                          <property name="text">
+                                           <string>Max Cached Logs</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                        <item>
+                                         <widget class="QLabel" name="label_29">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="font">
+                                           <font>
+                                            <pointsize>9</pointsize>
+                                            <weight>75</weight>
+                                            <bold>true</bold>
+                                           </font>
+                                          </property>
+                                          <property name="text">
+                                           <string>Max Shown Logs</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                       </layout>
+                                      </widget>
+                                     </item>
+                                     <item>
+                                      <widget class="QWidget" name="widget_39" native="true">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                       </property>
+                                       <layout class="QVBoxLayout" name="verticalLayout_24">
+                                        <property name="spacing">
+                                         <number>6</number>
+                                        </property>
+                                        <property name="leftMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="topMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="rightMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <property name="bottomMargin">
+                                         <number>0</number>
+                                        </property>
+                                        <item>
+                                         <widget class="QLineEdit" name="maxCachedLogs">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="text">
+                                           <string>100</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                        <item>
+                                         <widget class="QLineEdit" name="maxShownLogs">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="text">
+                                           <string>100</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                       </layout>
+                                      </widget>
+                                     </item>
+                                    </layout>
                                    </widget>
                                   </item>
                                   <item>
-                                   <widget class="QLabel" name="label_27">
+                                   <widget class="QPushButton" name="configureBtn">
                                     <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="font">
-                                     <font>
-                                      <pointsize>9</pointsize>
-                                      <weight>75</weight>
-                                      <bold>true</bold>
-                                     </font>
-                                    </property>
-                                    <property name="text">
-                                     <string>Max Shown Logs</string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                 </layout>
-                                </widget>
-                               </item>
-                               <item>
-                                <widget class="QWidget" name="widget_33" native="true">
-                                 <property name="sizePolicy">
-                                  <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                                   <horstretch>0</horstretch>
-                                   <verstretch>0</verstretch>
-                                  </sizepolicy>
-                                 </property>
-                                 <layout class="QVBoxLayout" name="verticalLayout_21">
-                                  <item>
-                                   <widget class="QLineEdit" name="maxCachedLogs">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                       <horstretch>0</horstretch>
                                       <verstretch>0</verstretch>
                                      </sizepolicy>
                                     </property>
                                     <property name="text">
-                                     <string>100</string>
-                                    </property>
-                                   </widget>
-                                  </item>
-                                  <item>
-                                   <widget class="QLineEdit" name="maxShownLogs">
-                                    <property name="sizePolicy">
-                                     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                                      <horstretch>0</horstretch>
-                                      <verstretch>0</verstretch>
-                                     </sizepolicy>
-                                    </property>
-                                    <property name="text">
-                                     <string>100</string>
-                                    </property>
-                                    <property name="readOnly">
-                                     <bool>true</bool>
+                                     <string>Configure...</string>
                                     </property>
                                    </widget>
                                   </item>
@@ -1057,23 +1195,6 @@ color: rgb(255, 255, 255);</string>
                                 </widget>
                                </item>
                               </layout>
-                             </widget>
-                            </item>
-                            <item>
-                             <widget class="QWidget" name="widget_34" native="true">
-                              <widget class="QPushButton" name="configureBtn">
-                               <property name="geometry">
-                                <rect>
-                                 <x>10</x>
-                                 <y>0</y>
-                                 <width>81</width>
-                                 <height>21</height>
-                                </rect>
-                               </property>
-                               <property name="text">
-                                <string>Configure...</string>
-                               </property>
-                              </widget>
                              </widget>
                             </item>
                            </layout>
@@ -1445,7 +1566,7 @@ background-color: rgb(4, 111, 182);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1643</width>
+     <width>1212</width>
      <height>20</height>
     </rect>
    </property>

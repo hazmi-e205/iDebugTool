@@ -62,7 +62,7 @@ private slots:
     void OnAutoScrollChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
-    void OnInstallBoxClicked();
+    void OnInstallDropClicked();
     void OnInstallClicked();
     void OnScrollTimerTick();
     void OnConfigureClicked();

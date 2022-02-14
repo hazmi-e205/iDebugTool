@@ -44,7 +44,7 @@ public:
     void ConnectToDevice(QString udid, idevice_connection_type type);
     std::map<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);
-    QJsonArray GetInstalledApps();
+    QJsonDocument GetInstalledApps();
     void UninstallApp(QString bundleId);
     void InstallApp(InstallMode cmd, QString path);
 
