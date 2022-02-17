@@ -57,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
+    ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
 }
 

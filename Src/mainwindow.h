@@ -47,7 +47,7 @@ private:
     std::map<QString, QJsonDocument> m_infoCache;
     QTimer *m_scrollTimer;
     CustomKeyFiler *m_installDropEvent;
-    unsigned int m_maxCachedLogs, m_maxShownLogs;
+    unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);

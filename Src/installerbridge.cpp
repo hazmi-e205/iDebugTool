@@ -8,9 +8,12 @@
 
 QJsonDocument DeviceBridge::GetInstalledApps()
 {
-    StartInstaller();
-
     QJsonDocument jsonArray;
+    if (!m_installer) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
+        return jsonArray;
+    }
+
     plist_t client_opts = instproxy_client_options_new();
     instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
 
@@ -28,15 +31,19 @@ QJsonDocument DeviceBridge::GetInstalledApps()
 
 void DeviceBridge::UninstallApp(QString bundleId)
 {
-    StartInstaller();
+    if (!m_installer) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
+        return;
+    }
     instproxy_uninstall(m_installer, bundleId.toUtf8(), NULL, InstallerCallback, NULL);
 }
 
 void DeviceBridge::InstallApp(InstallMode cmd, QString path)
 {
-    StartInstaller();
-    StartAFC();
-
+    if (!m_installer) {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
+        return;
+    }
     char *bundleidentifier = NULL;
     plist_t sinf = NULL;
     plist_t meta = NULL;
@@ -199,7 +206,7 @@ void DeviceBridge::InstallApp(InstallMode cmd, QString path)
         plist_free(info);
         info = NULL;
     } else {
-        zf = zip_open(path.toUtf8().data(), ZIP_RDONLY, &errp);
+        zf = zip_open(path.toUtf8().data(), 0, &errp);
         if (!zf) {
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: zip_open: " + path + ": " + QString::number(errp), QMessageBox::Ok);
             return;

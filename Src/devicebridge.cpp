@@ -121,6 +121,10 @@ void DeviceBridge::UpdateDeviceInfo()
             plist_free(node);
             node = nullptr;
             emit DeviceInfoReceived(m_deviceInfo);
+
+            //start services
+            StartInstaller();
+            StartAFC();
         }
     }
 }

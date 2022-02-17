@@ -5,8 +5,10 @@
 #include <QDebug>
 #include <QByteArray>
 #include <QBitArray>
+#include <QFileInfo>
 #include <zip.h>
 #include <dirent.h>
+#include <stdio.h>
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -257,7 +259,7 @@ int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, cha
 
     *buffer = (char*)malloc(zs.size);
     if (zs.size > LLONG_MAX || zip_fread(zfile, *buffer, zs.size) != (zip_int64_t)zs.size) {
-        fprintf(stderr, "ERROR: zip_fread %" PRIu64 " bytes from '%s'\n", (uint64_t)zs.size, filename);
+        fprintf(stderr, "ERROR: zip_fread %llu bytes from '%s'\n", (uint64_t)zs.size, filename);
         free(*buffer);
         *buffer = NULL;
         zip_fclose(zfile);
@@ -300,7 +302,8 @@ int zip_get_app_directory(struct zip* zf, QString &path)
                     continue;
 
                 /* copy filename */
-                path = name;
+                QFileInfo file_info(name);
+                path = file_info.filePath().remove(file_info.fileName());
                 break;
             }
         }

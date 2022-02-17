@@ -266,14 +266,14 @@ color: rgb(255, 255, 255);</string>
                          <item>
                           <widget class="QWidget" name="widget_6" native="true">
                            <property name="sizePolicy">
-                            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                              <horstretch>0</horstretch>
                              <verstretch>0</verstretch>
                             </sizepolicy>
                            </property>
                            <property name="minimumSize">
                             <size>
-                             <width>50</width>
+                             <width>40</width>
                              <height>0</height>
                             </size>
                            </property>
@@ -325,7 +325,7 @@ color: rgb(255, 255, 255);</string>
                                     </property>
                                     <layout class="QVBoxLayout" name="verticalLayout_6">
                                      <property name="spacing">
-                                      <number>4</number>
+                                      <number>6</number>
                                      </property>
                                      <property name="leftMargin">
                                       <number>0</number>
@@ -452,7 +452,7 @@ color: rgb(255, 255, 255);</string>
                                     </property>
                                     <layout class="QVBoxLayout" name="verticalLayout_8">
                                      <property name="spacing">
-                                      <number>4</number>
+                                      <number>2</number>
                                      </property>
                                      <property name="leftMargin">
                                       <number>0</number>
@@ -973,14 +973,14 @@ color: rgb(255, 255, 255);</string>
                          <item>
                           <widget class="QWidget" name="widget_23" native="true">
                            <property name="sizePolicy">
-                            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                              <horstretch>0</horstretch>
                              <verstretch>0</verstretch>
                             </sizepolicy>
                            </property>
                            <property name="minimumSize">
                             <size>
-                             <width>0</width>
+                             <width>40</width>
                              <height>0</height>
                             </size>
                            </property>
@@ -1095,7 +1095,7 @@ color: rgb(255, 255, 255);</string>
                                            </font>
                                           </property>
                                           <property name="text">
-                                           <string>Max Cached Logs</string>
+                                           <string>Max cached logs</string>
                                           </property>
                                          </widget>
                                         </item>
@@ -1115,7 +1115,27 @@ color: rgb(255, 255, 255);</string>
                                            </font>
                                           </property>
                                           <property name="text">
-                                           <string>Max Shown Logs</string>
+                                           <string>Max shown logs</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                        <item>
+                                         <widget class="QLabel" name="label_30">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="font">
+                                           <font>
+                                            <pointsize>7</pointsize>
+                                            <weight>75</weight>
+                                            <bold>true</bold>
+                                           </font>
+                                          </property>
+                                          <property name="text">
+                                           <string>Auto scroll interval (ms)</string>
                                           </property>
                                          </widget>
                                         </item>
@@ -1169,6 +1189,19 @@ color: rgb(255, 255, 255);</string>
                                           </property>
                                           <property name="text">
                                            <string>100</string>
+                                          </property>
+                                         </widget>
+                                        </item>
+                                        <item>
+                                         <widget class="QLineEdit" name="scrollInterval">
+                                          <property name="sizePolicy">
+                                           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                           </sizepolicy>
+                                          </property>
+                                          <property name="text">
+                                           <string>250</string>
                                           </property>
                                          </widget>
                                         </item>

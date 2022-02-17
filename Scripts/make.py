@@ -145,8 +145,7 @@ def ApplyPatch():
         libpath   = os.path.abspath(base_dir + "/" + repo_item["path"])
         if os.path.exists(patchpath) and os.path.exists(libpath):
             cprint("Found " + repo_item["project"] + ".patch and try to apply it...", 'yellow', attrs=['reverse', 'blink'])
-            if repo_item.type.lower() == "git":
-                utils.Git.apply_patch(lib_path=libpath, patch_path=patchpath)
+            utils.Git.apply_patch(lib_path=libpath, patch_path=patchpath)
             cprint("Patch applied to '" + repo_item["project"] + "'!\n", 'yellow', attrs=['reverse', 'blink'])
 
         if os.path.exists(filepath) and os.path.exists(libpath):
@@ -164,8 +163,7 @@ def CreatePatch():
             patchpath = os.path.abspath(patch_dir + "/" + repo_item["project"] + ".patch")
             if not os.path.exists(patch_dir):
                 os.makedirs(patch_dir)
-            if repo_item.type.lower() == "git":
-                utils.Git.create_patch(lib_path=libpath, patch_path=patchpath)
+            utils.Git.create_patch(lib_path=libpath, patch_path=patchpath)
             cprint("Patch created '" + patchpath + "'!", 'green', attrs=['reverse', 'blink'])
 
 
