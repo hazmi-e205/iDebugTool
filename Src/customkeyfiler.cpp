@@ -2,17 +2,17 @@
 #include <QEvent>
 #include <QKeyEvent>
 
-CustomKeyFiler::CustomKeyFiler() :
+CustomKeyFilter::CustomKeyFilter() :
     m_released(false)
 {
 }
 
-bool CustomKeyFiler::eventFilter(QObject *obj, QEvent *event)
+bool CustomKeyFilter::eventFilter(QObject *obj, QEvent *event)
 {
     switch(event->type())
     {
         case QEvent::MouseButtonRelease:
-            emit pressed();
+            emit pressed(obj);
             return true;
             break;
 

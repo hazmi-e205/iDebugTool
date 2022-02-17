@@ -8,6 +8,8 @@
 #include <QAbstractItemView>
 #include <QMimeData>
 #include <QFileDialog>
+#include <QJsonValue>
+#include <QJsonObject>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_logModel(nullptr)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
-    , m_installDropEvent(nullptr)
+    , m_eventFilter(nullptr)
     , m_maxCachedLogs(100)
     , m_maxShownLogs(100)
     , m_scrollInterval(250)
@@ -50,20 +52,27 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
     ui->installBar->setAlignment(Qt::AlignCenter);
 
-    m_installDropEvent = new CustomKeyFiler();
-    ui->installDrop->installEventFilter(m_installDropEvent);
-    connect(m_installDropEvent, SIGNAL(pressed()), this, SLOT(OnInstallDropClicked()));
+    m_eventFilter = new CustomKeyFilter();
+    ui->installDrop->installEventFilter(m_eventFilter);
+    ui->bundleIds->installEventFilter(m_eventFilter);
+    connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
+    connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
+    connect(ui->bundleIds, SIGNAL(currentTextChanged(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
     ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
+
+    connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
+    connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
+    connect(ui->shutdownBtn, SIGNAL(pressed()), this, SLOT(OnShutdownClicked()));
 }
 
 MainWindow::~MainWindow()
 {
-    delete m_installDropEvent;
+    delete m_eventFilter;
     m_scrollTimer->stop();
     delete m_scrollTimer;
     DeviceBridge::Destroy();
@@ -143,13 +152,13 @@ void MainWindow::UpdateLogsFilter()
     SetupLogsTable();
     if (m_currentFilter.isEmpty() && m_pidFilter.isEmpty())
     {
-        for (LogPacket m_Log : m_liveLogs) {
+        for (LogPacket& m_Log : m_liveLogs) {
             AddLogToTable(m_Log);
         }
     }
     else
     {
-        for (LogPacket m_Log : m_liveLogs)
+        for (LogPacket& m_Log : m_liveLogs)
         {
             if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter)) {
                 AddLogToTable(m_Log);
@@ -304,15 +313,41 @@ void MainWindow::OnSaveClicked()
     qDebug() << "save clicked";
 }
 
-void MainWindow::OnInstallDropClicked()
+void MainWindow::OnClickedEvent(QObject* object)
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
-    ui->installPath->setText(filename);
+    if(object->objectName() == ui->installDrop->objectName())
+    {
+        QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+        ui->installPath->setText(filename);
+    }
+
+    if(object->objectName() == ui->bundleIds->objectName())
+    {
+        ui->bundleIds->clear();
+        auto apps = DeviceBridge::Get()->GetInstalledApps();
+        for (int idx = 0; idx < apps.array().count(); idx++)
+        {
+            QString bundle_id = apps[idx]["CFBundleIdentifier"].toString();
+            ui->bundleIds->addItem(bundle_id);
+
+            QJsonDocument app_info;
+            app_info.setObject(apps[idx].toObject());
+            m_installedApps[bundle_id] = app_info;
+        }
+    }
 }
 
 void MainWindow::OnInstallClicked()
 {
     DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallMode::CMD_UPGRADE : InstallMode::CMD_INSTALL, ui->installPath->text());
+}
+
+void MainWindow::OnUninstallClicked()
+{
+    if (!m_choosenBundleId.isEmpty())
+    {
+        DeviceBridge::Get()->UninstallApp(m_choosenBundleId);
+    }
 }
 
 void MainWindow::OnScrollTimerTick()
@@ -324,4 +359,27 @@ void MainWindow::OnConfigureClicked()
 {
     m_maxCachedLogs = ui->maxCachedLogs->text().toUInt();
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
+}
+
+void MainWindow::OnSleepClicked()
+{
+    DeviceBridge::Get()->StartDiagnostics(DiagnosticsMode::CMD_SLEEP);
+}
+
+void MainWindow::OnShutdownClicked()
+{
+    DeviceBridge::Get()->StartDiagnostics(DiagnosticsMode::CMD_SHUTDOWN);
+}
+
+void MainWindow::OnRestartClicked()
+{
+    DeviceBridge::Get()->StartDiagnostics(DiagnosticsMode::CMD_RESTART);
+}
+
+void MainWindow::OnBundleIdChanged(QString text)
+{
+    m_choosenBundleId = text;
+    auto app_info = m_installedApps[text];
+    ui->AppName->setText(app_info["CFBundleName"].toString());
+    ui->AppVersion->setText(app_info["CFBundleVersion"].toString());
 }

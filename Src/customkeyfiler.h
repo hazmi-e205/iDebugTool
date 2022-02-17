@@ -3,11 +3,11 @@
 
 #include <QObject>
 
-class CustomKeyFiler : public QObject
+class CustomKeyFilter : public QObject
 {
     Q_OBJECT
 public:
-    CustomKeyFiler();
+    CustomKeyFilter();
 
 private:
     bool m_released;
@@ -16,7 +16,7 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 signals:
-    void pressed();
+    void pressed(QObject *obj);
 };
 
 #endif // CUSTOMKEYFILER_H

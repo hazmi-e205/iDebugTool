@@ -23,6 +23,7 @@ DeviceBridge::DeviceBridge() :
     m_syslog(nullptr),
     m_installer(nullptr),
     m_afc(nullptr),
+    m_diagnostics(nullptr),
     m_mainWidget(nullptr)
 {
 }
@@ -61,6 +62,13 @@ std::map<QString, idevice_connection_type> DeviceBridge::GetDevices()
 
 void DeviceBridge::ResetConnection()
 {
+    if (m_diagnostics)
+    {
+        diagnostics_relay_goodbye(m_diagnostics);
+        diagnostics_relay_client_free(m_diagnostics);
+        m_diagnostics = nullptr;
+    }
+
     if (m_afc)
     {
         afc_client_free(m_afc);
@@ -123,8 +131,7 @@ void DeviceBridge::UpdateDeviceInfo()
             emit DeviceInfoReceived(m_deviceInfo);
 
             //start services
-            StartInstaller();
-            StartAFC();
+            StartServices();
         }
     }
 }
@@ -162,44 +169,81 @@ void DeviceBridge::StartSystemLogs()
     }
 }
 
+void DeviceBridge::StartServices()
+{
+    StartLockdown(!m_installer, QStringList("com.apple.mobile.installation_proxy"), [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
+        if (err != INSTPROXY_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
+    StartLockdown(!m_afc, QStringList("com.apple.afc"), [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        afc_error_t err = afc_client_new(m_device, service, &m_afc);
+        if (err != AFC_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
+    QStringList serviceIds;
+    serviceIds << "com.apple.mobile.diagnostics_relay";
+    serviceIds << "com.apple.iosdiagnostics.relay";
+    StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
+        if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+}
+
+void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
+{
+    if (!condition)
+        return;
+
+    lockdownd_error_t lerr = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
+    lockdownd_service_descriptor_t service = nullptr;
+    QString service_id;
+    for ( const auto& service_id : service_ids)
+    {
+        lerr = lockdownd_start_service(m_client, service_id.toUtf8().data(), &service);
+        if(lerr == LOCKDOWN_E_SUCCESS) { break; }
+    }
+
+    if (lerr == LOCKDOWN_E_SUCCESS)
+    {
+        function(service_id, service);
+        lockdownd_service_descriptor_free(service);
+    }
+    else
+    {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr), QMessageBox::Ok);
+    }
+}
+
 void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 {
-    diagnostics_relay_client_t diagnostics_client = NULL;
-    lockdownd_service_descriptor_t service = NULL;
-
-    /*  attempt to use newer diagnostics service available on iOS 5 and later */
-    lockdownd_error_t ret = lockdownd_start_service(m_client, "com.apple.mobile.diagnostics_relay", &service);
-    if (ret != LOCKDOWN_E_SUCCESS) {
-        /*  attempt to use older diagnostics service */
-        ret = lockdownd_start_service(m_client, "com.apple.iosdiagnostics.relay", &service);
-    }
-
-    if (ret != LOCKDOWN_E_SUCCESS) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to lockdownd: " + QString::number(ret), QMessageBox::Ok);
-        return;
-    }
-
-    diagnostics_relay_error_t result = diagnostics_relay_client_new(m_device, service, &diagnostics_client);
-    lockdownd_service_descriptor_free(service);
-
-    if (result == DIAGNOSTICS_RELAY_E_SUCCESS) {
+    if (m_diagnostics) {
         switch (mode) {
         case CMD_SLEEP:
-            if (diagnostics_relay_sleep(diagnostics_client) == DIAGNOSTICS_RELAY_E_SUCCESS) {
+            if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS) {
                 QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
             } else {
                 QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
             }
             break;
         case CMD_RESTART:
-            if (diagnostics_relay_restart(diagnostics_client, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
+            if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
                 QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
             } else {
                 QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
             }
             break;
         case CMD_SHUTDOWN:
-            if (diagnostics_relay_shutdown(diagnostics_client, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
+            if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
                 QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
             } else {
                 QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
@@ -209,48 +253,8 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
             break;
         }
 
-        diagnostics_relay_goodbye(diagnostics_client);
-        diagnostics_relay_client_free(diagnostics_client);
     } else {
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
-    }
-}
-
-void DeviceBridge::StartInstaller()
-{
-    if (!m_installer) {
-        lockdownd_service_descriptor_t service = nullptr;
-        lockdownd_error_t lerr = lockdownd_start_service(m_client, "com.apple.mobile.installation_proxy", &service);
-        if (lerr != LOCKDOWN_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to lockdownd: " + QString::number(lerr), QMessageBox::Ok);
-            return;
-        }
-
-        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
-        lockdownd_service_descriptor_free(service);
-        if (err != INSTPROXY_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to installation_proxy! " + QString::number(err), QMessageBox::Ok);
-            return;
-        }
-    }
-}
-
-void DeviceBridge::StartAFC()
-{
-    if (!m_afc) {
-        lockdownd_service_descriptor_t service = nullptr;
-        lockdownd_error_t lerr = lockdownd_start_service(m_client, "com.apple.afc", &service);
-        if (lerr != LOCKDOWN_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not start com.apple.afc! " + QString::number(lerr), QMessageBox::Ok);
-            return;
-        }
-
-        afc_error_t err = afc_client_new(m_device, service, &m_afc);
-        lockdownd_service_descriptor_free(service);
-        if (err != AFC_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to AFC! " + QString::number(err), QMessageBox::Ok);
-            return;
-        }
     }
 }
 

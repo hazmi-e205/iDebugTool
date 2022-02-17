@@ -43,10 +43,11 @@ private:
     QString m_currentFilter;
     QString m_pidFilter;
     QString m_excludeFilter;
+    QString m_choosenBundleId;
     std::vector<LogPacket> m_liveLogs;
-    std::map<QString, QJsonDocument> m_infoCache;
+    std::map<QString, QJsonDocument> m_infoCache, m_installedApps;
     QTimer *m_scrollTimer;
-    CustomKeyFiler *m_installDropEvent;
+    CustomKeyFilter *m_eventFilter;
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
 
 private slots:
@@ -62,9 +63,14 @@ private slots:
     void OnAutoScrollChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
-    void OnInstallDropClicked();
+    void OnClickedEvent(QObject* object);
     void OnInstallClicked();
+    void OnUninstallClicked();
     void OnScrollTimerTick();
     void OnConfigureClicked();
+    void OnSleepClicked();
+    void OnShutdownClicked();
+    void OnRestartClicked();
+    void OnBundleIdChanged(QString text);
 };
 #endif // MAINWINDOW_H

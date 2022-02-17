@@ -55,8 +55,8 @@ private:
     void ResetConnection();
     void UpdateDeviceInfo();
     void StartSystemLogs();
-    void StartInstaller();
-    void StartAFC();
+    void StartServices();
+    void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
     void TriggerUpdateDevices();
     void TriggerSystemLogsReceived(LogPacket log);
 
@@ -69,6 +69,7 @@ private:
     syslog_relay_client_t m_syslog;
     instproxy_client_t m_installer;
     afc_client_t m_afc;
+    diagnostics_relay_client_t m_diagnostics;
     QJsonDocument m_deviceInfo;
     QWidget *m_mainWidget;
 
