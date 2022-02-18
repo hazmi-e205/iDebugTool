@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_maxCachedLogs(100)
     , m_maxShownLogs(100)
     , m_scrollInterval(250)
+    , m_textDialog(nullptr)
 {
     ui->setupUi(this);
 
@@ -68,6 +69,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
     connect(ui->shutdownBtn, SIGNAL(pressed()), this, SLOT(OnShutdownClicked()));
+
+    m_textDialog = new TextViewer(this);
+    connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
+    connect(ui->appInfoBtn, SIGNAL(pressed()), this, SLOT(OnAppInfoClicked()));
 }
 
 MainWindow::~MainWindow()
@@ -79,6 +84,7 @@ MainWindow::~MainWindow()
     delete m_appInfo;
     delete m_devicesModel;
     delete m_logModel;
+    delete m_textDialog;
     delete ui;
 }
 
@@ -383,4 +389,16 @@ void MainWindow::OnBundleIdChanged(QString text)
     ui->AppName->setText(app_info["CFBundleName"].toString());
     ui->AppVersion->setText(app_info["CFBundleShortVersionString"].toString());
     ui->AppSigner->setText(app_info["SignerIdentity"].toString());
+}
+
+void MainWindow::OnSystemInfoClicked()
+{
+    if(!m_currentUdid.isEmpty())
+        m_textDialog->ShowText("System Information", m_infoCache[m_currentUdid].toJson());
+}
+
+void MainWindow::OnAppInfoClicked()
+{
+    if(!m_choosenBundleId.isEmpty())
+        m_textDialog->ShowText("App Information",m_installedApps[m_choosenBundleId].toJson());
 }

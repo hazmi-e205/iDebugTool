@@ -7,6 +7,7 @@
 #include <QTimer>
 #include "devicebridge.h"
 #include "customkeyfiler.h"
+#include "textviewer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -49,6 +50,7 @@ private:
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
+    TextViewer *m_textDialog;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -72,5 +74,7 @@ private slots:
     void OnShutdownClicked();
     void OnRestartClicked();
     void OnBundleIdChanged(QString text);
+    void OnSystemInfoClicked();
+    void OnAppInfoClicked();
 };
 #endif // MAINWINDOW_H
