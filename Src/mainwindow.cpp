@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
-    connect(ui->bundleIds, SIGNAL(currentTextChanged(QString)), this, SLOT(OnBundleIdChanged(QString)));
+    connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
     ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
@@ -381,5 +381,6 @@ void MainWindow::OnBundleIdChanged(QString text)
     m_choosenBundleId = text;
     auto app_info = m_installedApps[text];
     ui->AppName->setText(app_info["CFBundleName"].toString());
-    ui->AppVersion->setText(app_info["CFBundleVersion"].toString());
+    ui->AppVersion->setText(app_info["CFBundleShortVersionString"].toString());
+    ui->AppSigner->setText(app_info["SignerIdentity"].toString());
 }

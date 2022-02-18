@@ -1452,7 +1452,7 @@ color: rgb(255, 255, 255);</string>
                                         </font>
                                        </property>
                                        <property name="text">
-                                        <string>APS Environtment</string>
+                                        <string>Signer Identity</string>
                                        </property>
                                       </widget>
                                      </item>
@@ -1469,7 +1469,7 @@ color: rgb(255, 255, 255);</string>
                                     </property>
                                     <layout class="QVBoxLayout" name="verticalLayout_18">
                                      <property name="spacing">
-                                      <number>8</number>
+                                      <number>4</number>
                                      </property>
                                      <property name="leftMargin">
                                       <number>0</number>
@@ -1504,12 +1504,15 @@ color: rgb(255, 255, 255);</string>
                                       </widget>
                                      </item>
                                      <item>
-                                      <widget class="QLabel" name="APSEnv">
-                                       <property name="text">
-                                        <string>....</string>
+                                      <widget class="QLineEdit" name="AppSigner">
+                                       <property name="sizePolicy">
+                                        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                         <horstretch>0</horstretch>
+                                         <verstretch>0</verstretch>
+                                        </sizepolicy>
                                        </property>
-                                       <property name="textFormat">
-                                        <enum>Qt::PlainText</enum>
+                                       <property name="readOnly">
+                                        <bool>true</bool>
                                        </property>
                                       </widget>
                                      </item>
