@@ -6,6 +6,7 @@ TextViewer::TextViewer(QWidget *parent) :
     ui(new Ui::TextViewer)
 {
     ui->setupUi(this);
+    setWindowModality(Qt::WindowModality::WindowModal);
     connect(ui->okButton, SIGNAL(pressed()), this, SLOT(close()));
 }
 
@@ -17,6 +18,6 @@ TextViewer::~TextViewer()
 void TextViewer::ShowText(QString title, QString text)
 {
     ui->textEdit->setText(text);
-    this->setWindowTitle(title);
-    this->show();
+    setWindowTitle(title);
+    show();
 }
