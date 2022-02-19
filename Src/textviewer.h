@@ -14,10 +14,21 @@ class TextViewer : public QDialog
 public:
     explicit TextViewer(QWidget *parent = nullptr);
     ~TextViewer();
-    void ShowText(QString title, QString text);
+
+    /**
+     * Show text viewer dialog with options.
+     * @param title of dialog.
+     * @param initial text that want to show to text viewer.
+     * @param callback if you want to use it as text editor, nullptr mean read only.
+     */
+    void ShowText(QString title, QString text, const std::function<void(QString)>& textCallback = nullptr);
 
 private:
+    std::function<void (QString)> m_callback;
     Ui::TextViewer *ui;
+
+private slots:
+    void OnOkPressed();
 };
 
 #endif // TEXTVIEWER_H
