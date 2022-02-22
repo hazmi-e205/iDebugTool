@@ -1727,7 +1727,7 @@ background-color: rgb(7, 148, 255);</string>
                     <number>9</number>
                    </property>
                    <item>
-                    <widget class="QPushButton" name="pushButton_5">
+                    <widget class="QPushButton" name="mounterBtn">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                        <horstretch>0</horstretch>

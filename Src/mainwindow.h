@@ -76,5 +76,6 @@ private slots:
     void OnBundleIdChanged(QString text);
     void OnSystemInfoClicked();
     void OnAppInfoClicked();
+    void OnImageMounterClicked();
 };
 #endif // MAINWINDOW_H

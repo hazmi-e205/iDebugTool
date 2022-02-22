@@ -13,12 +13,14 @@
 #include <libimobiledevice/diagnostics_relay.h>
 #include <libimobiledevice/installation_proxy.h>
 #include <libimobiledevice/afc.h>
+#include <libimobiledevice/mobile_image_mounter.h>
 #include "logpacket.h"
 
 #define TOOL_NAME                       "idebugtool"
 #define ITUNES_METADATA_PLIST_FILENAME  "iTunesMetadata.plist"
 #define PKG_PATH                        "PublicStaging"
 #define APPARCH_PATH                    "ApplicationArchives"
+#define PATH_PREFIX                     "/private/var/mobile/Media"
 
 enum InstallMode {
     CMD_INSTALL,
@@ -29,6 +31,11 @@ enum DiagnosticsMode {
     CMD_SLEEP,
     CMD_RESTART,
     CMD_SHUTDOWN
+};
+
+enum MounterType {
+    DISK_IMAGE_UPLOAD_TYPE_AFC,
+    DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE
 };
 
 class DeviceBridge : public QObject
@@ -47,6 +54,8 @@ public:
     QJsonDocument GetInstalledApps();
     void UninstallApp(QString bundleId);
     void InstallApp(InstallMode cmd, QString path);
+    QJsonDocument GetMountedImages();
+    void MountImage(QString image_path, QString signature_path);
 
     static DeviceBridge *Get();
     static void Destroy();
@@ -54,7 +63,6 @@ public:
 private:
     void ResetConnection();
     void UpdateDeviceInfo();
-    void StartSystemLogs();
     void StartServices();
     void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
     void TriggerUpdateDevices();
@@ -63,6 +71,7 @@ private:
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static void SystemLogsCallback(char c, void *user_data);
     static void InstallerCallback(plist_t command, plist_t status, void *unused);
+    static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
 
     idevice_t m_device;
     lockdownd_client_t m_client;
@@ -70,6 +79,7 @@ private:
     instproxy_client_t m_installer;
     afc_client_t m_afc;
     diagnostics_relay_client_t m_diagnostics;
+    mobile_image_mounter_client_t m_imageMounter;
     QJsonDocument m_deviceInfo;
     QWidget *m_mainWidget;
 

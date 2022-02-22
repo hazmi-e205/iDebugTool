@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
     connect(ui->shutdownBtn, SIGNAL(pressed()), this, SLOT(OnShutdownClicked()));
+    connect(ui->mounterBtn, SIGNAL(pressed()), this, SLOT(OnImageMounterClicked()));
 
     m_textDialog = new TextViewer(this);
     connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
@@ -401,4 +402,12 @@ void MainWindow::OnAppInfoClicked()
 {
     if(!m_choosenBundleId.isEmpty())
         m_textDialog->ShowText("App Information",m_installedApps[m_choosenBundleId].toJson());
+}
+
+void MainWindow::OnImageMounterClicked()
+{
+    //DeviceBridge::Get()->MountImage("E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg", "E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg.signature");
+    qDebug() << DeviceBridge::Get()->GetMountedImages().toJson();
+    //auto doc = DeviceBridge::Get()->GetMountedImages();
+    //auto arr = doc["ImageSignature"].toArray();
 }

@@ -24,6 +24,7 @@ DeviceBridge::DeviceBridge() :
     m_installer(nullptr),
     m_afc(nullptr),
     m_diagnostics(nullptr),
+    m_imageMounter(nullptr),
     m_mainWidget(nullptr)
 {
 }
@@ -62,6 +63,13 @@ std::map<QString, idevice_connection_type> DeviceBridge::GetDevices()
 
 void DeviceBridge::ResetConnection()
 {
+    if (m_imageMounter)
+    {
+        mobile_image_mounter_hangup(m_imageMounter);
+        mobile_image_mounter_free(m_imageMounter);
+        m_imageMounter = nullptr;
+    }
+
     if (m_diagnostics)
     {
         diagnostics_relay_goodbye(m_diagnostics);
@@ -117,7 +125,6 @@ void DeviceBridge::ConnectToDevice(QString udid, idevice_connection_type type)
     }
 
     UpdateDeviceInfo();
-    StartSystemLogs();
 }
 
 void DeviceBridge::UpdateDeviceInfo()
@@ -136,42 +143,31 @@ void DeviceBridge::UpdateDeviceInfo()
     }
 }
 
-void DeviceBridge::StartSystemLogs()
-{
-    /* start syslog_relay service */
-    lockdownd_service_descriptor_t svc = nullptr;
-    lockdownd_error_t lerr = lockdownd_start_service(m_client, SYSLOG_RELAY_SERVICE_NAME, &svc);
-    if (lerr == LOCKDOWN_E_PASSWORD_PROTECTED) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Device is passcode protected, enter passcode on the device to continue.", QMessageBox::Ok);
-        return;
-    }
-    if (lerr != LOCKDOWN_E_SUCCESS) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to lockdownd: " + QString::number(lerr), QMessageBox::Ok);
-        return;
-    }
-
-    /* connect to syslog_relay service */
-    syslog_relay_error_t serr = SYSLOG_RELAY_E_UNKNOWN_ERROR;
-    serr = syslog_relay_client_new(m_device, svc, &m_syslog);
-    lockdownd_service_descriptor_free(svc);
-    if (serr != SYSLOG_RELAY_E_SUCCESS) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not start service com.apple.syslog_relay.", QMessageBox::Ok);
-        return;
-    }
-
-    /* start capturing syslog */
-    serr = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
-    if (serr != SYSLOG_RELAY_E_SUCCESS) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to start capturing syslog.", QMessageBox::Ok);
-        syslog_relay_client_free(m_syslog);
-        m_syslog = nullptr;
-        return;
-    }
-}
-
 void DeviceBridge::StartServices()
 {
-    StartLockdown(!m_installer, QStringList("com.apple.mobile.installation_proxy"), [this](QString& service_id, lockdownd_service_descriptor_t& service){
+    QStringList serviceIds;
+    serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
+    StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        /* connect to syslog_relay service */
+        syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
+        err = syslog_relay_client_new(m_device, service, &m_syslog);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+            return;
+        }
+
+        /* start capturing syslog */
+        err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to start capturing syslog.", QMessageBox::Ok);
+            syslog_relay_client_free(m_syslog);
+            m_syslog = nullptr;
+            return;
+        }
+    });
+
+    serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
+    StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
         if (err != INSTPROXY_E_SUCCESS)
         {
@@ -179,7 +175,8 @@ void DeviceBridge::StartServices()
         }
     });
 
-    StartLockdown(!m_afc, QStringList("com.apple.afc"), [this](QString& service_id, lockdownd_service_descriptor_t& service){
+    serviceIds = QStringList() << "com.apple.afc";
+    StartLockdown(!m_afc, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_afc);
         if (err != AFC_E_SUCCESS)
         {
@@ -187,9 +184,16 @@ void DeviceBridge::StartServices()
         }
     });
 
-    QStringList serviceIds;
-    serviceIds << "com.apple.mobile.diagnostics_relay";
-    serviceIds << "com.apple.iosdiagnostics.relay";
+    serviceIds = QStringList() << "com.apple.mobile.mobile_image_mounter";
+    StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
+        if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
+    serviceIds = QStringList() << "com.apple.mobile.diagnostics_relay" << "com.apple.iosdiagnostics.relay";
     StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
         if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
@@ -213,14 +217,20 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
         if(lerr == LOCKDOWN_E_SUCCESS) { break; }
     }
 
-    if (lerr == LOCKDOWN_E_SUCCESS)
+    switch (lerr)
     {
-        function(service_id, service);
-        lockdownd_service_descriptor_free(service);
-    }
-    else
-    {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr), QMessageBox::Ok);
+        case LOCKDOWN_E_SUCCESS:
+            function(service_id, service);
+            lockdownd_service_descriptor_free(service);
+            break;
+
+        case LOCKDOWN_E_PASSWORD_PROTECTED:
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Device is passcode protected, enter passcode on the device to continue.", QMessageBox::Ok);
+            break;
+
+        default:
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr), QMessageBox::Ok);
+            break;
     }
 }
 
@@ -258,6 +268,151 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
     }
 }
 
+QJsonDocument DeviceBridge::GetMountedImages()
+{
+    QJsonDocument doc;
+    plist_t result = nullptr;
+    mobile_image_mounter_error_t err = mobile_image_mounter_lookup_image(m_imageMounter, "Developer", &result);
+    if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
+        doc = PlistToJson(result);
+    else
+        QMessageBox::critical(m_mainWidget, "Error", "Error: lookup_image returned " + QString::number(err), QMessageBox::Ok);
+
+    if (result)
+        plist_free(result);
+
+    return doc;
+}
+
+void DeviceBridge::MountImage(QString image_path, QString signature_path)
+{
+    char sig[8192];
+    size_t sig_length = 0;
+    size_t image_size = 0;
+    mobile_image_mounter_error_t err = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
+    plist_t result = NULL;
+
+    FILE *f = fopen(signature_path.toUtf8().data(), "rb");
+    if (!f) {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: opening signature file '" + signature_path + "' : " + strerror(errno), QMessageBox::Ok);
+        return;
+    }
+    sig_length = fread(sig, 1, sizeof(sig), f);
+    fclose(f);
+    if (sig_length == 0) {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: Could not read signature from file '" + signature_path + "'", QMessageBox::Ok);
+        return;
+    }
+
+    f = fopen(image_path.toUtf8().data(), "rb");
+    if (!f) {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: opening image file '" + image_path + "' : " + strerror(errno), QMessageBox::Ok);
+        return;
+    }
+
+    struct stat fst;
+    if (stat(image_path.toUtf8().data(), &fst) != 0) {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: stat: '" + image_path + "' : " + strerror(errno), QMessageBox::Ok);
+        return;
+    }
+    image_size = fst.st_size;
+    if (stat(signature_path.toUtf8().data(), &fst) != 0) {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: stat: '" + signature_path + "' : " + strerror(errno), QMessageBox::Ok);
+        return;
+    }
+
+    QString targetname = QString(PKG_PATH) + "/staging.dimage";
+    QString mountname = QString(PATH_PREFIX) + "/" + targetname;
+
+    MounterType mount_type = DISK_IMAGE_UPLOAD_TYPE_AFC;
+    QStringList os_version = m_deviceInfo["ProductVersion"].toString().split(".");
+    if (os_version[0].toInt() >= 7) {
+        mount_type = DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE;
+    }
+
+    switch (mount_type) {
+        case DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE:
+            qDebug() << "Uploading " + image_path;
+            err = mobile_image_mounter_upload_image(m_imageMounter, "Developer", image_size, sig, sig_length, ImageMounterCallback, f);
+            if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+                QString message("ERROR: Unknown error occurred, can't mount.");
+                if (err == MOBILE_IMAGE_MOUNTER_E_DEVICE_LOCKED) {
+                    message = "ERROR: Device is locked, can't mount. Unlock device and try again.";
+                }
+                QMessageBox::critical(m_mainWidget, "Error", "Error: " + message, QMessageBox::Ok);
+                return;
+            }
+            break;
+
+        default:
+            qDebug() << "Uploading " + image_path + " --> afc:///" + targetname;
+            char **strs = NULL;
+            if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
+                if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
+                    fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
+                }
+            }
+            if (strs) {
+                int i = 0;
+                while (strs[i]) {
+                    free(strs[i]);
+                    i++;
+                }
+                free(strs);
+            }
+
+            uint64_t af = 0;
+            if ((afc_file_open(m_afc, targetname.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) || !af) {
+                fclose(f);
+                QMessageBox::critical(m_mainWidget, "Error", "Error: afc_file_open on '" + targetname + "' failed!", QMessageBox::Ok);
+                return;
+            }
+
+            char buf[8192];
+            size_t amount = 0;
+            do {
+                amount = fread(buf, 1, sizeof(buf), f);
+                if (amount > 0) {
+                    uint32_t written, total = 0;
+                    while (total < amount) {
+                        written = 0;
+                        if (afc_file_write(m_afc, af, buf + total, amount - total, &written) != AFC_E_SUCCESS) {
+                            QMessageBox::critical(m_mainWidget, "Error", "Error: AFC Write error!", QMessageBox::Ok);
+                            break;
+                        }
+                        total += written;
+                    }
+                    if (total != amount) {
+                        QMessageBox::critical(m_mainWidget, "Error", "Error: wrote only " + QString::number(total) + " of " + QString::number(amount), QMessageBox::Ok);
+                        afc_file_close(m_afc, af);
+                        fclose(f);
+                        return;
+                    }
+                }
+            }
+            while (amount > 0);
+
+            afc_file_close(m_afc, af);
+            break;
+    }
+    fclose(f);
+    qDebug() << "done.";
+
+    qDebug() << "Mounting...";
+    err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
+    if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
+    {
+        QJsonDocument doc = PlistToJson(result);
+        qDebug() << doc.toJson();
+    }
+    else
+    {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: mount_image returned " + QString::number(err), QMessageBox::Ok);
+    }
+    if (result)
+        plist_free(result);
+}
+
 void DeviceBridge::TriggerUpdateDevices()
 {
     emit UpdateDevices(GetDevices());
@@ -280,4 +435,9 @@ void DeviceBridge::SystemLogsCallback(char c, void *user_data)
     {
         DeviceBridge::Get()->TriggerSystemLogsReceived(packet);
     }
+}
+
+ssize_t DeviceBridge::ImageMounterCallback(void *buf, size_t size, void *userdata)
+{
+    return fread(buf, 1, size, (FILE*)userdata);
 }
