@@ -10,7 +10,6 @@
 #include <QFileDialog>
 #include <QJsonValue>
 #include <QJsonObject>
-#include <QFile>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_maxShownLogs(100)
     , m_scrollInterval(250)
     , m_textDialog(nullptr)
-    , m_process(nullptr)
 {
     ui->setupUi(this);
 
@@ -44,7 +42,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
-    connect(ui->socketBtn, SIGNAL(pressed()), this, SLOT(OnSocketClicked()));
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
@@ -77,13 +74,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_textDialog = new TextViewer(this);
     connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
     connect(ui->appInfoBtn, SIGNAL(pressed()), this, SLOT(OnAppInfoClicked()));
-
-    m_process = new QProcess(this);
 }
 
 MainWindow::~MainWindow()
 {
-    delete m_process;
     delete m_eventFilter;
     m_scrollTimer->stop();
     delete m_scrollTimer;
@@ -324,35 +318,6 @@ void MainWindow::OnClearClicked()
 void MainWindow::OnSaveClicked()
 {
     qDebug() << "save clicked";
-}
-
-void MainWindow::OnSocketClicked()
-{
-    if (ui->socketBtn->text() == "Connect")
-    {
-        QString socat_bin;
-#if defined(WIN32)
-        socat_bin = "/socatx64.exe";
-#else
-        socat_bin = "/socatx64.bin";
-#endif
-        QString socat_path = QCoreApplication::applicationDirPath() + socat_bin;
-        if (!QFile(socat_path).exists())
-        {
-            QFile socat(":/res/Assets" + socat_bin);
-            socat.copy(socat_path);
-        }
-
-        QStringList arguments;
-        arguments << "-t100" << "-x" << "-v" << "UNIX-LISTEN:./usbmuxd,mode=777,reuseaddr,fork" << "TCP:" + ui->socketBox->currentText();
-        m_process->start(socat_path, arguments);
-        ui->socketBtn->setText("Disconnect");
-    }
-    else
-    {
-        m_process->kill();
-        ui->socketBtn->setText("Connect");
-    }
 }
 
 void MainWindow::OnClickedEvent(QObject* object)

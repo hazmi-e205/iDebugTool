@@ -5,7 +5,6 @@
 #include <QResizeEvent>
 #include <QStandardItemModel>
 #include <QTimer>
-#include <QProcess>
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
@@ -52,7 +51,6 @@ private:
     CustomKeyFilter *m_eventFilter;
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
-    QProcess *m_process;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -67,7 +65,6 @@ private slots:
     void OnAutoScrollChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
-    void OnSocketClicked();
     void OnClickedEvent(QObject* object);
     void OnInstallClicked();
     void OnUninstallClicked();
