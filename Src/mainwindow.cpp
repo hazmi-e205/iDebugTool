@@ -3,6 +3,7 @@
 #include <iostream>
 #include "appinfo.h"
 #include "logpacket.h"
+#include "usbmuxd.h"
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
@@ -36,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
     connect(ui->deviceTable, SIGNAL(clicked(QModelIndex)), this, SLOT(OnDevicesTableClicked(QModelIndex)));
     connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
+    connect(ui->socketBtn, SIGNAL(pressed()), this, SLOT(OnSocketClicked()));
     connect(ui->searchEdit, SIGNAL(textChanged(QString)), this, SLOT(OnTextFilterChanged(QString)));
     connect(ui->pidEdit, SIGNAL(textChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
     connect(ui->excludeEdit, SIGNAL(textChanged(QString)), this, SLOT(OnExcludeFilterChanged(QString)));
@@ -410,4 +412,22 @@ void MainWindow::OnImageMounterClicked()
     qDebug() << DeviceBridge::Get()->GetMountedImages().toJson();
     //auto doc = DeviceBridge::Get()->GetMountedImages();
     //auto arr = doc["ImageSignature"].toArray();
+}
+
+void MainWindow::OnSocketClicked()
+{
+    if (ui->socketBtn->text() == "Connect")
+    {
+        QStringList remote_address = ui->socketBox->currentText().split(":");
+        if (remote_address.length() == 2)
+        {
+            usbmuxd_connect_remote(remote_address[0].toUtf8().data(), remote_address[1].toUInt());
+            ui->socketBtn->setText("Disconnect");
+        }
+    }
+    else
+    {
+        usbmuxd_disconnect_remote();
+        ui->socketBtn->setText("Connect");
+    }
 }

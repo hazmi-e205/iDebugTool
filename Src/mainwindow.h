@@ -77,5 +77,6 @@ private slots:
     void OnSystemInfoClicked();
     void OnAppInfoClicked();
     void OnImageMounterClicked();
+    void OnSocketClicked();
 };
 #endif // MAINWINDOW_H
