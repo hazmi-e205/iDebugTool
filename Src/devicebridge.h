@@ -49,6 +49,7 @@ public:
     QWidget *GetMainWidget() { return m_mainWidget; }
 
     void ConnectToDevice(QString udid, idevice_connection_type type);
+    void ResetConnection();
     std::map<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);
     QJsonDocument GetInstalledApps();
@@ -61,7 +62,6 @@ public:
     static void Destroy();
 
 private:
-    void ResetConnection();
     void UpdateDeviceInfo();
     void StartServices();
     void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);

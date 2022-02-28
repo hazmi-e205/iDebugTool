@@ -418,16 +418,35 @@ void MainWindow::OnSocketClicked()
 {
     if (ui->socketBtn->text() == "Connect")
     {
-        QStringList remote_address = ui->socketBox->currentText().split(":");
-        if (remote_address.length() == 2)
+        QStringList text_split;
+        QString text = ui->socketBox->currentText();
+        if (text.contains(" "))
         {
-            usbmuxd_connect_remote(remote_address[0].toUtf8().data(), remote_address[1].toUInt());
+            text_split = text.split(" ");
+            for (auto& _text : text_split)
+            {
+                if (_text.contains(":"))
+                {
+                    text = _text;
+                    break;
+                }
+            }
+        }
+
+        text_split = text.split(":");
+        if (text_split.length() == 2)
+        {
+            usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt());
             ui->socketBtn->setText("Disconnect");
         }
     }
     else
     {
+        DeviceBridge::Get()->ResetConnection();
         usbmuxd_disconnect_remote();
         ui->socketBtn->setText("Connect");
     }
+
+    //update devce list
+    OnUpdateDevices(DeviceBridge::Get()->GetDevices());
 }
