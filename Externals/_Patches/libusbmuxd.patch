@@ -18,7 +18,7 @@ index f08a653..da37f22 100644
  }
  #endif
 diff --git a/src/libusbmuxd.c b/src/libusbmuxd.c
-index b16936a..412d060 100644
+index b16936a..a847c77 100644
 --- a/src/libusbmuxd.c
 +++ b/src/libusbmuxd.c
 @@ -137,6 +137,22 @@ static struct collection listeners;
@@ -30,28 +30,27 @@ index b16936a..412d060 100644
 +static boolean use_remote = 0;
 +void usbmuxd_connect_remote(const char* ip_address, uint16_t port)
 +{
-+    remote_ip = strdup(ip_address);
-+    remote_port = port;
-+    use_remote = 1;
++	remote_ip = strdup(ip_address);
++	remote_port = port;
++	use_remote = 1;
 +}
 +void usbmuxd_disconnect_remote()
 +{
-+    free(remote_ip);
-+    remote_port = 0;
-+    use_remote = 0;
++	free(remote_ip);
++	remote_port = 0;
++	use_remote = 0;
 +}
 +
  /**
   * Finds a device info record by its handle.
   * if the record is not found, NULL is returned.
-@@ -215,6 +231,10 @@ static int connect_usbmuxd_socket()
- 	}
- #if defined(WIN32) || defined(__CYGWIN__)
- 	res = socket_connect("127.0.0.1", USBMUXD_SOCKET_PORT);
-+    if (use_remote > 0)
-+    {
-+        res = socket_connect(remote_ip, remote_port);
-+    }
+@@ -218,6 +234,9 @@ static int connect_usbmuxd_socket()
  #else
  	res = socket_connect_unix(USBMUXD_SOCKET_FILE);
  #endif
++	if (use_remote > 0) {
++		res = socket_connect(remote_ip, remote_port);
++	}
+ 	if (res < 0) {
+ 		res = -errno;
+ 	}
