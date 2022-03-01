@@ -11,6 +11,8 @@
 #include <QFileDialog>
 #include <QJsonValue>
 #include <QJsonObject>
+#include <QFileInfo>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -34,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::map<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(std::map<QString,idevice_connection_type>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceInfoReceived(QJsonDocument)), this, SLOT(OnDeviceInfoReceived(QJsonDocument)));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
+    connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
     connect(ui->deviceTable, SIGNAL(clicked(QModelIndex)), this, SLOT(OnDevicesTableClicked(QModelIndex)));
     connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
@@ -61,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
+    connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
     connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
     ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
@@ -80,10 +84,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    DeviceBridge::Destroy();
     delete m_eventFilter;
     m_scrollTimer->stop();
     delete m_scrollTimer;
-    DeviceBridge::Destroy();
     delete m_appInfo;
     delete m_devicesModel;
     delete m_logModel;
@@ -282,6 +286,25 @@ void MainWindow::OnSystemLogsReceived(LogPacket log)
     }
 }
 
+void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message)
+{
+    switch (command)
+    {
+    case InstallerMode::CMD_INSTALL:
+        m_installerLogs += (percentage >= 0 ? ("(" + QString::number(percentage) + "%) ") : "") + message + "\n";
+        ui->installBar->setValue(percentage);
+        break;
+
+    case InstallerMode::CMD_UNINSTALL:
+        if (percentage == 100)
+            QMessageBox::information(this, "Uninstall Success!", bundleId + " uninstalled.", QMessageBox::Ok);
+        break;
+
+    default:
+        break;
+    }
+}
+
 void MainWindow::OnTextFilterChanged(QString text)
 {
     m_currentFilter = text;
@@ -348,7 +371,8 @@ void MainWindow::OnClickedEvent(QObject* object)
 
 void MainWindow::OnInstallClicked()
 {
-    DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallMode::CMD_UPGRADE : InstallMode::CMD_INSTALL, ui->installPath->text());
+    m_installerLogs.clear();
+    DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallerMode::CMD_UPGRADE : InstallerMode::CMD_INSTALL, ui->installPath->text());
 }
 
 void MainWindow::OnUninstallClicked()
@@ -357,6 +381,12 @@ void MainWindow::OnUninstallClicked()
     {
         DeviceBridge::Get()->UninstallApp(m_choosenBundleId);
     }
+}
+
+void MainWindow::OnInstallLogsClicked()
+{
+    if(!m_installerLogs.isEmpty())
+        m_textDialog->ShowText("Installer Logs", m_installerLogs);
 }
 
 void MainWindow::OnScrollTimerTick()

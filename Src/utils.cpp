@@ -384,3 +384,32 @@ void afc_upload_dir(afc_client_t afc, QString &path, QString &afcpath)
         closedir(dir);
     }
 }
+
+void StringWithSpaces(QString &string, bool CapFirstOnly)
+{
+    QString temp;
+    // Traverse the string
+    for(int i=0; i < string.length(); i++)
+    {
+        // Convert to lowercase if its
+        // an uppercase character
+        if (string[i]>='A' && string[i]<='Z')
+        {
+            // add space before it
+            // if its an uppercase character
+            if (i != 0)
+                temp += " ";
+
+            // add the character
+            if (CapFirstOnly && i != 0)
+                temp += string[i].toLower();
+            else
+                temp += string[i];
+        }
+
+        // if lowercase character then just add
+        else
+            temp += string[i];
+    }
+    string = temp;
+}

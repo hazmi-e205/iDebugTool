@@ -22,9 +22,10 @@
 #define APPARCH_PATH                    "ApplicationArchives"
 #define PATH_PREFIX                     "/private/var/mobile/Media"
 
-enum InstallMode {
+enum InstallerMode {
     CMD_INSTALL,
-    CMD_UPGRADE
+    CMD_UPGRADE,
+    CMD_UNINSTALL
 };
 
 enum DiagnosticsMode {
@@ -54,7 +55,7 @@ public:
     void StartDiagnostics(DiagnosticsMode mode);
     QJsonDocument GetInstalledApps();
     void UninstallApp(QString bundleId);
-    void InstallApp(InstallMode cmd, QString path);
+    void InstallApp(InstallerMode cmd, QString path);
     QJsonDocument GetMountedImages();
     void MountImage(QString image_path, QString signature_path);
 
@@ -67,6 +68,7 @@ private:
     void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
     void TriggerUpdateDevices();
     void TriggerSystemLogsReceived(LogPacket log);
+    void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static void SystemLogsCallback(char c, void *user_data);
@@ -89,6 +91,7 @@ signals:
      void UpdateDevices(std::map<QString, idevice_connection_type> devices);
      void DeviceInfoReceived(QJsonDocument info);
      void SystemLogsReceived(LogPacket log);
+     void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
 };
 
 #endif // DEVICEBRIDGE_H

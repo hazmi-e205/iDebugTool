@@ -35,10 +35,10 @@ void DeviceBridge::UninstallApp(QString bundleId)
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
         return;
     }
-    instproxy_uninstall(m_installer, bundleId.toUtf8(), NULL, InstallerCallback, NULL);
+    instproxy_uninstall(m_installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
 }
 
-void DeviceBridge::InstallApp(InstallMode cmd, QString path)
+void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 {
     if (!m_installer) {
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
@@ -301,13 +301,10 @@ void DeviceBridge::InstallApp(InstallMode cmd, QString path)
         /* copy archive to device */
         pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
 
-        printf("Copying '%s' to device... ", path.toUtf8().data());
-
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, -1, "Copying '" + path + "' to device...");
         if (afc_upload_file(m_afc, path, pkgname) < 0) {
             return;
         }
-
-        printf("DONE.\n");
 
         if (bundleidentifier) {
             instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
@@ -326,25 +323,27 @@ void DeviceBridge::InstallApp(InstallMode cmd, QString path)
 
     /* perform installation or upgrade */
     if (cmd == CMD_INSTALL) {
-        printf("Installing '%s'\n", bundleidentifier);
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Installing '" + QString(bundleidentifier) + "'...");
         instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     } else {
-        printf("Upgrading '%s'\n", bundleidentifier);
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Upgrading '" + QString(bundleidentifier) + "'...");
         instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     }
     instproxy_client_options_free(client_opts);
 }
 
+void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument status)
+{
+    InstallerMode pCommand = command["Command"].toString() == "Install" ? InstallerMode::CMD_INSTALL : InstallerMode::CMD_UNINSTALL;
+    QString pBundleId = pCommand == InstallerMode::CMD_INSTALL ? command["ClientOptions"]["CFBundleIdentifier"].toString() : command["ApplicationIdentifier"].toString();
+
+    QString pMessage = status["Status"].toString();
+    StringWithSpaces(pMessage, true);
+
+    emit InstallerStatusChanged(pCommand, pBundleId, pMessage == "Complete" ? 100 : status["PercentComplete"].toInt(), pMessage);
+}
+
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)
 {
-    QJsonDocument json = PlistToJson(command);
-    qDebug("command:");
-    qDebug("%s", json.toJson().toStdString().c_str());
-    qDebug("");
-
-
-    json = PlistToJson(status);
-    qDebug("status:");
-    qDebug("%s", json.toJson().toStdString().c_str());
-    qDebug("");
+    DeviceBridge::Get()->TriggetInstallerStatus(PlistToJson(command), PlistToJson(status));
 }

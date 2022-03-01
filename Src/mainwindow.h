@@ -45,6 +45,7 @@ private:
     QString m_pidFilter;
     QString m_excludeFilter;
     QString m_choosenBundleId;
+    QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
     std::map<QString, QJsonDocument> m_infoCache, m_installedApps;
     QTimer *m_scrollTimer;
@@ -59,6 +60,7 @@ private slots:
     void OnUpdateDevices(std::map<QString, idevice_connection_type> devices);
     void OnDeviceInfoReceived(QJsonDocument info);
     void OnSystemLogsReceived(LogPacket log);
+    void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
     void OnTextFilterChanged(QString text);
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
@@ -68,6 +70,7 @@ private slots:
     void OnClickedEvent(QObject* object);
     void OnInstallClicked();
     void OnUninstallClicked();
+    void OnInstallLogsClicked();
     void OnScrollTimerTick();
     void OnConfigureClicked();
     void OnSleepClicked();
