@@ -701,8 +701,8 @@ color: rgb(255, 255, 255);</string>
                                         </property>
                                         <property name="minimumSize">
                                          <size>
-                                          <width>50</width>
-                                          <height>50</height>
+                                          <width>35</width>
+                                          <height>35</height>
                                          </size>
                                         </property>
                                         <property name="styleSheet">
@@ -1912,12 +1912,15 @@ background-color: rgb(4, 111, 182);</string>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="pidEdit">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+           <widget class="QComboBox" name="pidEdit">
+            <property name="minimumSize">
+             <size>
+              <width>130</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -1925,6 +1928,13 @@ background-color: rgb(4, 111, 182);</string>
            <widget class="QCheckBox" name="scrollCheck">
             <property name="text">
              <string>Auto scroll</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="stopCheck">
+            <property name="text">
+             <string>Stop</string>
             </property>
            </widget>
           </item>

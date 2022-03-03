@@ -413,3 +413,11 @@ void StringWithSpaces(QString &string, bool CapFirstOnly)
     }
     string = temp;
 }
+
+QString FindRegex(QString rawString, QString regex)
+{
+    QRegularExpression re(regex);
+    QRegularExpressionMatch match = re.match(rawString);
+    QStringList captured = match.capturedTexts();
+    return captured.length() > 0 ? captured[0] : "";
+}

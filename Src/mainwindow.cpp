@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
     connect(ui->socketBtn, SIGNAL(pressed()), this, SLOT(OnSocketClicked()));
     connect(ui->searchEdit, SIGNAL(textChanged(QString)), this, SLOT(OnTextFilterChanged(QString)));
-    connect(ui->pidEdit, SIGNAL(textChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
+    connect(ui->pidEdit, SIGNAL(currentTextChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
     connect(ui->excludeEdit, SIGNAL(textChanged(QString)), this, SLOT(OnExcludeFilterChanged(QString)));
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
@@ -127,16 +127,16 @@ void MainWindow::SetupDevicesTable()
     if (!m_devicesModel) {
         m_devicesModel = new QStandardItemModel();
         ui->deviceTable->setModel(m_devicesModel);
-        ui->deviceTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-        ui->deviceTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        ui->deviceTable->setSelectionMode(QAbstractItemView::SingleSelection);
+        ui->deviceTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+        ui->deviceTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
+        ui->deviceTable->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
     }
     m_devicesModel->setHorizontalHeaderItem(0, new QStandardItem("UDID"));
     m_devicesModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
     m_devicesModel->setHorizontalHeaderItem(2, new QStandardItem("Connection"));
-    ui->deviceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    ui->deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    ui->deviceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeMode::Stretch);
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeMode::ResizeToContents);
+    ui->deviceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeMode::ResizeToContents);
 }
 
 void MainWindow::SetupLogsTable()
@@ -144,19 +144,20 @@ void MainWindow::SetupLogsTable()
     if (!m_logModel) {
         m_logModel = new QStandardItemModel();
         ui->logTable->setModel(m_logModel);
-        ui->logTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-        ui->logTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        ui->logTable->setSelectionMode(QAbstractItemView::MultiSelection);
         ui->logTable->setWordWrap(false);
-        ui->logTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        ui->logTable->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        ui->logTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+        ui->logTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
+        ui->logTable->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
+        ui->logTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+        ui->logTable->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+        ui->logTable->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
     }
     m_logModel->setHorizontalHeaderItem(0, new QStandardItem("DateTime"));
     m_logModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
     m_logModel->setHorizontalHeaderItem(2, new QStandardItem("ProcessID"));
     m_logModel->setHorizontalHeaderItem(3, new QStandardItem("Type"));
     m_logModel->setHorizontalHeaderItem(4, new QStandardItem("Messages"));
-    ui->logTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    ui->logTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeMode::ResizeToContents);
 }
 
 void MainWindow::UpdateLogsFilter()
@@ -220,15 +221,27 @@ void MainWindow::OnTopSplitterMoved(int pos, int index)
     m_ratioTopWidth = (float)ui->deviceWidget->width() / m_topWidth;
 }
 
-void MainWindow::OnDevicesTableClicked(QModelIndex index)
+void MainWindow::OnDevicesTableClicked(QModelIndex selectedIndex)
 {
-    if (index.isValid()) {
-        m_currentUdid = index.model()->index(0,0).data().toString();
-        UpdateInfoWidget();
+    if (!selectedIndex.isValid())
+        return;
 
-        auto type = index.model()->index(0,2).data().toString() == "network" ? idevice_connection_type::CONNECTION_NETWORK : idevice_connection_type::CONNECTION_USBMUXD;
-        DeviceBridge::Get()->ConnectToDevice(m_currentUdid, type);
+    QModelIndexList indexes = ui->deviceTable->selectionModel()->selection().indexes();
+    idevice_connection_type conntype = idevice_connection_type::CONNECTION_USBMUXD;
+    for (int i = 0; i < indexes.count(); ++i)
+    {
+        QModelIndex index = indexes.at(i);
+        if (index.column() == 0)
+        {
+            m_currentUdid = index.model()->index(index.row(),index.column()).data().toString();
+        }
+        else if (index.column() == 2)
+        {
+            conntype = index.model()->index(index.row(),index.column()).data().toString() == "network" ? idevice_connection_type::CONNECTION_NETWORK : idevice_connection_type::CONNECTION_USBMUXD;
+        }
     }
+    DeviceBridge::Get()->ConnectToDevice(m_currentUdid, conntype);
+    UpdateInfoWidget();
 }
 
 void MainWindow::OnRefreshClicked()
@@ -256,10 +269,19 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
         }
     }
 
-    if(devices.size() == 0 || !currentUdidFound)
+    if (!currentUdidFound)
     {
-        m_currentUdid = "";
-        UpdateStatusbar();
+        if (devices.size() == 0)
+        {
+            m_currentUdid = "";
+            UpdateStatusbar();
+        }
+        else
+        {
+            m_currentUdid = devices.begin()->first;
+            DeviceBridge::Get()->ConnectToDevice(m_currentUdid, devices.begin()->second);
+            UpdateInfoWidget();
+        }
     }
 }
 
@@ -274,6 +296,9 @@ void MainWindow::OnDeviceInfoReceived(QJsonDocument info)
 
 void MainWindow::OnSystemLogsReceived(LogPacket log)
 {
+    if (ui->stopCheck->isChecked())
+        return;
+
     m_liveLogs.push_back(log);
     while ((unsigned int)m_liveLogs.size() > m_maxCachedLogs)
     {
@@ -342,7 +367,32 @@ void MainWindow::OnClearClicked()
 
 void MainWindow::OnSaveClicked()
 {
-    qDebug() << "save clicked";
+    QModelIndexList indexes = ui->logTable->selectionModel()->selection().indexes();
+    int last_row = -1;
+    QString data_str = "";
+    for (int i = 0; i < indexes.count(); ++i)
+    {
+        QModelIndex index = indexes.at(i);
+        if (last_row > 0 && last_row != index.row())
+        {
+            data_str += "\n";
+        }
+        if (index.column() > 0)
+        {
+            data_str += "\t";
+        }
+        data_str += index.model()->index(index.row(),index.column()).data().toString();
+        last_row = index.row();
+    }
+
+    QString filename = QFileDialog::getSaveFileName(this, "Save logs file...", "", "Text File (*.txt)");
+    QFile f(filename);
+    if (f.open(QIODevice::ReadWrite))
+    {
+        QTextStream stream(&f);
+        stream << data_str;
+        f.close();
+    }
 }
 
 void MainWindow::OnClickedEvent(QObject* object)

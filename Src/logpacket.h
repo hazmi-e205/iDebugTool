@@ -13,7 +13,6 @@ public:
     void Parse(QString rawString);
     QString GetRawData();
     bool Filter(QString text_or_regex, QString pid_name, QString exclude_text);
-    QString FindRegex(QString rawString, QString regex);
     bool IsHeader(QString rawString);
     bool IsEmpty();
     void Clear();

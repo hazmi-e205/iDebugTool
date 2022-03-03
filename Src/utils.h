@@ -17,6 +17,7 @@ QJsonValue PlistArrayToJsonValue(plist_t node);
 QString Base64Encode(QString string);
 bool ParseSystemLogs(char &in, LogPacket &out);
 void StringWithSpaces(QString &string, bool CapFirstOnly = false);
+QString FindRegex(QString rawString, QString regex);
 
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
 int zip_get_app_directory(struct zip* zf, QString &path);

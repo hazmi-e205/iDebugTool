@@ -1,5 +1,5 @@
 #include "logpacket.h"
-#include <QRegularExpression>
+#include "utils.h"
 
 LogPacket::LogPacket()
 {
@@ -79,13 +79,6 @@ bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_
     }
 
     return isPassed;
-}
-
-QString LogPacket::FindRegex(QString rawString, QString regex)
-{
-    QRegularExpression re(regex);
-    QRegularExpressionMatch match = re.match(rawString);
-    return match.capturedTexts().length() > 0 ? match.capturedTexts()[0] : "";
 }
 
 bool LogPacket::IsHeader(QString rawString)
