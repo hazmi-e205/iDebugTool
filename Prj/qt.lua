@@ -98,14 +98,15 @@ function qt.add_links(tab, datatable)
     end
 end
 
-function qt.add_libdirs(tab, datatable)
+function qt.add_libdirs(tab, datatable, prj)
     if #datatable > 0 then
         _p(tab, 'LIBS += \\')
         for k,v in ipairs(datatable) do
+            local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
             if k ~= #datatable then
-                v = v .. ' \\'
+                relative_str = relative_str .. ' \\'
             end
-            _p(tab + 1, '-L' .. v)
+            _p(tab + 1, '-L' .. relative_str)
         end
         _p('')
     end
@@ -160,6 +161,12 @@ function qt.project_pro(prj)
     end
     if #prj.defines > 0 then
         _p('DEFINES += ' .. table.concat(prj.defines, " "))
+    end
+    if prj.targetdir then
+        _p('DESTDIR = \"' .. prj.targetdir .. '\"')
+    end
+    if prj.targetname then
+        _p('TARGET = \"' .. prj.targetname .. '\"')
     end
 
     -- compiler & linker flags
@@ -223,7 +230,7 @@ function qt.project_pro(prj)
     -- links
     qt.add_includedirs(0, prj.includedirs, prj)
     qt.add_links(0, prj.links)
-    qt.add_libdirs(0, prj.libdirs)
+    qt.add_libdirs(0, prj.libdirs, prj)
     _p('')
 
     -- debug or release
@@ -234,33 +241,33 @@ function qt.project_pro(prj)
             _p(1, 'DEFINES += ' .. table.concat(defines, " "))
         end
 
-        local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.project.includedirs, prj)
-        qt.add_includedirs(1, includedirs, prj)
+        local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.project.includedirs)
+        qt.add_includedirs(1, includedirs, cfg)
 
         local links = qt.remove_item_by_list(cfg.links, prj.project.links)
         qt.add_links(1, links)
 
         local libdirs = qt.remove_item_by_list(cfg.libdirs, prj.project.libdirs)
-        qt.add_libdirs(1, libdirs)
+        qt.add_libdirs(1, libdirs, cfg)
         _p('}')
         _p('')
     end
 
     -- app properties
     if prj.AppName then
-        _p('QMAKE_TARGET_PRODUCT = \"' .. prj.AppName .. "\"")
+        _p('QMAKE_TARGET_PRODUCT = \"' .. prj.AppName .. '\"')
     end
     if prj.AppCompany then
-        _p('QMAKE_TARGET_COMPANY = \"' .. prj.AppCompany .. "\"")
+        _p('QMAKE_TARGET_COMPANY = \"' .. prj.AppCompany .. '\"')
     end
     if prj.AppCopyright then
-        _p('QMAKE_TARGET_COPYRIGHT = \"' .. prj.AppCopyright .. "\"")
+        _p('QMAKE_TARGET_COPYRIGHT = \"' .. prj.AppCopyright .. '\"')
     end
     if prj.AppDescription then
-        _p('QMAKE_TARGET_DESCRIPTION = \"' .. prj.AppDescription .. "\"")
+        _p('QMAKE_TARGET_DESCRIPTION = \"' .. prj.AppDescription .. '\"')
     end
     if prj.AppVersion then
-        _p('VERSION = \"' .. prj.AppVersion .. "\"")
+        _p('VERSION = \"' .. prj.AppVersion .. '\"')
     end
     if prj.AppIcon then
         local relative_str = path.getrelative(prj.location .. "/" .. prj.name, prj.AppIcon)
