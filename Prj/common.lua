@@ -72,6 +72,10 @@ if IsQt() then
 	filter {"kind:StaticLib"}
 		targetdir ("../Build/" .. GetPathFromPlatform() .. "/libs/")
 	filter {}
+
+	filter {"Debug*"}
+		targetsuffix "_d"
+	filter {}
 end
 
 -- default configuration

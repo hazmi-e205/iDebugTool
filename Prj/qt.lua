@@ -86,14 +86,39 @@ function qt.add_includedirs(tab, datatable, prj)
     end
 end
 
+local links = {}
+links["Release"] = {}
+links["Debug"] = {}
+links["Common"] = {}
+function qt.parse_links(prj)
+    for _,link in ipairs(prj.links) do
+        local lprj = p.workspace.findproject(prj.workspace, link)
+        if lprj and lprj ~= nil then
+            local release_cfg = project.findClosestMatch(lprj, "Release")
+            local debug_cfg   = project.findClosestMatch(lprj, "Debug")
+            if release_cfg.linktarget.basename == debug_cfg.linktarget.basename then
+                table.insert(links["Common"], release_cfg.linktarget.basename)
+            else
+                for _,conf in ipairs(prj.configurations) do
+                    local prjcfg = project.findClosestMatch(lprj, conf)
+                    table.insert(links[conf], prjcfg.linktarget.basename)
+                end
+            end
+        else
+            table.insert(links["Common"], link)
+        end
+    end
+end
+
 function qt.add_links(tab, datatable)
     if #datatable > 0 then
         _p(tab, 'LIBS += \\')
-        _p(tab + 1, '-Wl,--start-group \\')
         for k,v in ipairs(datatable) do
-            _p(tab + 1, '-l' .. v .. ' \\')
+            if k ~= #datatable then
+                v = v .. ' \\'
+            end
+            _p(tab + 1, '-l' .. v)
         end
-        _p(tab + 1, '-Wl,--end-group')
         _p('')
     end
 end
@@ -110,6 +135,27 @@ function qt.add_libdirs(tab, datatable, prj)
         end
         _p('')
     end
+end
+
+function qt.add_targetdir(tab, prj)
+    if prj.targetdir then
+        local relative_str = path.getrelative(prj.location .. "/" .. prj.name, prj.targetdir)
+        _p(tab, 'DESTDIR = ' .. relative_str)
+    end
+end
+
+function qt.get_targetname(prj)
+    local outname = prj.project.name
+    if prj.targetname then
+        outname = prj.targetname
+    end
+    if prj.targetprefix then
+        outname = prj.targetprefix .. outname
+    end
+    if prj.targetsuffix then
+        outname = outname .. prj.targetsuffix
+    end
+    return outname
 end
 
 function qt.remove_item_by_list(full_table, remove_list)
@@ -161,12 +207,6 @@ function qt.project_pro(prj)
     end
     if #prj.defines > 0 then
         _p('DEFINES += ' .. table.concat(prj.defines, " "))
-    end
-    if prj.targetdir then
-        _p('DESTDIR = \"' .. prj.targetdir .. '\"')
-    end
-    if prj.targetname then
-        _p('TARGET = \"' .. prj.targetname .. '\"')
     end
 
     -- compiler & linker flags
@@ -228,30 +268,56 @@ function qt.project_pro(prj)
     end
 
     -- links
-    qt.add_includedirs(0, prj.includedirs, prj)
-    qt.add_links(0, prj.links)
+    qt.parse_links(prj)
+    if #links["Release"] > 0 or #links["Debug"] > 0 or #links["Common"] > 0 then
+        _p('LIBS += -Wl,--start-group')
+    end
+    qt.add_links(0, links["Common"])
     qt.add_libdirs(0, prj.libdirs, prj)
+    qt.add_includedirs(0, prj.includedirs, prj)
     _p('')
 
     -- debug or release
+    local is_one_targetname = true
+    local is_one_targetdir = true
     for cfg in project.eachconfig(prj) do
         _p('CONFIG(' .. string.lower(cfg.buildcfg) .. ', debug|release) {')
-        local defines = qt.remove_item_by_list(cfg.defines, prj.project.defines)
+
+        if cfg.targetdir ~= prj.project.targetdir then
+            is_one_targetdir = false
+            qt.add_targetdir(1, cfg)
+        end
+
+        if qt.get_targetname(prj) ~= qt.get_targetname(cfg) or is_one_targetname == false then
+            is_one_targetname = false
+            _p(1, 'TARGET = ' .. qt.get_targetname(cfg))
+        end
+
+        local defines = qt.remove_item_by_list(cfg.defines, prj.defines)
         if #defines > 0 then
             _p(1, 'DEFINES += ' .. table.concat(defines, " "))
         end
 
-        local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.project.includedirs)
-        qt.add_includedirs(1, includedirs, cfg)
+        qt.add_links(1, links[cfg.buildcfg])
 
-        local links = qt.remove_item_by_list(cfg.links, prj.project.links)
-        qt.add_links(1, links)
-
-        local libdirs = qt.remove_item_by_list(cfg.libdirs, prj.project.libdirs)
+        local libdirs = qt.remove_item_by_list(cfg.libdirs, prj.libdirs)
         qt.add_libdirs(1, libdirs, cfg)
+
+        local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.includedirs)
+        qt.add_includedirs(1, includedirs, cfg)
         _p('}')
         _p('')
     end
+    if #links["Release"] > 0 or #links["Debug"] > 0 or #links["Common"] > 0 then
+        _p('LIBS += -Wl,--end-group')
+    end
+    if is_one_targetname then
+        _p('TARGET = ' .. qt.get_targetname(prj))
+    end
+    if is_one_targetdir then
+        qt.add_targetdir(0, prj)
+    end
+    _p('')
 
     -- app properties
     if prj.AppName then
