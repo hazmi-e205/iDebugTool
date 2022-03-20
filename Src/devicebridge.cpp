@@ -268,20 +268,29 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
     }
 }
 
-QJsonDocument DeviceBridge::GetMountedImages()
+QStringList DeviceBridge::GetMountedImages()
 {
+    QStringList signatures;
     QJsonDocument doc;
     plist_t result = nullptr;
     mobile_image_mounter_error_t err = mobile_image_mounter_lookup_image(m_imageMounter, "Developer", &result);
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
+    {
         doc = PlistToJson(result);
+        auto arr = doc["ImageSignature"].toArray();
+        for (int idx = 0; idx < arr.count(); idx++)
+        {
+            signatures.append(arr[idx].toString());
+        }
+    }
     else
+    {
         QMessageBox::critical(m_mainWidget, "Error", "Error: lookup_image returned " + QString::number(err), QMessageBox::Ok);
+    }
 
     if (result)
         plist_free(result);
-
-    return doc;
+    return signatures;
 }
 
 void DeviceBridge::MountImage(QString image_path, QString signature_path)
@@ -402,8 +411,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
     err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
-        QJsonDocument doc = PlistToJson(result);
-        qDebug() << doc.toJson();
+        QMessageBox::information(m_mainWidget, "Mount Success!", "Developer disk image mounted", QMessageBox::Ok);
     }
     else
     {

@@ -56,7 +56,7 @@ public:
     QJsonDocument GetInstalledApps();
     void UninstallApp(QString bundleId);
     void InstallApp(InstallerMode cmd, QString path);
-    QJsonDocument GetMountedImages();
+    QStringList GetMountedImages();
     void MountImage(QString image_path, QString signature_path);
 
     static DeviceBridge *Get();
