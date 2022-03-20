@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <iostream>
+#include "utils.h"
 #include "appinfo.h"
 #include "logpacket.h"
 #include "usbmuxd.h"
@@ -489,7 +490,7 @@ void MainWindow::OnAppInfoClicked()
 void MainWindow::OnImageMounterClicked()
 {
     //DeviceBridge::Get()->MountImage("E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg", "E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg.signature");
-    qDebug() << DeviceBridge::Get()->GetMountedImages().toJson();
+    //qDebug() << DeviceBridge::Get()->GetMountedImages().toJson();
     //auto doc = DeviceBridge::Get()->GetMountedImages();
     //auto arr = doc["ImageSignature"].toArray();
 }
@@ -498,26 +499,14 @@ void MainWindow::OnSocketClicked()
 {
     if (ui->socketBtn->text() == "Connect")
     {
-        QStringList text_split;
-        QString text = ui->socketBox->currentText();
-        if (text.contains(" "))
-        {
-            text_split = text.split(" ");
-            for (auto& _text : text_split)
-            {
-                if (_text.contains(":"))
-                {
-                    text = _text;
-                    break;
-                }
-            }
-        }
-
-        text_split = text.split(":");
+        QString text = FindRegex(ui->socketBox->currentText(), "(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)");
+        QStringList text_split = text.split(":");
         if (text_split.length() == 2)
         {
-            usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt());
-            ui->socketBtn->setText("Disconnect");
+            if (usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt()) >= 0)
+                ui->socketBtn->setText("Disconnect");
+            else
+                QMessageBox::critical(this, "Error", "Error: fail to connect '" + text + "' device via socket", QMessageBox::Ok);
         }
     }
     else

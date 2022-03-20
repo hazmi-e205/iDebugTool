@@ -1,5 +1,5 @@
 diff --git a/include/usbmuxd.h b/include/usbmuxd.h
-index f08a653..da37f22 100644
+index f08a653..a337139 100644
 --- a/include/usbmuxd.h
 +++ b/include/usbmuxd.h
 @@ -324,6 +324,14 @@ void libusbmuxd_set_use_inotify(int set);
@@ -11,28 +11,30 @@ index f08a653..da37f22 100644
 + * @param ip address of target device.
 + * @param port of target device.
 + */
-+void usbmuxd_connect_remote(const char* ip_address, uint16_t port);
++int usbmuxd_connect_remote(const char* ip_address, uint16_t port);
 +void usbmuxd_disconnect_remote();
 +
  #ifdef __cplusplus
  }
  #endif
 diff --git a/src/libusbmuxd.c b/src/libusbmuxd.c
-index b16936a..82e6fa7 100644
+index b16936a..9ae76e5 100644
 --- a/src/libusbmuxd.c
 +++ b/src/libusbmuxd.c
-@@ -137,6 +137,22 @@ static struct collection listeners;
+@@ -137,6 +137,24 @@ static struct collection listeners;
  thread_once_t listener_init_once = THREAD_ONCE_INIT;
  mutex_t listener_mutex;
  
 +static char* remote_ip = "";
 +static uint16_t remote_port = 0;
 +static unsigned char use_remote = 0;
-+void usbmuxd_connect_remote(const char* ip_address, uint16_t port)
++int usbmuxd_connect_remote(const char* ip_address, uint16_t port)
 +{
 +	remote_ip = strdup(ip_address);
 +	remote_port = port;
-+	use_remote = 1;
++	int res = socket_connect(remote_ip, remote_port);
++	use_remote = res >= 0 ? 1 : 0;
++	return res;
 +}
 +void usbmuxd_disconnect_remote()
 +{
@@ -44,7 +46,7 @@ index b16936a..82e6fa7 100644
  /**
   * Finds a device info record by its handle.
   * if the record is not found, NULL is returned.
-@@ -218,6 +234,9 @@ static int connect_usbmuxd_socket()
+@@ -218,6 +236,9 @@ static int connect_usbmuxd_socket()
  #else
  	res = socket_connect_unix(USBMUXD_SOCKET_FILE);
  #endif
