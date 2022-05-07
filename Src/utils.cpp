@@ -6,9 +6,16 @@
 #include <QByteArray>
 #include <QBitArray>
 #include <QFileInfo>
+#include <QProcess>
+#include <QCoreApplication>
+#include <QDir>
+#include <QDirIterator>
 #include <zip.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -420,4 +427,168 @@ QString FindRegex(QString rawString, QString regex)
     QRegularExpressionMatch match = re.match(rawString);
     QStringList captured = match.capturedTexts();
     return captured.length() > 0 ? captured[0] : "";
+}
+
+bool IsInternetOn()
+{
+    int returnedCode = 0;
+#if defined(WIN32)
+    returnedCode = QProcess::execute("ping", QStringList() << "-n" << "1" << "8.8.8.8");
+#else
+    returnedCode = QProcess::execute("ping", QStringList() << "-c" << "1" << "8.8.8.8");
+#endif
+    return returnedCode == 0;
+}
+
+quint64 VersionToUInt(QString version_raw)
+{
+    std::array<int,3> version = {0,0,0};
+    QString version_str = FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+");
+    if (!version_str.isEmpty())
+    {
+        QStringList versions = version_str.split(".");
+        version[0] = versions[0].toInt();
+        version[1] = versions[1].toInt();
+        version[2] = versions[2].toInt();
+    }
+    version_str = version_str.isEmpty() ? FindRegex(version_raw, "\\d+\\.\\d+") : version_str;
+    if (!version_str.isEmpty() && version[0] == 0)
+    {
+        QStringList versions = version_str.split(".");
+        version[0] = versions[0].toInt();
+        version[1] = versions[1].toInt();
+    }
+    return (version[0] * 1000000) + (version[1] * 1000) + version[2];
+}
+
+QString UIntToVersion(quint64 version_int)
+{
+    quint64 major = version_int / 1000000;
+    quint64 minor = (version_int % 1000000) / 1000;
+    quint64 patch = (version_int % 1000);
+    return QString::number(major) + "." + QString::number(minor) + (patch != 0 ? ("." + QString::number(patch)) : "");
+}
+
+QString GetDirectory(DIRECTORY_TYPE dirtype)
+{
+    switch(dirtype)
+    {
+    case DIRECTORY_TYPE::APP:
+        return QCoreApplication::applicationDirPath();
+    case DIRECTORY_TYPE::LOCALDATA:
+        return QCoreApplication::applicationDirPath() + "/LocalData/";
+    case DIRECTORY_TYPE::TEMP:
+        return QCoreApplication::applicationDirPath() + "/LocalData/Temp/";
+    case DIRECTORY_TYPE::DISKIMAGES:
+        return QCoreApplication::applicationDirPath() + "/LocalData/DiskImages/";
+    case DIRECTORY_TYPE::SCREENSHOT:
+        return QCoreApplication::applicationDirPath() + "/LocalData/Screenshot/";
+        break;
+    default:
+        break;
+    }
+    return "";
+}
+
+bool zip_extract_all(struct zip *zf, QString dist)
+{
+    zip_int64_t n_entries = 0;          /* number of entries in archive */
+    struct zip_file* p_file = NULL;     /* state for a file within zip archive */
+    int file_fd = -1, bytes_read;       /* state used when extracting file */
+    char copy_buf[2048];                /* temporary buffer for file contents */
+
+    /* for each entry... */
+    n_entries = zip_get_num_entries(zf, 0);
+    for(zip_int64_t entry_idx=0; entry_idx < n_entries; entry_idx++) {
+        /* FIXME: we ignore mtime for this example. A stricter implementation may
+         * not do so. */
+        struct zip_stat file_stat;
+
+        /* get file information */
+        if(zip_stat_index(zf, entry_idx, 0, &file_stat)) {
+            fprintf(stderr, "error stat-ing file at index %i: %s\n", (int)(entry_idx), zip_strerror(zf));
+            return false;
+        }
+
+        /* check which fields are valid */
+        if(!(file_stat.valid & ZIP_STAT_NAME)) {
+            fprintf(stderr, "warning: skipping entry at index %i with invalid name.\n", (int)entry_idx);
+            continue;
+        }
+
+        /* show the user what we're doing */
+        printf("extracting: %s\n", file_stat.name);
+
+        /* is this a directory? */
+        if((file_stat.name[0] != '\0') && (file_stat.name[strlen(file_stat.name)-1] == '/')) {
+            /* yes, create it noting that it isn't an error if the directory already exists */
+            QDir().mkpath(dist + "/" + file_stat.name);
+
+            /* loop to the next file */
+            continue;
+        }
+
+        /* the file is not a directory if we get here */
+        QString file_path = dist + "/" + file_stat.name;
+
+        /* try to open the file in the filesystem for writing */
+        if((file_fd = open(file_path.toUtf8().data(), O_CREAT | O_TRUNC | O_WRONLY, 0666)) == -1) {
+            perror("cannot open file for writing");
+            return false;
+        }
+
+        /* open the file in the archive */
+        if((p_file = zip_fopen_index(zf, entry_idx, 0)) == NULL) {
+            fprintf(stderr, "error extracting file: %s\n", zip_strerror(zf));
+            return false;
+        }
+
+        /* extract file */
+        do {
+            /* read some bytes */
+            if((bytes_read = zip_fread(p_file, copy_buf, sizeof(copy_buf))) == -1) {
+                fprintf(stderr, "error extracting file: %s\n", zip_strerror(zf));
+                return false;
+            }
+
+            /* if some bytes were read... */
+            if(bytes_read > 0) {
+                write(file_fd, copy_buf, bytes_read);
+            }
+
+            /* loop until we read no more bytes */
+        } while(bytes_read > 0);
+
+        /* close file in archive */
+        zip_fclose(p_file);
+        p_file = NULL;
+
+        /* close file in filesystem */
+        close(file_fd);
+        file_fd = -1;
+    }
+    return true;
+}
+
+QStringList FindFiles(QString dir, QStringList criteria)
+{
+    QStringList files;
+    QDirIterator it(dir, criteria, QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext())
+        files << it.next();
+    return files;
+}
+
+bool FilterVersion(QStringList &versions, QString version)
+{
+    QStringList final_list;
+    quint64 selected_version = VersionToUInt(version);
+    for (const auto& _version : versions)
+    {
+        quint64 current_version = VersionToUInt(_version);
+        if (selected_version == current_version)
+            final_list.append(_version);
+    }
+    versions = final_list;
+    return final_list.length() > 0;
 }

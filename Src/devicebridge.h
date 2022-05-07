@@ -50,6 +50,7 @@ public:
     QWidget *GetMainWidget() { return m_mainWidget; }
 
     void ConnectToDevice(QString udid, idevice_connection_type type);
+    QJsonDocument GetDeviceInfo();
     void ResetConnection();
     std::map<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);
@@ -82,16 +83,18 @@ private:
     afc_client_t m_afc;
     diagnostics_relay_client_t m_diagnostics;
     mobile_image_mounter_client_t m_imageMounter;
-    QJsonDocument m_deviceInfo;
     QWidget *m_mainWidget;
+    std::map<QString, QJsonDocument> m_deviceInfo;
+    QString m_currentUdid;
 
     static DeviceBridge *m_instance;
 
 signals:
      void UpdateDevices(std::map<QString, idevice_connection_type> devices);
-     void DeviceInfoReceived(QJsonDocument info);
+     void DeviceConnected();
      void SystemLogsReceived(LogPacket log);
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
+     void MounterStatusChanged(QString messages);
 };
 
 #endif // DEVICEBRIDGE_H

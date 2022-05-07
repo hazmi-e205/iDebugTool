@@ -123,6 +123,7 @@ void DeviceBridge::ConnectToDevice(QString udid, idevice_connection_type type)
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
         return;
     }
+    m_currentUdid = udid;
 
     UpdateDeviceInfo();
 }
@@ -132,15 +133,21 @@ void DeviceBridge::UpdateDeviceInfo()
     plist_t node = nullptr;
     if(lockdownd_get_value(m_client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
         if (node) {
-            m_deviceInfo = PlistToJson(node);
+            QJsonDocument deviceInfo = PlistToJson(node);
+            m_deviceInfo[m_currentUdid] = deviceInfo;
             plist_free(node);
             node = nullptr;
-            emit DeviceInfoReceived(m_deviceInfo);
+            emit DeviceConnected();
 
             //start services
             StartServices();
         }
     }
+}
+
+QJsonDocument DeviceBridge::GetDeviceInfo()
+{
+    return m_deviceInfo[m_currentUdid];
 }
 
 void DeviceBridge::StartServices()
@@ -184,7 +191,7 @@ void DeviceBridge::StartServices()
         }
     });
 
-    serviceIds = QStringList() << "com.apple.mobile.mobile_image_mounter";
+    serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
     StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
         if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
@@ -277,6 +284,7 @@ QStringList DeviceBridge::GetMountedImages()
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
         doc = PlistToJson(result);
+        qDebug() << doc.toJson();
         auto arr = doc["ImageSignature"].toArray();
         for (int idx = 0; idx < arr.count(); idx++)
         {
@@ -303,30 +311,30 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
 
     FILE *f = fopen(signature_path.toUtf8().data(), "rb");
     if (!f) {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: opening signature file '" + signature_path + "' : " + strerror(errno), QMessageBox::Ok);
+        emit MounterStatusChanged("Error: opening signature file '" + signature_path + "' : " + strerror(errno));
         return;
     }
     sig_length = fread(sig, 1, sizeof(sig), f);
     fclose(f);
     if (sig_length == 0) {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: Could not read signature from file '" + signature_path + "'", QMessageBox::Ok);
+        emit MounterStatusChanged("Error: Could not read signature from file '" + signature_path + "'");
         return;
     }
 
     f = fopen(image_path.toUtf8().data(), "rb");
     if (!f) {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: opening image file '" + image_path + "' : " + strerror(errno), QMessageBox::Ok);
+        emit MounterStatusChanged("Error: opening image file '" + image_path + "' : " + strerror(errno));
         return;
     }
 
     struct stat fst;
     if (stat(image_path.toUtf8().data(), &fst) != 0) {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: stat: '" + image_path + "' : " + strerror(errno), QMessageBox::Ok);
+        emit MounterStatusChanged("Error: stat: '" + image_path + "' : " + strerror(errno));
         return;
     }
     image_size = fst.st_size;
     if (stat(signature_path.toUtf8().data(), &fst) != 0) {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: stat: '" + signature_path + "' : " + strerror(errno), QMessageBox::Ok);
+        emit MounterStatusChanged("Error: stat: '" + signature_path + "' : " + strerror(errno));
         return;
     }
 
@@ -334,31 +342,31 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
     QString mountname = QString(PATH_PREFIX) + "/" + targetname;
 
     MounterType mount_type = DISK_IMAGE_UPLOAD_TYPE_AFC;
-    QStringList os_version = m_deviceInfo["ProductVersion"].toString().split(".");
+    QStringList os_version = m_deviceInfo[m_currentUdid]["ProductVersion"].toString().split(".");
     if (os_version[0].toInt() >= 7) {
         mount_type = DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE;
     }
 
     switch (mount_type) {
         case DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE:
-            qDebug() << "Uploading " + image_path;
+            emit MounterStatusChanged("Uploading " + image_path);
             err = mobile_image_mounter_upload_image(m_imageMounter, "Developer", image_size, sig, sig_length, ImageMounterCallback, f);
             if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
                 QString message("ERROR: Unknown error occurred, can't mount.");
                 if (err == MOBILE_IMAGE_MOUNTER_E_DEVICE_LOCKED) {
                     message = "ERROR: Device is locked, can't mount. Unlock device and try again.";
                 }
-                QMessageBox::critical(m_mainWidget, "Error", "Error: " + message, QMessageBox::Ok);
+                emit MounterStatusChanged("Error: " + message);
                 return;
             }
             break;
 
         default:
-            qDebug() << "Uploading " + image_path + " --> afc:///" + targetname;
+            emit MounterStatusChanged("Uploading " + image_path + " --> afc:///" + targetname);
             char **strs = NULL;
             if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
                 if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
-                    fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
+                    emit MounterStatusChanged("WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!\n");
                 }
             }
             if (strs) {
@@ -373,7 +381,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
             uint64_t af = 0;
             if ((afc_file_open(m_afc, targetname.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) || !af) {
                 fclose(f);
-                QMessageBox::critical(m_mainWidget, "Error", "Error: afc_file_open on '" + targetname + "' failed!", QMessageBox::Ok);
+                emit MounterStatusChanged("Error: afc_file_open on '" + targetname + "' failed!");
                 return;
             }
 
@@ -386,13 +394,13 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
                     while (total < amount) {
                         written = 0;
                         if (afc_file_write(m_afc, af, buf + total, amount - total, &written) != AFC_E_SUCCESS) {
-                            QMessageBox::critical(m_mainWidget, "Error", "Error: AFC Write error!", QMessageBox::Ok);
+                            emit MounterStatusChanged("Error: AFC Write error!");
                             break;
                         }
                         total += written;
                     }
                     if (total != amount) {
-                        QMessageBox::critical(m_mainWidget, "Error", "Error: wrote only " + QString::number(total) + " of " + QString::number(amount), QMessageBox::Ok);
+                        emit MounterStatusChanged("Error: wrote only " + QString::number(total) + " of " + QString::number(amount));
                         afc_file_close(m_afc, af);
                         fclose(f);
                         return;
@@ -405,17 +413,17 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
             break;
     }
     fclose(f);
-    qDebug() << "done.";
+    emit MounterStatusChanged("Image uploaded");
 
-    qDebug() << "Mounting...";
+    emit MounterStatusChanged("Mounting...");
     err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
-        QMessageBox::information(m_mainWidget, "Mount Success!", "Developer disk image mounted", QMessageBox::Ok);
+        emit MounterStatusChanged("Developer disk image mounted");
     }
     else
     {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: mount_image returned " + QString::number(err), QMessageBox::Ok);
+        emit MounterStatusChanged("Error: mount_image returned " + QString::number(err));
     }
     if (result)
         plist_free(result);

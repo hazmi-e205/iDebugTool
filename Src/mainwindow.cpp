@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_maxShownLogs(100)
     , m_scrollInterval(250)
     , m_textDialog(nullptr)
+    , m_offlineMounter(nullptr)
 {
     ui->setupUi(this);
 
@@ -35,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
     DeviceBridge::Get()->Init(this);
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::map<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(std::map<QString,idevice_connection_type>)));
-    connect(DeviceBridge::Get(), SIGNAL(DeviceInfoReceived(QJsonDocument)), this, SLOT(OnDeviceInfoReceived(QJsonDocument)));
+    connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
@@ -76,6 +77,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
     connect(ui->shutdownBtn, SIGNAL(pressed()), this, SLOT(OnShutdownClicked()));
+
+    m_offlineMounter = new ImageMounter(this);
     connect(ui->mounterBtn, SIGNAL(pressed()), this, SLOT(OnImageMounterClicked()));
 
     m_textDialog = new TextViewer(this);
@@ -93,6 +96,7 @@ MainWindow::~MainWindow()
     delete m_devicesModel;
     delete m_logModel;
     delete m_textDialog;
+    delete m_offlineMounter;
     delete ui;
 }
 
@@ -203,18 +207,19 @@ void MainWindow::UpdateStatusbar()
     if (m_currentUdid.isEmpty()) {
         ui->statusbar->showMessage("Idle");
     } else {
-        QString name = m_infoCache[m_currentUdid]["DeviceName"].toString();
+        QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
         ui->statusbar->showMessage("Connected to " + (name.length() > 0 ? name : m_currentUdid));
     }
 }
 
 void MainWindow::UpdateInfoWidget()
 {
-    ui->ProductType->setText(m_infoCache[m_currentUdid]["ProductType"].toString());
-    ui->OSName->setText(m_infoCache[m_currentUdid]["ProductName"].toString());
-    ui->OSVersion->setText(m_infoCache[m_currentUdid]["ProductVersion"].toString());
-    ui->CPUArch->setText(m_infoCache[m_currentUdid]["CPUArchitecture"].toString());
-    ui->UDID->setText(m_infoCache[m_currentUdid]["UniqueDeviceID"].toString());
+    auto deviceinfo = DeviceBridge::Get()->GetDeviceInfo();
+    ui->ProductType->setText(deviceinfo["ProductType"].toString());
+    ui->OSName->setText(deviceinfo["ProductName"].toString());
+    ui->OSVersion->setText(deviceinfo["ProductVersion"].toString());
+    ui->CPUArch->setText(deviceinfo["CPUArchitecture"].toString());
+    ui->UDID->setText(deviceinfo["UniqueDeviceID"].toString());
 }
 
 void MainWindow::OnTopSplitterMoved(int pos, int index)
@@ -260,7 +265,7 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
     for(std::map<QString, idevice_connection_type>::iterator it = devices.begin(); it != devices.end(); ++it) {
         QList<QStandardItem*> rowData;
         QString udid = it->first;
-        QString name = m_infoCache[udid]["DeviceName"].toString();
+        QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
         rowData << new QStandardItem(udid);
         rowData << new QStandardItem(name);
         rowData << new QStandardItem(it->second == idevice_connection_type::CONNECTION_NETWORK ? "network" : "usbmuxd");
@@ -270,26 +275,15 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
         }
     }
 
-    if (!currentUdidFound)
+    if (!currentUdidFound && devices.size() == 0)
     {
-        if (devices.size() == 0)
-        {
-            m_currentUdid = "";
-            UpdateStatusbar();
-        }
-        else
-        {
-            m_currentUdid = devices.begin()->first;
-            DeviceBridge::Get()->ConnectToDevice(m_currentUdid, devices.begin()->second);
-            UpdateInfoWidget();
-        }
+        m_currentUdid = "";
+        UpdateStatusbar();
     }
 }
 
-void MainWindow::OnDeviceInfoReceived(QJsonDocument info)
+void MainWindow::OnDeviceConnected()
 {
-    m_infoCache[m_currentUdid] = info;
-
     UpdateStatusbar();
     UpdateInfoWidget();
     OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
@@ -478,7 +472,7 @@ void MainWindow::OnBundleIdChanged(QString text)
 void MainWindow::OnSystemInfoClicked()
 {
     if(!m_currentUdid.isEmpty())
-        m_textDialog->ShowText("System Information", m_infoCache[m_currentUdid].toJson());
+        m_textDialog->ShowText("System Information", DeviceBridge::Get()->GetDeviceInfo().toJson());
 }
 
 void MainWindow::OnAppInfoClicked()
@@ -489,10 +483,15 @@ void MainWindow::OnAppInfoClicked()
 
 void MainWindow::OnImageMounterClicked()
 {
-    //DeviceBridge::Get()->MountImage("E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg", "E:\\Projects\\Tools\\15.2\\DeveloperDiskImage.dmg.signature");
-    //qDebug() << DeviceBridge::Get()->GetMountedImages().toJson();
-    //auto doc = DeviceBridge::Get()->GetMountedImages();
-    //auto arr = doc["ImageSignature"].toArray();
+    auto mounted = DeviceBridge::Get()->GetMountedImages();
+    if (mounted.length() > 0)
+    {
+        QMessageBox::information(this, "Disk Mounted!", "Developer disk image mounted", QMessageBox::Ok);
+    }
+    else
+    {
+        m_offlineMounter->ShowDialog();
+    }
 }
 
 void MainWindow::OnSocketClicked()

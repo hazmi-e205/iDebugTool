@@ -8,6 +8,7 @@
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
+#include "imagemounter.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -47,18 +48,19 @@ private:
     QString m_choosenBundleId;
     QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
-    std::map<QString, QJsonDocument> m_infoCache, m_installedApps;
+    std::map<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
+    ImageMounter *m_offlineMounter;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
     void OnDevicesTableClicked(QModelIndex index);
     void OnRefreshClicked();
     void OnUpdateDevices(std::map<QString, idevice_connection_type> devices);
-    void OnDeviceInfoReceived(QJsonDocument info);
+    void OnDeviceConnected();
     void OnSystemLogsReceived(LogPacket log);
     void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
     void OnTextFilterChanged(QString text);

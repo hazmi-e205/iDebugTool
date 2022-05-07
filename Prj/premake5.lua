@@ -21,6 +21,11 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    QtModules
+    {
+        "network",
+    }
+
     QtResources
     {
         "../info.json",
