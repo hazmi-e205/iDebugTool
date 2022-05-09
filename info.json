@@ -1,13 +1,13 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha1",
+    "status": "alpha2",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "2c6121db9ad84b8aad05b937e071ff7dcc9c8867",
+            "revision": "cad15f71204f32a389bee2797be22f84e7480f58",
             "path": "Externals/libimobiledevice"
         },
         {
@@ -21,14 +21,14 @@
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "3cb687baa8e69fbf57c5e05f4865184eb44abf67",
+            "revision": "c2e237ab5449b42461639c8e1eabbc61d0c386b7",
             "path": "Externals/libimobiledevice-glue"
         },
         {
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "a22f0f5dd020958c7a61282e067479add99a0a5a",
+            "revision": "db93bae96d64140230ad050061632531644c46ad",
             "path": "Externals/libplist"
         },
         {
