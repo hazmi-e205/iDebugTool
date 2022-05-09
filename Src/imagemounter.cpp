@@ -177,11 +177,13 @@ void ImageMounter::DownloadImage(DOWNLOAD_TYPE downloadtype)
                 {
                     m_downloadout = location;
                     m_downloadurl = m_downloadUrls[m_downloadout];
+                    m_downloadUrls.remove(location);
+                    break;
                 }
                 m_downloadUrls.remove(location);
             }
         }
-        ui->logField->append("Download image from repository...");
+        ui->logField->append("Download " + (QFileInfo(m_downloadout).fileName().endsWith(".dmg") ? QString("image") : "signature") + " file from repository...");
         m_request->Download(m_downloadurl);
         break;
     }
@@ -286,8 +288,8 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
         }
         else if (m_downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
         {
-            ui->logField->append("File downloaded.");
             QFileInfo file_info(m_downloadout);
+            ui->logField->append((QFileInfo(m_downloadout).fileName().endsWith(".dmg") ? QString("Image") : "Signature") + " file downloaded.");
             QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
             QSaveFile file(m_downloadout);
             file.open(QIODevice::WriteOnly);

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QFileInfo>
 
 DeviceBridge *DeviceBridge::m_instance = nullptr;
 DeviceBridge *DeviceBridge::Get()
@@ -349,7 +350,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
 
     switch (mount_type) {
         case DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE:
-            emit MounterStatusChanged("Uploading " + image_path);
+            emit MounterStatusChanged("Uploading '" + QFileInfo(image_path).fileName() + "' to device...");
             err = mobile_image_mounter_upload_image(m_imageMounter, "Developer", image_size, sig, sig_length, ImageMounterCallback, f);
             if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
                 QString message("ERROR: Unknown error occurred, can't mount.");
@@ -362,7 +363,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
             break;
 
         default:
-            emit MounterStatusChanged("Uploading " + image_path + " --> afc:///" + targetname);
+            emit MounterStatusChanged("Uploading " + QFileInfo(image_path).fileName() + " --> afc:///" + targetname);
             char **strs = NULL;
             if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
                 if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
@@ -413,7 +414,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
             break;
     }
     fclose(f);
-    emit MounterStatusChanged("Image uploaded");
+    emit MounterStatusChanged("Image uploaded.");
 
     emit MounterStatusChanged("Mounting...");
     err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
