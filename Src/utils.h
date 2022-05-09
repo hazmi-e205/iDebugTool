@@ -19,6 +19,7 @@ bool ParseSystemLogs(char &in, LogPacket &out);
 void StringWithSpaces(QString &string, bool CapFirstOnly = false);
 QString FindRegex(QString rawString, QString regex);
 bool IsInternetOn();
+QString ParseVersion(QString version_raw);
 quint64 VersionToUInt(QString version_raw);
 QString UIntToVersion(quint64 version_int);
 bool FilterVersion(QStringList& versions, QString version);

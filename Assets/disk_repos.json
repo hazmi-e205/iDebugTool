@@ -1,0 +1,12 @@
+{
+    "mspvirajpatel" : {
+        "git_url" : "https://github.com/mspvirajpatel/Xcode_Developer_Disk_Images",
+        "repo_url" : "https://api.github.com/repos/mspvirajpatel/Xcode_Developer_Disk_Images/contents/Developer%20Disk%20Image?ref=master",
+        "is_archived" : false
+    },
+    "haikieu" : {
+        "git_url" : "https://github.com/haikieu/xcode-developer-disk-image-all-platforms",
+        "repo_url" : "https://api.github.com/repos/haikieu/xcode-developer-disk-image-all-platforms/contents/DiskImages/iPhoneOS.platform/DeviceSupport?ref=master",
+        "is_archived" : true
+    }
+}

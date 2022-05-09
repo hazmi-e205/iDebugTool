@@ -39,6 +39,7 @@ void DeviceBridge::Init(QWidget *parent)
 {
     m_mainWidget = parent;
     idevice_event_subscribe(DeviceEventCallback, nullptr);
+    idevice_set_debug_level(1);
 }
 
 std::map<QString, idevice_connection_type> DeviceBridge::GetDevices()
@@ -284,7 +285,6 @@ QStringList DeviceBridge::GetMountedImages()
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
         doc = PlistToJson(result);
-        qDebug() << doc.toJson();
         auto arr = doc["ImageSignature"].toArray();
         for (int idx = 0; idx < arr.count(); idx++)
         {
@@ -425,8 +425,12 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
     {
         emit MounterStatusChanged("Error: mount_image returned " + QString::number(err));
     }
+
     if (result)
+    {
+        emit MounterStatusChanged(PlistToJson(result).toJson());
         plist_free(result);
+    }
 }
 
 void DeviceBridge::TriggerUpdateDevices()

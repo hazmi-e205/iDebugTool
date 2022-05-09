@@ -592,3 +592,10 @@ bool FilterVersion(QStringList &versions, QString version)
     versions = final_list;
     return final_list.length() > 0;
 }
+
+QString ParseVersion(QString version_raw)
+{
+    QString version_str = FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+");
+    version_str = version_str.isEmpty() ? FindRegex(version_raw, "\\d+\\.\\d+") : version_str;
+    return version_str;
+}

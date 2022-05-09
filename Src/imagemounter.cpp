@@ -2,6 +2,7 @@
 #include "devicebridge.h"
 #include <QFileDialog>
 #include <QSaveFile>
+#include <QMessageBox>
 #include <ui_imagemounter.h>
 #include <zip.h>
 #include "utils.h"
@@ -9,6 +10,7 @@
 ImageMounter::ImageMounter(QWidget *parent)
   : QDialog(parent)
   , ui(new Ui::ImageMounter)
+  , m_downloadState(DOWNLOAD_STATE::IDLE)
   , m_request(nullptr)
 {
     ui->setupUi(this);
@@ -17,8 +19,19 @@ ImageMounter::ImageMounter(QWidget *parent)
     connect(ui->signatureBtn, SIGNAL(pressed()), this, SLOT(OnSignatureClicked()));
     connect(ui->mountBtn, SIGNAL(pressed()), this, SLOT(OnMountClicked()));
     connect(ui->mount2Btn, SIGNAL(pressed()), this, SLOT(OnDownloadMountClicked()));
+    connect(ui->repoBox, SIGNAL(currentTextChanged(QString)), this, SLOT(OnRepoChanged(QString)));
     connect(DeviceBridge::Get(), SIGNAL(MounterStatusChanged(QString)), this, SLOT(OnMounterStatusChanged(QString)));
     m_request = new SimpleRequest();
+    connect(m_request, SIGNAL(DownloadResponse(SimpleRequest::RequestState,int,QNetworkReply::NetworkError,QByteArray)), this, SLOT(OnDownloadResponse(SimpleRequest::RequestState,int,QNetworkReply::NetworkError,QByteArray)));
+
+    QFile mFile(":res/Assets/disk_repos.json");
+    if(!mFile.open(QFile::ReadOnly | QFile::Text))
+    {
+        QMessageBox::critical(parent, "Error", "Disk images repo file missing!", QMessageBox::Ok);
+    }
+    QTextStream in(&mFile);
+    m_repoJson = QJsonDocument::fromJson(in.readAll().toUtf8());
+    mFile.close();
 }
 
 ImageMounter::~ImageMounter()
@@ -42,38 +55,36 @@ void ImageMounter::RefreshUI(bool fetchImages)
         ui->onlineTab->show();
         if (fetchImages)
         {
-            ui->repoEdit->setText("https://github.com/haikieu/xcode-developer-disk-image-all-platforms");
-            ui->logField->append("Fetch image list...");
-            m_request->Get("https://api.github.com/repos/haikieu/xcode-developer-disk-image-all-platforms/contents/DiskImages/iPhoneOS.platform/DeviceSupport?ref=master", [this, OSVersion](QNetworkReply::NetworkError responseCode, QJsonDocument ResponseData){
-                if (responseCode == QNetworkReply::NetworkError::NoError)
-                {
-                    ui->logField->append("Parsing data from repository...");
-                    auto rawdata = ResponseData.array();
-                    for (int idx = 0; idx < rawdata.count(); ++idx)
-                    {
-                        QString nameStr = rawdata.at(idx)["name"].toString();
-                        m_imagelinks[VersionToUInt(nameStr)] = rawdata.at(idx)["download_url"].toString();
-                    }
+            for (const auto& owner : m_repoJson.object().keys())
+            {
+                ui->logField->append("Fetch from '" + m_repoJson[owner].toObject()["git_url"].toString() + "'...");
+                if (ui->repoBox->findText(owner) < 0)
+                    ui->repoBox->addItem(owner);
 
-                    QString version_selected;
-                    foreach (const quint64 &image_ver, m_imagelinks.keys())
+                m_request->Get(m_repoJson[owner].toObject()["repo_url"].toString(), [this, owner](QNetworkReply::NetworkError responseCode, QJsonDocument ResponseData){
+                    if (responseCode == QNetworkReply::NetworkError::NoError)
                     {
-                        quint64 os_version = VersionToUInt(OSVersion);
-                        ui->imageBox->addItem(UIntToVersion(image_ver));
-                        if (image_ver <= os_version)
+                        ui->logField->append("Parsing data from '" + owner + "'...");
+                        bool repo_archived = m_repoJson[owner].toObject()["is_archived"].toBool();
+                        QJsonObject imagesJson;
+                        auto rawdata = ResponseData.array();
+                        for (int idx = 0; idx < rawdata.count(); ++idx)
                         {
-                            version_selected = UIntToVersion(image_ver);
-
-                            if(image_ver == os_version)
-                                ui->imageStatus->setText("Choose image same as your iOS version (" + version_selected + ")");
-                            else
-                                ui->imageStatus->setText("Choose closest version, sometime it still works (" + version_selected + ")");
+                            QString nameStr = rawdata.at(idx)["name"].toString();
+                            imagesJson.insert(ParseVersion(nameStr), repo_archived ? rawdata.at(idx)["download_url"].toString() : rawdata.at(idx)["url"].toString());
                         }
+
+                        QJsonObject repoJson = m_repoJson.object();
+                        QJsonObject newData = m_repoJson[owner].toObject();
+                        newData.insert("images", imagesJson);
+                        repoJson.insert(owner, newData);
+                        m_repoJson.setObject(repoJson);
+
+                        ui->logField->append("Data from '" + owner + "' converted.");
+                        OnRepoChanged(ui->repoBox->currentText());
                     }
-                    ui->imageBox->setCurrentText(version_selected);
-                    ui->logField->append("Image list parsed.");
-                }
-            });
+                });
+            }
         }
     }
     else
@@ -82,11 +93,113 @@ void ImageMounter::RefreshUI(bool fetchImages)
     }
 }
 
+void ImageMounter::OnRepoChanged(QString messages)
+{
+    ui->imageBox->clear();
+    QJsonObject available_images = m_repoJson[messages].toObject()["images"].toObject();
+    quint64 os_version = VersionToUInt(DeviceBridge::Get()->GetDeviceInfo()["ProductVersion"].toString());
+    QMap<quint64,QString> imagelinks;
+
+    // sort data
+    foreach (const auto& version_str, available_images.keys())
+    {
+        imagelinks[VersionToUInt(version_str)] = available_images[version_str].toString();
+    }
+
+    // add item and recommendation
+    QString version_selected;
+    foreach (const quint64 &image_ver, imagelinks.keys())
+    {
+        ui->imageBox->addItem(UIntToVersion(image_ver));
+        if (image_ver <= os_version)
+        {
+            version_selected = UIntToVersion(image_ver);
+
+            if(image_ver == os_version)
+                ui->imageStatus->setText("Choose image same as your iOS version (" + version_selected + ")");
+            else
+                ui->imageStatus->setText("Choose closest version, sometime it still works (" + version_selected + ")");
+        }
+    }
+    ui->imageBox->setCurrentText(version_selected);
+}
+
 void ImageMounter::ShowDialog()
 {
     ui->logField->clear();
     RefreshUI();
     show();
+}
+
+void ImageMounter::DownloadImage(DOWNLOAD_TYPE downloadtype)
+{
+    QString selected_version = ui->imageBox->currentText();
+    QString repo_owner = ui->repoBox->currentText();
+    m_downloadtype = downloadtype;
+
+    if (m_downloadState == DOWNLOAD_STATE::IDLE)
+    {
+        if (downloadtype == DOWNLOAD_TYPE::ARCHIVED_IMAGE)
+            m_downloadState = DOWNLOAD_STATE::DOWNLOAD;
+        else if (downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
+            m_downloadState = DOWNLOAD_STATE::FETCH;
+    }
+
+    switch (m_downloadState)
+    {
+    case DOWNLOAD_STATE::FETCH:
+        ui->logField->append("Get image url from repository...");
+        m_request->Get(m_repoJson[repo_owner].toObject()["images"].toObject()[selected_version].toString(), [this, repo_owner, selected_version](QNetworkReply::NetworkError responseCode, QJsonDocument ResponseData){
+            if (responseCode == QNetworkReply::NetworkError::NoError)
+            {
+                foreach (const auto& file_json, ResponseData.array())
+                {
+                    QString target = GetDirectory(DIRECTORY_TYPE::DISKIMAGES) + "/" + repo_owner + "/" + ParseVersion(selected_version) + "/" + file_json.toObject()["name"].toString();
+                    m_downloadUrls[target] = file_json.toObject()["download_url"].toString();
+                }
+                ChangeDownloadState(DOWNLOAD_STATE::DOWNLOAD);
+            }
+        });
+        break;
+
+    case DOWNLOAD_STATE::DOWNLOAD:
+    {
+        if (downloadtype == DOWNLOAD_TYPE::ARCHIVED_IMAGE)
+        {
+            m_downloadout = GetDirectory(DIRECTORY_TYPE::DISKIMAGES) + "/" + repo_owner + "/";
+            m_downloadurl = m_repoJson[repo_owner].toObject()["images"].toObject()[ui->imageBox->currentText()].toString();
+        }
+        else if (downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
+        {
+            foreach (const auto& location, m_downloadUrls.keys())
+            {
+                if (!QFileInfo::exists(location))
+                {
+                    m_downloadout = location;
+                    m_downloadurl = m_downloadUrls[m_downloadout];
+                }
+                m_downloadUrls.remove(location);
+            }
+        }
+        ui->logField->append("Download image from repository...");
+        m_request->Download(m_downloadurl);
+        break;
+    }
+    case DOWNLOAD_STATE::DONE:
+        m_downloadState = DOWNLOAD_STATE::IDLE;
+        m_downloadUrls.clear();
+        OnDownloadMountClicked();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void ImageMounter::ChangeDownloadState(DOWNLOAD_STATE downloadState)
+{
+    m_downloadState = downloadState;
+    DownloadImage(m_downloadtype);
 }
 
 void ImageMounter::OnImageClicked()
@@ -109,8 +222,18 @@ void ImageMounter::OnMountClicked()
 
 void ImageMounter::OnDownloadMountClicked()
 {
-    QStringList diskImages = FindFiles(GetDirectory(DIRECTORY_TYPE::DISKIMAGES), QStringList() << "*.dmg" << "*.signature");
-    if (FilterVersion(diskImages, ui->imageBox->currentText()))
+    auto mounted = DeviceBridge::Get()->GetMountedImages();
+    if (mounted.length() > 0)
+    {
+        QMessageBox::information(this, "Disk Mounted!", "Developer disk image mounted", QMessageBox::Ok);
+        return;
+    }
+
+    QString repo_owner = ui->repoBox->currentText();
+    bool repo_archived = m_repoJson[repo_owner].toObject()["is_archived"].toBool();
+
+    QStringList diskImages = FindFiles(GetDirectory(DIRECTORY_TYPE::DISKIMAGES) + "/" + repo_owner + "/", QStringList() << "*.dmg" << "*.signature");
+    if (FilterVersion(diskImages, ui->imageBox->currentText()) && diskImages.length() == 2)
     {
         QString image_path = diskImages.filter(QRegularExpression(".dmg$")).at(0);
         QString signature_path = diskImages.filter(QRegularExpression(".signature$")).at(0);
@@ -119,50 +242,66 @@ void ImageMounter::OnDownloadMountClicked()
     }
     else
     {
-        ui->logField->append("Download image from repository...");
-        m_request->Download(m_imagelinks[VersionToUInt(ui->imageBox->currentText())], [this](SimpleRequest::RequestState state, int percentage, QNetworkReply::NetworkError error, QByteArray data){
-            QString temp_zip = GetDirectory(DIRECTORY_TYPE::TEMP) + "devimage.temp";
-            QDir().mkpath(GetDirectory(DIRECTORY_TYPE::TEMP));
-            switch (state)
-            {
-            case SimpleRequest::RequestState::STATE_PROGRESS:
-                ui->progressBar->setValue(percentage);
-                break;
-
-            case SimpleRequest::RequestState::STATE_FINISH:
-            {
-                ui->logField->append("Image Package downloaded.");
-                QSaveFile file(temp_zip);
-                file.open(QIODevice::WriteOnly);
-                file.write(data.data(), data.size());
-                file.commit();
-
-                ui->logField->append("Extract Image Package...");
-                struct zip *zf = NULL;
-                int errp = 0;
-                char errstr[256];
-                zf = zip_open(temp_zip.toUtf8().data(), 0, &errp);
-                if (!zf) {
-                    zip_error_to_str(errstr, sizeof(errstr), errp, errno);
-                    ui->logField->append("ERROR: zip_open: " + QString(errstr) + ": " + QString::number(errp));
-                    break;
-                }
-                zip_extract_all(zf, GetDirectory(DIRECTORY_TYPE::DISKIMAGES));
-                OnDownloadMountClicked();
-                break;
-            }
-            case SimpleRequest::RequestState::STATE_ERROR:
-                ui->logField->append("Download error: " + QVariant::fromValue(error).toString());
-                break;
-
-            default:
-                break;
-            }
-        });
+        DownloadImage(repo_archived ? DOWNLOAD_TYPE::ARCHIVED_IMAGE : DOWNLOAD_TYPE::DIRECT_FILES);
     }
 }
 
 void ImageMounter::OnMounterStatusChanged(QString messages)
 {
     ui->logField->append(messages);
+}
+
+void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int percentage, QNetworkReply::NetworkError error, QByteArray data)
+{
+    switch (req_state)
+    {
+    case SimpleRequest::RequestState::STATE_PROGRESS:
+        ui->progressBar->setValue(percentage);
+        break;
+
+    case SimpleRequest::RequestState::STATE_FINISH:
+    {
+        if (m_downloadtype == DOWNLOAD_TYPE::ARCHIVED_IMAGE)
+        {
+            ui->logField->append("Image Package downloaded.");
+            QDir().mkpath(GetDirectory(DIRECTORY_TYPE::TEMP));
+            QString temp_zip = GetDirectory(DIRECTORY_TYPE::TEMP) + "devimage.temp";
+            QSaveFile file(temp_zip);
+            file.open(QIODevice::WriteOnly);
+            file.write(data.data(), data.size());
+            file.commit();
+
+            ui->logField->append("Extract Image Package...");
+            struct zip *zf = NULL;
+            int errp = 0;
+            char errstr[256];
+            zf = zip_open(temp_zip.toUtf8().data(), 0, &errp);
+            if (!zf) {
+                zip_error_to_str(errstr, sizeof(errstr), errp, errno);
+                ui->logField->append("ERROR: zip_open: " + QString(errstr) + ": " + QString::number(errp));
+                break;
+            }
+            zip_extract_all(zf, m_downloadout);
+            ChangeDownloadState(DOWNLOAD_STATE::DONE);
+        }
+        else if (m_downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
+        {
+            ui->logField->append("File downloaded.");
+            QFileInfo file_info(m_downloadout);
+            QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
+            QSaveFile file(m_downloadout);
+            file.open(QIODevice::WriteOnly);
+            file.write(data.data(), data.size());
+            file.commit();
+            ChangeDownloadState(m_downloadUrls.isEmpty() ? DOWNLOAD_STATE::DONE : DOWNLOAD_STATE::DOWNLOAD);
+        }
+        break;
+    }
+    case SimpleRequest::RequestState::STATE_ERROR:
+        ui->logField->append("Download error: " + QVariant::fromValue(error).toString());
+        break;
+
+    default:
+        break;
+    }
 }

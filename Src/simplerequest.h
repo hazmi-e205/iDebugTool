@@ -40,13 +40,16 @@ public:
 
     SimpleRequest();
     ~SimpleRequest();
-    void Download(QString url, const std::function<void(RequestState,int,QNetworkReply::NetworkError,QByteArray)>& responseCallback);
+    void Download(QString url, const std::function<void(RequestState,int,QNetworkReply::NetworkError,QByteArray)>& responseCallback = nullptr);
     void Get(QString url, const std::function<void(QNetworkReply::NetworkError,QJsonDocument)>& responseCallback = nullptr);
+
+signals:
+    void RequestResponse(QNetworkReply::NetworkError errorcode, QJsonDocument datajson);
+    void DownloadResponse(SimpleRequest::RequestState state, int progress, QNetworkReply::NetworkError error, QByteArray data);
 
 private:
     void DoNextQueue();
     QNetworkAccessManager *m_manager;
-    QNetworkRequest m_request;
     QNetworkReply* m_reply;
     std::function<void (QNetworkReply::NetworkError, QJsonDocument)> m_callback;
     std::function<void(RequestState,int,QNetworkReply::NetworkError,QByteArray)> m_dlcallback;
@@ -54,9 +57,6 @@ private:
     int m_progress;
     bool m_stillrunning;
     QByteArray m_downloadedData;
-
-signals:
-    void RequestResponse(QNetworkReply::NetworkError errorcode, QJsonDocument datajson);
 
 private slots:
     void Response(QNetworkReply *reply);

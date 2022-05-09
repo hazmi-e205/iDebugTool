@@ -20,16 +20,38 @@ public:
     void ShowDialog();
 
 private:
-    Ui::ImageMounter *ui;
-    SimpleRequest *m_request;
-    QMap<quint64,QString> m_imagelinks;
+    enum class DOWNLOAD_TYPE
+    {
+        ARCHIVED_IMAGE,
+        DIRECT_FILES
+    };
+    void DownloadImage(DOWNLOAD_TYPE downloadtype);
 
-private slots:
+    enum class DOWNLOAD_STATE
+    {
+        IDLE,
+        FETCH,
+        DOWNLOAD,
+        DONE
+    };
+    void ChangeDownloadState(DOWNLOAD_STATE downloadState);
+
+    Ui::ImageMounter *ui;
+    DOWNLOAD_STATE m_downloadState;
+    SimpleRequest *m_request;
+    QJsonDocument m_repoJson;
+    QMap<QString,QString> m_downloadUrls;
+    QString m_downloadurl, m_downloadout;
+    DOWNLOAD_TYPE m_downloadtype;
+
+protected slots:
     void OnImageClicked();
     void OnSignatureClicked();
     void OnMountClicked();
     void OnDownloadMountClicked();
+    void OnRepoChanged(QString messages);
     void OnMounterStatusChanged(QString messages);
+    void OnDownloadResponse(SimpleRequest::RequestState req_state, int percentage, QNetworkReply::NetworkError error, QByteArray data);
 };
 
 #endif // IMAGEMOUNTER_H

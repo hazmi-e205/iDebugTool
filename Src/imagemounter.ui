@@ -213,7 +213,7 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_9">
              <item>
-              <widget class="QLineEdit" name="repoEdit"/>
+              <widget class="QComboBox" name="repoBox"/>
              </item>
              <item>
               <widget class="QWidget" name="widget_8" native="true">
