@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileInfo>
+#include <QDir>
+#include <QSaveFile>
 
 DeviceBridge *DeviceBridge::m_instance = nullptr;
 DeviceBridge *DeviceBridge::Get()
@@ -26,6 +28,7 @@ DeviceBridge::DeviceBridge() :
     m_afc(nullptr),
     m_diagnostics(nullptr),
     m_imageMounter(nullptr),
+    m_screenshot(nullptr),
     m_mainWidget(nullptr)
 {
 }
@@ -65,6 +68,12 @@ std::map<QString, idevice_connection_type> DeviceBridge::GetDevices()
 
 void DeviceBridge::ResetConnection()
 {
+    if (m_screenshot)
+    {
+        screenshotr_client_free(m_screenshot);
+        m_screenshot = nullptr;
+    }
+
     if (m_imageMounter)
     {
         mobile_image_mounter_hangup(m_imageMounter);
@@ -432,6 +441,36 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
         emit MounterStatusChanged(PlistToJson(result).toJson());
         plist_free(result);
     }
+}
+
+bool DeviceBridge::Screenshot(QString path)
+{
+    QStringList serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
+    StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
+        if (err != SCREENSHOTR_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
+    char *imgdata = NULL;
+    uint64_t imgsize = 0;
+    screenshotr_error_t error = screenshotr_take_screenshot(m_screenshot, &imgdata, &imgsize);
+    if (error == SCREENSHOTR_E_SUCCESS)
+    {
+        QFileInfo file_info(path);
+        QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
+        QSaveFile file(path);
+        file.open(QIODevice::WriteOnly);
+        file.write(imgdata, imgsize);
+        file.commit();
+    }
+    else
+    {
+        QMessageBox::critical(m_mainWidget, "Error", "Error: screenshotr_take_screenshot returned " + QString::number(error), QMessageBox::Ok);
+    }
+    return error == SCREENSHOTR_E_SUCCESS;
 }
 
 void DeviceBridge::TriggerUpdateDevices()

@@ -54,7 +54,7 @@ private:
     CustomKeyFilter *m_eventFilter;
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
-    ImageMounter *m_offlineMounter;
+    ImageMounter *m_imageMounter;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -84,6 +84,7 @@ private slots:
     void OnSystemInfoClicked();
     void OnAppInfoClicked();
     void OnImageMounterClicked();
+    void OnScreenshotClicked();
     void OnSocketClicked();
 };
 #endif // MAINWINDOW_H

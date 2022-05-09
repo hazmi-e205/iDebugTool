@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_maxShownLogs(100)
     , m_scrollInterval(250)
     , m_textDialog(nullptr)
-    , m_offlineMounter(nullptr)
+    , m_imageMounter(nullptr)
 {
     ui->setupUi(this);
 
@@ -81,8 +81,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
     connect(ui->shutdownBtn, SIGNAL(pressed()), this, SLOT(OnShutdownClicked()));
 
-    m_offlineMounter = new ImageMounter(this);
+    m_imageMounter = new ImageMounter(this);
     connect(ui->mounterBtn, SIGNAL(pressed()), this, SLOT(OnImageMounterClicked()));
+    connect(ui->screenshotBtn, SIGNAL(pressed()), this, SLOT(OnScreenshotClicked()));
 
     m_textDialog = new TextViewer(this);
     connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
@@ -99,7 +100,7 @@ MainWindow::~MainWindow()
     delete m_devicesModel;
     delete m_logModel;
     delete m_textDialog;
-    delete m_offlineMounter;
+    delete m_imageMounter;
     delete ui;
 }
 
@@ -516,8 +517,22 @@ void MainWindow::OnImageMounterClicked()
     }
     else
     {
-        m_offlineMounter->ShowDialog();
+        m_imageMounter->ShowDialog();
     }
+}
+
+void MainWindow::OnScreenshotClicked()
+{
+    auto mounted = DeviceBridge::Get()->GetMountedImages();
+    if (mounted.empty())
+    {
+        m_imageMounter->ShowDialog();
+        return;
+    }
+
+    QString imagePath = GetDirectory(DIRECTORY_TYPE::SCREENSHOT) + "Screenshot_" + QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") + ".png";
+    if (DeviceBridge::Get()->Screenshot(imagePath))
+        ui->statusbar->showMessage("Screenshot saved to '" + imagePath + "'!");
 }
 
 void MainWindow::OnSocketClicked()

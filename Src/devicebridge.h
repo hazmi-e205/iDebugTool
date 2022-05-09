@@ -14,6 +14,7 @@
 #include <libimobiledevice/installation_proxy.h>
 #include <libimobiledevice/afc.h>
 #include <libimobiledevice/mobile_image_mounter.h>
+#include <libimobiledevice/screenshotr.h>
 #include "logpacket.h"
 
 #define TOOL_NAME                       "idebugtool"
@@ -59,6 +60,7 @@ public:
     void InstallApp(InstallerMode cmd, QString path);
     QStringList GetMountedImages();
     void MountImage(QString image_path, QString signature_path);
+    bool Screenshot(QString path);
 
     static DeviceBridge *Get();
     static void Destroy();
@@ -83,6 +85,7 @@ private:
     afc_client_t m_afc;
     diagnostics_relay_client_t m_diagnostics;
     mobile_image_mounter_client_t m_imageMounter;
+    screenshotr_client_t m_screenshot;
     QWidget *m_mainWidget;
     std::map<QString, QJsonDocument> m_deviceInfo;
     QString m_currentUdid;
