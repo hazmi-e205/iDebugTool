@@ -14,6 +14,7 @@
 #include <QJsonObject>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QClipboard>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -61,9 +62,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->installBar->setAlignment(Qt::AlignCenter);
 
     m_eventFilter = new CustomKeyFilter();
+    ui->logTable->installEventFilter(m_eventFilter);
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
+    connect(m_eventFilter, SIGNAL(keyReleased(QObject*,QKeyEvent*)), this, SLOT(OnKeyReleased(QObject*,QKeyEvent*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
     connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
@@ -222,6 +225,43 @@ void MainWindow::UpdateInfoWidget()
     ui->UDID->setText(deviceinfo["UniqueDeviceID"].toString());
 }
 
+void MainWindow::SaveLogMessages(bool savefile)
+{
+    QModelIndexList indexes = ui->logTable->selectionModel()->selection().indexes();
+    int last_row = -1;
+    QString data_str = "";
+    for (int i = 0; i < indexes.count(); ++i)
+    {
+        QModelIndex index = indexes.at(i);
+        if (last_row > 0 && last_row != index.row())
+        {
+            data_str += "\n";
+        }
+        if (index.column() > 0)
+        {
+            data_str += "\t";
+        }
+        data_str += index.model()->index(index.row(),index.column()).data().toString();
+        last_row = index.row();
+    }
+
+    if (savefile)
+    {
+        QString filename = QFileDialog::getSaveFileName(this, "Save logs file...", "", "Text File (*.txt)");
+        QFile f(filename);
+        if (f.open(QIODevice::ReadWrite))
+        {
+            QTextStream stream(&f);
+            stream << data_str;
+            f.close();
+        }
+    }
+    else
+    {
+        QApplication::clipboard()->setText(data_str);
+    }
+}
+
 void MainWindow::OnTopSplitterMoved(int pos, int index)
 {
     m_ratioTopWidth = (float)ui->deviceWidget->width() / m_topWidth;
@@ -362,32 +402,7 @@ void MainWindow::OnClearClicked()
 
 void MainWindow::OnSaveClicked()
 {
-    QModelIndexList indexes = ui->logTable->selectionModel()->selection().indexes();
-    int last_row = -1;
-    QString data_str = "";
-    for (int i = 0; i < indexes.count(); ++i)
-    {
-        QModelIndex index = indexes.at(i);
-        if (last_row > 0 && last_row != index.row())
-        {
-            data_str += "\n";
-        }
-        if (index.column() > 0)
-        {
-            data_str += "\t";
-        }
-        data_str += index.model()->index(index.row(),index.column()).data().toString();
-        last_row = index.row();
-    }
-
-    QString filename = QFileDialog::getSaveFileName(this, "Save logs file...", "", "Text File (*.txt)");
-    QFile f(filename);
-    if (f.open(QIODevice::ReadWrite))
-    {
-        QTextStream stream(&f);
-        stream << data_str;
-        f.close();
-    }
+    SaveLogMessages();
 }
 
 void MainWindow::OnClickedEvent(QObject* object)
@@ -410,6 +425,17 @@ void MainWindow::OnClickedEvent(QObject* object)
             QJsonDocument app_info;
             app_info.setObject(apps[idx].toObject());
             m_installedApps[bundle_id] = app_info;
+        }
+    }
+}
+
+void MainWindow::OnKeyReleased(QObject *object, QKeyEvent *keyEvent)
+{
+    if(object->objectName() == ui->logTable->objectName())
+    {
+        if(keyEvent->matches(QKeySequence::Copy))
+        {
+            SaveLogMessages(false);
         }
     }
 }

@@ -35,6 +35,7 @@ private:
     void AddLogToTable(LogPacket log);
     void UpdateStatusbar();
     void UpdateInfoWidget();
+    void SaveLogMessages(bool savefile = true);
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     QStandardItemModel *m_logModel;
@@ -70,6 +71,7 @@ private slots:
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);
+    void OnKeyReleased(QObject* object, QKeyEvent* keyEvent);
     void OnInstallClicked();
     void OnUninstallClicked();
     void OnInstallLogsClicked();

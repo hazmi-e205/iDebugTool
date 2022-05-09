@@ -2,6 +2,7 @@
 #define CUSTOMKEYFILER_H
 
 #include <QObject>
+#include <QKeyEvent>
 
 class CustomKeyFilter : public QObject
 {
@@ -17,6 +18,7 @@ protected:
 
 signals:
     void pressed(QObject *obj);
+    void keyReleased(QObject *obj, QKeyEvent *event);
 };
 
 #endif // CUSTOMKEYFILER_H
