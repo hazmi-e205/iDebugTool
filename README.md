@@ -22,6 +22,7 @@ This command will does several things that you can disable it optionally.
 Project will be generated in `Prj` folder. There is 2 projects for each platforms.
 - `Prj/Qt-linux/iDebugTool.pro` for Linux project.
 - `Prj/Qt-windows/iDebugTool.pro` for Windows project.
+
 You can build using Qt Creator or command line.
 
 ## Download
