@@ -316,10 +316,19 @@ void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devi
         }
     }
 
-    if (!currentUdidFound && devices.size() == 0)
+    if (!currentUdidFound)
     {
-        m_currentUdid = "";
-        UpdateStatusbar();
+        if (devices.size() == 0)
+        {
+            m_currentUdid = "";
+            UpdateStatusbar();
+        }
+        else
+        {
+            m_currentUdid = devices.begin()->first;
+            DeviceBridge::Get()->ConnectToDevice(m_currentUdid, devices.begin()->second);
+            UpdateInfoWidget();
+        }
     }
 }
 
