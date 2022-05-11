@@ -127,7 +127,10 @@ class Git:
 
     @staticmethod
     def checkout(path, location, revision="", **kwargs):
-        shellout(["git", "checkout", "-B", location, revision], path, **kwargs)
+        if len(revision) > 0:
+            shellout(["git", "checkout", "-B", location, revision], path, **kwargs)
+        else:
+            shellout(["git", "checkout", "-f", location], path, **kwargs)
 
     @staticmethod
     def update_submodules(path, **kwargs):
