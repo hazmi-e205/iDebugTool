@@ -7,7 +7,7 @@
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "cad15f71204f32a389bee2797be22f84e7480f58",
+            "revision": "dec0438c89a020995229b08aeaee96c403c5daed",
             "path": "Externals/libimobiledevice"
         },
         {
