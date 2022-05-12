@@ -42,7 +42,6 @@ private:
     AppInfo *m_appInfo;
     float m_ratioTopWidth;
     float m_topWidth;
-    QString m_currentUdid;
     QString m_currentFilter;
     QString m_pidFilter;
     QString m_excludeFilter;
@@ -60,7 +59,7 @@ private slots:
     void OnTopSplitterMoved(int pos, int index);
     void OnDevicesTableClicked(QModelIndex index);
     void OnRefreshClicked();
-    void OnUpdateDevices(std::map<QString, idevice_connection_type> devices);
+    void OnUpdateDevices(QMap<QString, idevice_connection_type> devices);
     void OnDeviceConnected();
     void OnSystemLogsReceived(LogPacket log);
     void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);

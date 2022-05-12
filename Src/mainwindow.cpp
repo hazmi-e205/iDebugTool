@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     QMainWindow::setWindowTitle(m_appInfo->GetFullname());
     QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
     DeviceBridge::Get()->Init(this);
-    connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(std::map<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(std::map<QString,idevice_connection_type>)));
+    connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(QMap<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(QMap<QString,idevice_connection_type>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
@@ -208,11 +208,15 @@ void MainWindow::AddLogToTable(LogPacket log)
 
 void MainWindow::UpdateStatusbar()
 {
-    if (m_currentUdid.isEmpty()) {
+    if (DeviceBridge::Get()->IsConnected())
+    {
+        QString device_name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
+        device_name = device_name.isEmpty() ? DeviceBridge::Get()->GetCurrentUdid() : device_name;
+        ui->statusbar->showMessage("Connected to " + device_name);
+    }
+    else
+    {
         ui->statusbar->showMessage("Idle");
-    } else {
-        QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
-        ui->statusbar->showMessage("Connected to " + (name.length() > 0 ? name : m_currentUdid));
     }
 }
 
@@ -274,20 +278,16 @@ void MainWindow::OnDevicesTableClicked(QModelIndex selectedIndex)
         return;
 
     QModelIndexList indexes = ui->deviceTable->selectionModel()->selection().indexes();
-    idevice_connection_type conntype = idevice_connection_type::CONNECTION_USBMUXD;
+    QString choosenUdid;
     for (int i = 0; i < indexes.count(); ++i)
     {
         QModelIndex index = indexes.at(i);
         if (index.column() == 0)
         {
-            m_currentUdid = index.model()->index(index.row(),index.column()).data().toString();
-        }
-        else if (index.column() == 2)
-        {
-            conntype = index.model()->index(index.row(),index.column()).data().toString() == "network" ? idevice_connection_type::CONNECTION_NETWORK : idevice_connection_type::CONNECTION_USBMUXD;
+            choosenUdid = index.model()->index(index.row(),index.column()).data().toString();
         }
     }
-    DeviceBridge::Get()->ConnectToDevice(m_currentUdid, conntype);
+    DeviceBridge::Get()->ConnectToDevice(choosenUdid);
     UpdateInfoWidget();
 }
 
@@ -296,39 +296,29 @@ void MainWindow::OnRefreshClicked()
     OnUpdateDevices(DeviceBridge::Get()->GetDevices());
 }
 
-void MainWindow::OnUpdateDevices(std::map<QString, idevice_connection_type> devices)
+void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
 {
     m_devicesModel->clear();
     SetupDevicesTable();
 
-    bool currentUdidFound = false;
-
-    for(std::map<QString, idevice_connection_type>::iterator it = devices.begin(); it != devices.end(); ++it) {
+    foreach (const auto& udid, devices.keys())
+    {
         QList<QStandardItem*> rowData;
-        QString udid = it->first;
         QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
         rowData << new QStandardItem(udid);
         rowData << new QStandardItem(name);
-        rowData << new QStandardItem(it->second == idevice_connection_type::CONNECTION_NETWORK ? "network" : "usbmuxd");
+        rowData << new QStandardItem(devices[udid] == idevice_connection_type::CONNECTION_NETWORK ? "network" : "usbmuxd");
         m_devicesModel->appendRow(rowData);
-        if (!currentUdidFound) {
-            currentUdidFound = m_currentUdid == udid ? true : false;
-        }
     }
 
-    if (!currentUdidFound)
+    if (!DeviceBridge::Get()->IsConnected())
     {
-        if (devices.size() == 0)
+        if (devices.size() > 0)
         {
-            m_currentUdid = "";
-            UpdateStatusbar();
+            DeviceBridge::Get()->ConnectToDevice(devices.firstKey());
         }
-        else
-        {
-            m_currentUdid = devices.begin()->first;
-            DeviceBridge::Get()->ConnectToDevice(m_currentUdid, devices.begin()->second);
-            UpdateInfoWidget();
-        }
+        UpdateStatusbar();
+        UpdateInfoWidget();
     }
 }
 
@@ -507,7 +497,7 @@ void MainWindow::OnBundleIdChanged(QString text)
 
 void MainWindow::OnSystemInfoClicked()
 {
-    if(!m_currentUdid.isEmpty())
+    if(DeviceBridge::Get()->IsConnected())
         m_textDialog->ShowText("System Information", DeviceBridge::Get()->GetDeviceInfo().toJson());
 }
 

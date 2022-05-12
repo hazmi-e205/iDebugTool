@@ -50,10 +50,12 @@ public:
     void Init(QWidget *parent);
     QWidget *GetMainWidget() { return m_mainWidget; }
 
-    void ConnectToDevice(QString udid, idevice_connection_type type);
+    void ConnectToDevice(QString udid);
+    QString GetCurrentUdid();
+    bool IsConnected();
     QJsonDocument GetDeviceInfo();
     void ResetConnection();
-    std::map<QString, idevice_connection_type> GetDevices();
+    QMap<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);
     QJsonDocument GetInstalledApps();
     void UninstallApp(QString bundleId);
@@ -69,7 +71,7 @@ private:
     void UpdateDeviceInfo();
     void StartServices();
     void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
-    void TriggerUpdateDevices();
+    void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
     void TriggerSystemLogsReceived(LogPacket log);
     void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
@@ -87,13 +89,14 @@ private:
     mobile_image_mounter_client_t m_imageMounter;
     screenshotr_client_t m_screenshot;
     QWidget *m_mainWidget;
-    std::map<QString, QJsonDocument> m_deviceInfo;
+    QMap<QString, QJsonDocument> m_deviceInfo;
+    QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
 
     static DeviceBridge *m_instance;
 
 signals:
-     void UpdateDevices(std::map<QString, idevice_connection_type> devices);
+     void UpdateDevices(QMap<QString, idevice_connection_type> devices);
      void DeviceConnected();
      void SystemLogsReceived(LogPacket log);
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);

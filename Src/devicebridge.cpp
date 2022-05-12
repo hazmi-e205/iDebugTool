@@ -42,32 +42,37 @@ DeviceBridge::~DeviceBridge()
 void DeviceBridge::Init(QWidget *parent)
 {
     m_mainWidget = parent;
-    idevice_event_subscribe(DeviceEventCallback, nullptr);
     idevice_set_debug_level(1);
+    idevice_event_subscribe(DeviceEventCallback, nullptr);
 }
 
-std::map<QString, idevice_connection_type> DeviceBridge::GetDevices()
+QMap<QString, idevice_connection_type> DeviceBridge::GetDevices()
 {
-    std::map<QString, idevice_connection_type> pDevices;
     idevice_info_t *dev_list = NULL;
-    int i;
-    if (idevice_get_device_list_extended(&dev_list, &i) < 0)
+    int dev_count = 0;
+    idevice_get_device_list_extended(&dev_list, &dev_count);
+
+    m_deviceList.clear();
+    for (int idx = 0; idx < dev_count; idx++)
     {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to retrieve device list!", QMessageBox::Ok);
+        m_deviceList[dev_list[idx]->udid] = dev_list[idx]->conn_type;
     }
-    else
-    {
-        for (i = 0; dev_list[i] != NULL; i++)
-        {
-            pDevices[dev_list[i]->udid] = dev_list[i]->conn_type;
-        }
+    if (dev_list)
         idevice_device_list_extended_free(dev_list);
-    }
-    return pDevices;
+    return m_deviceList;
 }
 
 void DeviceBridge::ResetConnection()
 {
+    bool is_exist = m_deviceList.find(m_currentUdid) != m_deviceList.end();
+    m_currentUdid.clear();
+
+    if(m_client)
+    {
+        is_exist ? (void)lockdownd_client_free(m_client) : free(m_client);
+        m_client = nullptr;
+    }
+
     if (m_screenshot)
     {
         screenshotr_client_free(m_screenshot);
@@ -76,14 +81,16 @@ void DeviceBridge::ResetConnection()
 
     if (m_imageMounter)
     {
-        mobile_image_mounter_hangup(m_imageMounter);
+        if (is_exist)
+            mobile_image_mounter_hangup(m_imageMounter);
         mobile_image_mounter_free(m_imageMounter);
         m_imageMounter = nullptr;
     }
 
     if (m_diagnostics)
     {
-        diagnostics_relay_goodbye(m_diagnostics);
+        if (is_exist)
+            diagnostics_relay_goodbye(m_diagnostics);
         diagnostics_relay_client_free(m_diagnostics);
         m_diagnostics = nullptr;
     }
@@ -106,12 +113,6 @@ void DeviceBridge::ResetConnection()
         m_syslog = nullptr;
     }
 
-    if(m_client)
-    {
-        lockdownd_client_free(m_client);
-        m_client = nullptr;
-    }
-
     if(m_device)
     {
         idevice_free(m_device);
@@ -119,12 +120,12 @@ void DeviceBridge::ResetConnection()
     }
 }
 
-void DeviceBridge::ConnectToDevice(QString udid, idevice_connection_type type)
+void DeviceBridge::ConnectToDevice(QString udid)
 {
     ResetConnection();
 
     //connect to udid
-    idevice_new_with_options(&m_device, udid.toStdString().c_str(), type == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
+    idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
     if (!m_device) {
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + udid, QMessageBox::Ok);
         return;
@@ -134,9 +135,19 @@ void DeviceBridge::ConnectToDevice(QString udid, idevice_connection_type type)
         QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
         return;
     }
-    m_currentUdid = udid;
 
+    m_currentUdid = udid;
     UpdateDeviceInfo();
+}
+
+QString DeviceBridge::GetCurrentUdid()
+{
+    return m_currentUdid;
+}
+
+bool DeviceBridge::IsConnected()
+{
+    return !m_currentUdid.isEmpty();
 }
 
 void DeviceBridge::UpdateDeviceInfo()
@@ -473,9 +484,25 @@ bool DeviceBridge::Screenshot(QString path)
     return error == SCREENSHOTR_E_SUCCESS;
 }
 
-void DeviceBridge::TriggerUpdateDevices()
+void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid)
 {
-    emit UpdateDevices(GetDevices());
+    switch (eventType)
+    {
+    case idevice_event_type::IDEVICE_DEVICE_ADD:
+        m_deviceList[udid] = connectionType;
+        break;
+
+    case idevice_event_type::IDEVICE_DEVICE_REMOVE:
+        m_deviceList.remove(udid);
+        if (m_currentUdid == udid)
+            ResetConnection();
+        break;
+
+    default:
+        break;
+    }
+
+    emit UpdateDevices(m_deviceList);
 }
 
 void DeviceBridge::TriggerSystemLogsReceived(LogPacket log)
@@ -485,7 +512,7 @@ void DeviceBridge::TriggerSystemLogsReceived(LogPacket log)
 
 void DeviceBridge::DeviceEventCallback(const idevice_event_t *event, void *userdata)
 {
-    DeviceBridge::Get()->TriggerUpdateDevices();
+    DeviceBridge::Get()->TriggerUpdateDevices(event->event, event->conn_type, event->udid);
 }
 
 void DeviceBridge::SystemLogsCallback(char c, void *user_data)
