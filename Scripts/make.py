@@ -22,6 +22,15 @@ premake_path    = os.path.abspath(script_dir + "/premake5")
 if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys":
     premake_path = premake_path + ".exe"
 
+#compiler
+qt_dir           = "C:/Qt"
+qt_version       = "6.3.0"
+compiler_name    = "mingw"
+compiler_version = "1120"
+compiler_arch    = "64"
+platform_var     = "win"
+prj_name         = "iDebugTool"
+
 #flags
 is_checkout     = False
 is_reset        = False
@@ -177,7 +186,42 @@ def Premake():
 
 
 def Build():
-    cprint("Please do something...", 'yellow', attrs=['reverse', 'blink'])
+    prj_type      = "Qt-windows"
+    exe_ext       = ".exe"
+    if "lin" in platform_var:
+        prj_type  = "Qt-linux"
+        exe_ext   = ""
+    
+    cprint("Build '"+ prj_type + "' started...", 'yellow', attrs=['reverse', 'blink'])
+    prj_path      = prj_dir + "/" + prj_type + "/" + prj_name + ".pro"
+    build_cache   = prj_dir + "/" + prj_type + "_Release/"
+    makefile_path = build_cache + "/Makefile"
+    qmake_path    = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/qmake" + exe_ext
+    deploy_path   = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/windeployqt" + exe_ext
+    compiler_dir  = qt_dir + "/Tools/" + compiler_name + compiler_version + "_" + compiler_arch + "/bin/"
+    make_path     = compiler_dir + "mingw32-make" + exe_ext
+    build_final   = build_dir + "/" + prj_type + "/bin/"
+    
+    cprint("Generate makefile from qmake...", 'yellow', attrs=['reverse', 'blink'])
+    os.environ["PATH"] += os.pathsep + os.pathsep.join([compiler_dir])
+    if not os.path.exists(build_cache):
+        os.makedirs(build_cache)
+    utils.call([qmake_path, prj_path, "-spec", "win32-g++", "\"CONFIG+=qtquickcompiler\""], build_cache)
+
+    cprint("Build qmake...", 'yellow', attrs=['reverse', 'blink'])
+    utils.call([make_path, "-f", makefile_path, "qmake_all"], build_cache)
+
+    cprint("Build app...", 'yellow', attrs=['reverse', 'blink'])
+    utils.call([make_path, "-j8"], build_cache)
+
+    cprint("Deploy app...", 'yellow', attrs=['reverse', 'blink'])
+    build_exe = build_final + prj_name + exe_ext
+    if os.path.exists(build_exe):
+        utils.call([deploy_path, build_exe, "--no-opengl-sw", "--no-translations", "--no-system-d3d-compiler"], build_final)
+    else:
+        sys.exit("Build failed!")
+
+    cprint("Build success!", 'yellow', attrs=['reverse', 'blink'])
 
 
 def Execute():
@@ -209,6 +253,9 @@ if __name__ == "__main__":
             is_apply_patch = True
         if "--build" in arg:
             is_build = True
+            platform_split = arg.split('=')
+            if len(platform_split) > 1:
+                platform_var = platform_split[1].strip()
         if "--premake" in arg:
             is_premake = True
             premake_split = arg.split('=')
