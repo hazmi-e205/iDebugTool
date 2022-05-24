@@ -5,6 +5,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QObject>
+#include <QNetworkProxy>
 
 class SimpleRequest : public QObject
 {

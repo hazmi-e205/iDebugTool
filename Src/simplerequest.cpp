@@ -1,7 +1,14 @@
 #include "simplerequest.h"
 #include <QEventLoop>
+#include "userconfigs.h"
 
-SimpleRequest::SimpleRequest() : m_manager(nullptr), m_reply(nullptr), m_callback(nullptr), m_dlcallback(nullptr), m_progress(0.f), m_stillrunning(false)
+SimpleRequest::SimpleRequest()
+    : m_manager(nullptr)
+    , m_reply(nullptr)
+    , m_callback(nullptr)
+    , m_dlcallback(nullptr)
+    , m_progress(0.f)
+    , m_stillrunning(false)
 {
     m_manager = new QNetworkAccessManager();
     connect(m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(Response(QNetworkReply*)));
@@ -57,9 +64,10 @@ void SimpleRequest::Get(QString url, const std::function<void (QNetworkReply::Ne
 
 bool SimpleRequest::IsInternetOn()
 {
-    QNetworkAccessManager nam;
-    QNetworkRequest req(QUrl("https://github.com"));
-    QNetworkReply* reply = nam.get(req);
+    QNetworkAccessManager manager;
+    manager.setTransferTimeout(5000);
+    QNetworkRequest request(QUrl("https://github.com"));
+    QNetworkReply *reply = manager.get(request);
     QEventLoop loop;
     connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
     loop.exec();

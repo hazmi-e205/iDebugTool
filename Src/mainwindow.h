@@ -9,6 +9,7 @@
 #include "customkeyfiler.h"
 #include "textviewer.h"
 #include "imagemounter.h"
+#include "proxydialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -54,6 +55,7 @@ private:
     unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
+    ProxyDialog *m_proxyDialog;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -76,6 +78,7 @@ private slots:
     void OnInstallLogsClicked();
     void OnScrollTimerTick();
     void OnConfigureClicked();
+    void OnProxyClicked();
     void OnSleepClicked();
     void OnShutdownClicked();
     void OnRestartClicked();

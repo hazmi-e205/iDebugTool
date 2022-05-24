@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "appinfo.h"
 #include "logpacket.h"
+#include "userconfigs.h"
 #include "usbmuxd.h"
 #include <QSplitter>
 #include <QTableView>
@@ -15,7 +16,6 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QClipboard>
-#include "userconfigs.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_scrollInterval(UserConfigs::Get()->GetData("ScrollInterval", "250").toUInt())
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
+    , m_proxyDialog(nullptr)
 {
     ui->setupUi(this);
 
@@ -77,6 +78,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
+    connect(ui->proxyBtn, SIGNAL(pressed()), this, SLOT(OnProxyClicked()));
+    m_proxyDialog = new ProxyDialog(this);
+    m_proxyDialog->UseExisting();
 
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
@@ -102,6 +106,7 @@ MainWindow::~MainWindow()
     delete m_logModel;
     delete m_textDialog;
     delete m_imageMounter;
+    delete m_proxyDialog;
     delete ui;
 }
 
@@ -475,6 +480,11 @@ void MainWindow::OnConfigureClicked()
     UserConfigs::Get()->SaveData("MaxCachedLogs", ui->maxCachedLogs->text());
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
     UserConfigs::Get()->SaveData("ScrollInterval", ui->scrollInterval->text());
+}
+
+void MainWindow::OnProxyClicked()
+{
+    m_proxyDialog->ShowDialog();
 }
 
 void MainWindow::OnSleepClicked()
