@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "simplerequest.h"
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -431,13 +432,8 @@ QString FindRegex(QString rawString, QString regex)
 
 bool IsInternetOn()
 {
-    int returnedCode = 0;
-#if defined(WIN32)
-    returnedCode = QProcess::execute("ping", QStringList() << "-n" << "1" << "8.8.8.8");
-#else
-    returnedCode = QProcess::execute("ping", QStringList() << "-c" << "1" << "8.8.8.8");
-#endif
-    return returnedCode == 0;
+    SimpleRequest req;
+    return req.IsInternetOn();
 }
 
 quint64 VersionToUInt(QString version_raw)

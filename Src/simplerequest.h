@@ -42,6 +42,7 @@ public:
     ~SimpleRequest();
     void Download(QString url, const std::function<void(RequestState,int,QNetworkReply::NetworkError,QByteArray)>& responseCallback = nullptr);
     void Get(QString url, const std::function<void(QNetworkReply::NetworkError,QJsonDocument)>& responseCallback = nullptr);
+    bool IsInternetOn();
 
 signals:
     void RequestResponse(QNetworkReply::NetworkError errorcode, QJsonDocument datajson);

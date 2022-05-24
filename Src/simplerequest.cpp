@@ -1,4 +1,5 @@
 #include "simplerequest.h"
+#include <QEventLoop>
 
 SimpleRequest::SimpleRequest() : m_manager(nullptr), m_reply(nullptr), m_callback(nullptr), m_dlcallback(nullptr), m_progress(0.f), m_stillrunning(false)
 {
@@ -52,6 +53,17 @@ void SimpleRequest::Get(QString url, const std::function<void (QNetworkReply::Ne
     {
         m_getQueue.push_back(RequestQueue(RequestCmd::REQ_GET, url, responseCallback));
     }
+}
+
+bool SimpleRequest::IsInternetOn()
+{
+    QNetworkAccessManager nam;
+    QNetworkRequest req(QUrl("https://github.com"));
+    QNetworkReply* reply = nam.get(req);
+    QEventLoop loop;
+    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+    loop.exec();
+    return reply->bytesAvailable();
 }
 
 void SimpleRequest::DoNextQueue()

@@ -300,6 +300,9 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 QStringList DeviceBridge::GetMountedImages()
 {
     QStringList signatures;
+    if (!m_imageMounter)
+        return signatures;
+
     QJsonDocument doc;
     plist_t result = nullptr;
     mobile_image_mounter_error_t err = mobile_image_mounter_lookup_image(m_imageMounter, "Developer", &result);

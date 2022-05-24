@@ -52,7 +52,8 @@ void ImageMounter::RefreshUI(bool fetchImages)
 
     if (IsInternetOn())
     {
-        ui->onlineTab->show();
+        ui->onlineTab->setEnabled(true);
+        ui->tabWidget->setCurrentWidget(ui->onlineTab);
         if (fetchImages)
         {
             for (const auto& owner : m_repoJson.object().keys())
@@ -89,7 +90,8 @@ void ImageMounter::RefreshUI(bool fetchImages)
     }
     else
     {
-        ui->offlineTab->show();
+        ui->onlineTab->setEnabled(false);
+        ui->tabWidget->setCurrentWidget(ui->offlineTab);
     }
 }
 
@@ -230,6 +232,9 @@ void ImageMounter::OnDownloadMountClicked()
         QMessageBox::information(this, "Disk Mounted!", "Developer disk image mounted", QMessageBox::Ok);
         return;
     }
+
+    if (ui->imageBox->currentText().isEmpty())
+        return;
 
     QString repo_owner = ui->repoBox->currentText();
     bool repo_archived = m_repoJson[repo_owner].toObject()["is_archived"].toBool();
