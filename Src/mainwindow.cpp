@@ -15,6 +15,7 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QClipboard>
+#include "userconfigs.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,9 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
-    , m_maxCachedLogs(100)
-    , m_maxShownLogs(100)
-    , m_scrollInterval(250)
+    , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxCachedLogs", "100").toUInt())
+    , m_maxShownLogs(UserConfigs::Get()->GetData("MaxShownLogs", "100").toUInt())
+    , m_scrollInterval(UserConfigs::Get()->GetData("ScrollInterval", "250").toUInt())
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
 {
@@ -469,6 +470,11 @@ void MainWindow::OnConfigureClicked()
 {
     m_maxCachedLogs = ui->maxCachedLogs->text().toUInt();
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
+    m_scrollInterval = ui->scrollInterval->text().toUInt();
+
+    UserConfigs::Get()->SaveData("MaxCachedLogs", ui->maxCachedLogs->text());
+    UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
+    UserConfigs::Get()->SaveData("ScrollInterval", ui->scrollInterval->text());
 }
 
 void MainWindow::OnSleepClicked()
