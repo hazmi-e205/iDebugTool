@@ -12,6 +12,7 @@ ImageMounter::ImageMounter(QWidget *parent)
   , ui(new Ui::ImageMounter)
   , m_downloadState(DOWNLOAD_STATE::IDLE)
   , m_request(nullptr)
+  , m_isCloseAction(false)
 {
     ui->setupUi(this);
     setWindowModality(Qt::WindowModality::WindowModal);
@@ -46,9 +47,17 @@ void ImageMounter::RefreshUI(bool fetchImages)
     ui->OSVersion->setText(OSVersion);
     auto mounted = DeviceBridge::Get()->GetMountedImages();
     if (mounted.length() > 0)
+    {
         ui->Signatures->setText(mounted.at(0));
+
+        if (m_isCloseAction) {
+            close(); return;
+        }
+    }
     else
+    {
         ui->Signatures->setText("No image mounted!");
+    }
 
     if (IsInternetOn())
     {
@@ -126,8 +135,9 @@ void ImageMounter::OnRepoChanged(QString messages)
     ui->imageBox->setCurrentText(version_selected);
 }
 
-void ImageMounter::ShowDialog()
+void ImageMounter::ShowDialog(bool closeAction)
 {
+    m_isCloseAction = closeAction;
     ui->logField->clear();
     RefreshUI();
     show();

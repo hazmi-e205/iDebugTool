@@ -230,6 +230,18 @@ void DeviceBridge::StartServices()
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
         }
     });
+
+    if (!IsImageMounted())
+        return;
+
+    serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
+    StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
+        if (err != SCREENSHOTR_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
 }
 
 void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
@@ -323,6 +335,12 @@ QStringList DeviceBridge::GetMountedImages()
     if (result)
         plist_free(result);
     return signatures;
+}
+
+bool DeviceBridge::IsImageMounted()
+{
+    QStringList mounted = DeviceBridge::Get()->GetMountedImages();
+    return !mounted.empty();
 }
 
 void DeviceBridge::MountImage(QString image_path, QString signature_path)
@@ -459,15 +477,6 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
 
 bool DeviceBridge::Screenshot(QString path)
 {
-    QStringList serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
-    StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
-        if (err != SCREENSHOTR_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
-    });
-
     char *imgdata = NULL;
     uint64_t imgsize = 0;
     screenshotr_error_t error = screenshotr_take_screenshot(m_screenshot, &imgdata, &imgsize);

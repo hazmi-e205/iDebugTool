@@ -16,6 +16,7 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QClipboard>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -97,13 +98,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    m_logModel->clear();
+    delete m_logModel;
+    m_devicesModel->clear();
+    delete m_devicesModel;
+    ui->logTable->setModel(nullptr);
+    ui->deviceTable->setModel(nullptr);
     DeviceBridge::Destroy();
     delete m_eventFilter;
     m_scrollTimer->stop();
     delete m_scrollTimer;
     delete m_appInfo;
-    delete m_devicesModel;
-    delete m_logModel;
     delete m_textDialog;
     delete m_imageMounter;
     delete m_proxyDialog;
@@ -538,16 +543,40 @@ void MainWindow::OnImageMounterClicked()
 
 void MainWindow::OnScreenshotClicked()
 {
-    auto mounted = DeviceBridge::Get()->GetMountedImages();
-    if (mounted.empty())
+    if (!DeviceBridge::Get()->IsImageMounted())
     {
-        m_imageMounter->ShowDialog();
-        return;
+        m_imageMounter->ShowDialog(true);
+        m_imageMounter->exec();
+
+        if (DeviceBridge::Get()->IsImageMounted()) {
+            //Hack to fix lockdownd error (-8)
+            QString udid = DeviceBridge::Get()->GetCurrentUdid();
+            DeviceBridge::Get()->ConnectToDevice(udid);
+        } else {
+            return;
+        }
     }
+
 
     QString imagePath = GetDirectory(DIRECTORY_TYPE::SCREENSHOT) + "Screenshot_" + QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") + ".png";
     if (DeviceBridge::Get()->Screenshot(imagePath))
+    {
         ui->statusbar->showMessage("Screenshot saved to '" + imagePath + "'!");
+
+        QMessageBox msgBox(QMessageBox::Question, "Screenshot", "Screenshot has been taken!\n" + imagePath);
+        QPushButton *shotButton = msgBox.addButton("Take another shot!", QMessageBox::ButtonRole::ActionRole);
+        QPushButton *dirButton = msgBox.addButton("Go to directory...", QMessageBox::ButtonRole::ActionRole);
+        msgBox.addButton(QMessageBox::StandardButton::Close);
+        msgBox.exec();
+        if (msgBox.clickedButton() == shotButton)
+        {
+            OnScreenshotClicked();
+        }
+        else if (msgBox.clickedButton() == dirButton)
+        {
+            QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SCREENSHOT));
+        }
+    }
 }
 
 void MainWindow::OnSocketClicked()

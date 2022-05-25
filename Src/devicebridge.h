@@ -61,6 +61,7 @@ public:
     void UninstallApp(QString bundleId);
     void InstallApp(InstallerMode cmd, QString path);
     QStringList GetMountedImages();
+    bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
     bool Screenshot(QString path);
 

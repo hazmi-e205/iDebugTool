@@ -17,7 +17,7 @@ public:
     explicit ImageMounter(QWidget *parent = nullptr);
     ~ImageMounter();
     void RefreshUI(bool fetchImages = true);
-    void ShowDialog();
+    void ShowDialog(bool closeAction = false);
 
 private:
     enum class DOWNLOAD_TYPE
@@ -43,6 +43,7 @@ private:
     QMap<QString,QString> m_downloadUrls;
     QString m_downloadurl, m_downloadout;
     DOWNLOAD_TYPE m_downloadtype;
+    bool m_isCloseAction;
 
 protected slots:
     void OnImageClicked();
