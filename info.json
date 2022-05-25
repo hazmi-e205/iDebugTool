@@ -1,35 +1,39 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha2",
+    "status": "alpha3",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "dec0438c89a020995229b08aeaee96c403c5daed",
-            "path": "Externals/libimobiledevice"
+            "revision": "12394bc7be588be83c352d7441102072a89dd193",
+            "path": "Externals/libimobiledevice",
+            "use_submodules": false
         },
         {
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
             "revision": "2ec5354a6ff2ba5e2740eabe7402186f29294f79",
-            "path": "Externals/libusbmuxd"
+            "path": "Externals/libusbmuxd",
+            "use_submodules": false
         },
         {
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "c2e237ab5449b42461639c8e1eabbc61d0c386b7",
-            "path": "Externals/libimobiledevice-glue"
+            "revision": "d2ff7969dcd0a12e4f18f63dab03e6cd03054fcb",
+            "path": "Externals/libimobiledevice-glue",
+            "use_submodules": false
         },
         {
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
             "revision": "db93bae96d64140230ad050061632531644c46ad",
-            "path": "Externals/libplist"
+            "path": "Externals/libplist",
+            "use_submodules": false
         },
         {
             "project": "openssl",
