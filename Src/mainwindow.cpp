@@ -547,14 +547,7 @@ void MainWindow::OnScreenshotClicked()
     {
         m_imageMounter->ShowDialog(true);
         m_imageMounter->exec();
-
-        if (DeviceBridge::Get()->IsImageMounted()) {
-            //Hack to fix lockdownd error (-8)
-            QString udid = DeviceBridge::Get()->GetCurrentUdid();
-            DeviceBridge::Get()->ConnectToDevice(udid);
-        } else {
-            return;
-        }
+        if (!DeviceBridge::Get()->IsImageMounted()) return;
     }
 
 

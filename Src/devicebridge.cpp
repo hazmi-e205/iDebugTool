@@ -462,6 +462,7 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
         emit MounterStatusChanged("Developer disk image mounted");
+        ConnectToDevice(m_currentUdid); //hack to fix LOCKDOWN_E_MUX_ERROR after mounted
     }
     else
     {
