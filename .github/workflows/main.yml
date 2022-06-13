@@ -32,6 +32,7 @@ jobs:
         arch: 'win64_mingw81'
         install-deps: 'true'
         setup-python: 'false'
+        tools: 'tools_mingw'
         
     - name: Checkout Project
       uses: actions/checkout@v3
