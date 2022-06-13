@@ -38,7 +38,7 @@ jobs:
         
     - name: Check Qt
       run: |
-        cd Qt\
+        cd ..\Qt\
         dir
         cd 6.2.1
         dir
