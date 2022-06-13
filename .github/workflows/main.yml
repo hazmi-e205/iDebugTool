@@ -16,7 +16,7 @@ jobs:
       run: python -V
 
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2
+      uses: jurplel/install-qt-action@v2.14.0
       with:
         version: '6.2.1'
         host: 'windows'
@@ -24,7 +24,7 @@ jobs:
         arch: 'win64_mingw81'
         install-deps: 'true'
         setup-python: 'false'
-        tools: 'tools_mingw,qt.tools.win32_mingw810'
+        tools: 'tools_mingw,qt.tools.win64_mingw810'
         
     - name: Checkout Project
       uses: actions/checkout@v3
