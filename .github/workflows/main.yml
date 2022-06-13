@@ -33,5 +33,7 @@ jobs:
       run: |
         cd ..\Qt\
         dir
-        cd 6.2.1
+        cd Tools\
+        dir
+        cd ..\6.2.1
         Get-ChildItem -Recurse -Directory
