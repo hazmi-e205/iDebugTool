@@ -43,4 +43,4 @@ jobs:
         cd 6.2.1
         dir
         cd ..\Tools
-        dir
+        Get-ChildItem -Recurse
