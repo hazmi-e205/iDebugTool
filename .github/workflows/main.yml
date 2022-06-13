@@ -31,5 +31,5 @@ jobs:
         
     - name: Check Qt
       run: |
-        cd ..\Qt\
+        cd ..\Qt\Tools
         Get-ChildItem -Recurse
