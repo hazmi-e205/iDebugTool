@@ -41,6 +41,4 @@ jobs:
         cd ..\Qt\
         dir
         cd 6.2.1
-        dir
-        cd ..\Tools
         Get-ChildItem -Recurse
