@@ -26,10 +26,10 @@ jobs:
       uses: jurplel/install-qt-action@v2
       with:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: '6.3.0'
+        version: '6.2.1'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_mingw112'
+        arch: 'win64_mingw81'
         install-deps: 'true'
         setup-python: 'false'
         
