@@ -35,3 +35,12 @@ jobs:
         
     - name: Checkout Project
       uses: actions/checkout@v3
+        
+    - name: Check Qt
+      run: |
+        cd Qt\
+        dir
+        cd 6.2.1
+        dir
+        cd ..\Tools
+        dir
