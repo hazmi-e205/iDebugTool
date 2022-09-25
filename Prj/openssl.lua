@@ -5,10 +5,8 @@ project "crypto"
 
     files
     {
-        "../Externals/openssl/include/**.h",
         "../Externals/openssl/crypto/**.c",
         "../Externals/openssl/crypto/**.h",
-        "../Externals/openssl/*.h",
     }
 
     excludes

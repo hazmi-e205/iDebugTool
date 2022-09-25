@@ -47,4 +47,5 @@ assert.log
 /prj/vs**
 /prj/xcode4/**
 /prj/Qt**
+/prj/build**
 /Scripts/premake5**

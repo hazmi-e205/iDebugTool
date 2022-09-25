@@ -7,7 +7,7 @@
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "12394bc7be588be83c352d7441102072a89dd193",
+            "revision": "ef7cf8eb545d9ed3fb1f351376dec71608d0127b",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -15,7 +15,7 @@
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
-            "revision": "2ec5354a6ff2ba5e2740eabe7402186f29294f79",
+            "revision": "6426362e5cbad7284368b7fe70363f6b3251f94c",
             "path": "Externals/libusbmuxd",
             "use_submodules": false
         },
@@ -23,7 +23,7 @@
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "d2ff7969dcd0a12e4f18f63dab03e6cd03054fcb",
+            "revision": "7eaa28ea9529b69da6b1721ba3e791e7ea5e950b",
             "path": "Externals/libimobiledevice-glue",
             "use_submodules": false
         },
@@ -31,7 +31,7 @@
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "db93bae96d64140230ad050061632531644c46ad",
+            "revision": "c3af449543795ad4d3ab178120ff69e90fdd2cc8",
             "path": "Externals/libplist",
             "use_submodules": false
         },
