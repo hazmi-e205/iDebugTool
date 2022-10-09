@@ -11,7 +11,6 @@
 #include <QDir>
 #include <QDirIterator>
 #include <zip.h>
-#include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -320,79 +319,6 @@ int zip_get_app_directory(struct zip* zf, QString &path)
     return 0;
 }
 
-int afc_upload_file(afc_client_t afc, QString &filename, QString &dstfn)
-{
-    FILE *f = NULL;
-    uint64_t af = 0;
-    char buf[1048576];
-
-    f = fopen(filename.toUtf8().data(), "rb");
-    if (!f) {
-        fprintf(stderr, "fopen: %s\n", strerror(errno));
-        return -1;
-    }
-
-    if ((afc_file_open(afc, dstfn.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) || !af) {
-        fclose(f);
-        fprintf(stderr, "afc_file_open on '%s' failed!\n", dstfn.toUtf8().data());
-        return -1;
-    }
-
-    size_t amount = 0;
-    do {
-        amount = fread(buf, 1, sizeof(buf), f);
-        if (amount > 0) {
-            uint32_t written, total = 0;
-            while (total < amount) {
-                written = 0;
-                afc_error_t aerr = afc_file_write(afc, af, buf, amount, &written);
-                if (aerr != AFC_E_SUCCESS) {
-                    fprintf(stderr, "AFC Write error: %d\n", aerr);
-                    break;
-                }
-                total += written;
-            }
-            if (total != amount) {
-                fprintf(stderr, "Error: wrote only %u of %u\n", total, (uint32_t)amount);
-                afc_file_close(afc, af);
-                fclose(f);
-                return -1;
-            }
-        }
-    } while (amount > 0);
-
-    afc_file_close(afc, af);
-    fclose(f);
-
-    return 0;
-}
-
-void afc_upload_dir(afc_client_t afc, QString &path, QString &afcpath)
-{
-    afc_make_directory(afc, afcpath.toUtf8().data());
-
-    DIR *dir = opendir(path.toUtf8().data());
-    if (dir) {
-        struct dirent* ep;
-        while ((ep = readdir(dir))) {
-            if ((strcmp(ep->d_name, ".") == 0) || (strcmp(ep->d_name, "..") == 0)) {
-                continue;
-            }
-            QString fpath = path + "/" + ep->d_name;
-            QString apath = afcpath + "/" + ep->d_name;
-
-            struct stat st;
-
-            if ((stat(fpath.toUtf8().data(), &st) == 0) && S_ISDIR(st.st_mode)) {
-                afc_upload_dir(afc, fpath, apath);
-            } else {
-                afc_upload_file(afc, fpath, apath);
-            }
-        }
-        closedir(dir);
-    }
-}
-
 void StringWithSpaces(QString &string, bool CapFirstOnly)
 {
     QString temp;
@@ -479,6 +405,8 @@ QString GetDirectory(DIRECTORY_TYPE dirtype)
         return QCoreApplication::applicationDirPath() + "/LocalData/DiskImages/";
     case DIRECTORY_TYPE::SCREENSHOT:
         return QCoreApplication::applicationDirPath() + "/LocalData/Screenshot/";
+    case DIRECTORY_TYPE::CRASHLOGS:
+        return QCoreApplication::applicationDirPath() + "/LocalData/Crashlogs/";
         break;
     default:
         break;

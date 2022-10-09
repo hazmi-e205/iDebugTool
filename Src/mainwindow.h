@@ -88,5 +88,6 @@ private slots:
     void OnImageMounterClicked();
     void OnScreenshotClicked();
     void OnSocketClicked();
+    void OnCopyCrashClicked();
 };
 #endif // MAINWINDOW_H

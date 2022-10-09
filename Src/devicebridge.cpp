@@ -26,6 +26,7 @@ DeviceBridge::DeviceBridge() :
     m_syslog(nullptr),
     m_installer(nullptr),
     m_afc(nullptr),
+    m_crashlog(nullptr),
     m_diagnostics(nullptr),
     m_imageMounter(nullptr),
     m_screenshot(nullptr),
@@ -99,6 +100,12 @@ void DeviceBridge::ResetConnection()
     {
         afc_client_free(m_afc);
         m_afc = nullptr;
+    }
+
+    if (m_crashlog)
+    {
+        afc_client_free(m_crashlog);
+        m_crashlog = nullptr;
     }
 
     if (m_installer)
@@ -199,6 +206,48 @@ void DeviceBridge::StartServices()
     StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
         if (err != INSTPROXY_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
+    serviceIds = QStringList() << "com.apple.crashreportmover";
+    StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        service_client_t svcmove = NULL;
+        service_error_t err = service_client_new(m_device, service, &svcmove);
+        if (err != SERVICE_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+            return;
+        }
+
+        /* read "ping" message which indicates the crash logs have been moved to a safe harbor */
+        char* ping = (char*)malloc(4);
+        memset(ping, '\0', 4);
+        int attempts = 0;
+        while ((strncmp(ping, "ping", 4) != 0) && (attempts < 10)) {
+            uint32_t bytes = 0;
+            err = service_receive_with_timeout(svcmove, ping, 4, &bytes, 2000);
+            if (err == SERVICE_E_SUCCESS || err == SERVICE_E_TIMEOUT) {
+                attempts++;
+                continue;
+            }
+
+            fprintf(stderr, "ERROR: Crash logs could not be moved. Connection interrupted (%d).\n", err);
+            break;
+        }
+        service_client_free(svcmove);
+        free(ping);
+
+        if (attempts >= 10) {
+            fprintf(stderr, "ERROR: Failed to receive ping message from crash report mover.\n");
+        }
+    });
+
+    serviceIds = QStringList() << "com.apple.crashreportcopymobile";
+    StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        afc_error_t err = afc_client_new(m_device, service, &m_crashlog);
+        if (err != AFC_E_SUCCESS)
         {
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
         }
@@ -495,6 +544,12 @@ bool DeviceBridge::Screenshot(QString path)
         QMessageBox::critical(m_mainWidget, "Error", "Error: screenshotr_take_screenshot returned " + QString::number(error), QMessageBox::Ok);
     }
     return error == SCREENSHOTR_E_SUCCESS;
+}
+
+bool DeviceBridge::CopyCrashlogToDir(QString path)
+{
+    QDir().mkpath(path);
+    return afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data()) >= 0;
 }
 
 void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid)

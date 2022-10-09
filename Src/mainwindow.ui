@@ -201,9 +201,9 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
-           <widget class="QWidget" name="tab">
+           <widget class="QWidget" name="dashboardTab">
             <attribute name="title">
              <string>Dashboard</string>
             </attribute>
@@ -1896,10 +1896,23 @@ background-color: rgb(4, 111, 182);</string>
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="tab_2">
+           <widget class="QWidget" name="crashlogTab">
             <attribute name="title">
-             <string>...</string>
+             <string>Crashlog</string>
             </attribute>
+            <widget class="QPushButton" name="CopyCrashBtn">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>110</y>
+               <width>80</width>
+               <height>24</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Sync to folder</string>
+             </property>
+            </widget>
            </widget>
           </widget>
          </widget>

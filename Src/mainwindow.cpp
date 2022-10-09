@@ -94,6 +94,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_textDialog = new TextViewer(this);
     connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
     connect(ui->appInfoBtn, SIGNAL(pressed()), this, SLOT(OnAppInfoClicked()));
+
+    connect(ui->CopyCrashBtn, SIGNAL(pressed()), this, SLOT(OnCopyCrashClicked()));
 }
 
 MainWindow::~MainWindow()
@@ -595,4 +597,9 @@ void MainWindow::OnSocketClicked()
 
     //update devce list
     OnUpdateDevices(DeviceBridge::Get()->GetDevices());
+}
+
+void MainWindow::OnCopyCrashClicked()
+{
+    qDebug() << DeviceBridge::Get()->CopyCrashlogToDir(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
 }

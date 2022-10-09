@@ -15,6 +15,7 @@
 #include <libimobiledevice/afc.h>
 #include <libimobiledevice/mobile_image_mounter.h>
 #include <libimobiledevice/screenshotr.h>
+#include <libimobiledevice/service.h>
 #include "logpacket.h"
 
 #define TOOL_NAME                       "idebugtool"
@@ -64,6 +65,7 @@ public:
     bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
     bool Screenshot(QString path);
+    bool CopyCrashlogToDir(QString path);
 
     static DeviceBridge *Get();
     static void Destroy();
@@ -76,6 +78,10 @@ private:
     void TriggerSystemLogsReceived(LogPacket log);
     void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
+    int afc_upload_file(afc_client_t &afc, QString &filename, QString &dstfn);
+    void afc_upload_dir(afc_client_t &afc, QString &path,  QString &afcpath);
+    int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
+
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static void SystemLogsCallback(char c, void *user_data);
     static void InstallerCallback(plist_t command, plist_t status, void *unused);
@@ -86,6 +92,7 @@ private:
     syslog_relay_client_t m_syslog;
     instproxy_client_t m_installer;
     afc_client_t m_afc;
+    afc_client_t m_crashlog;
     diagnostics_relay_client_t m_diagnostics;
     mobile_image_mounter_client_t m_imageMounter;
     screenshotr_client_t m_screenshot;
@@ -93,6 +100,7 @@ private:
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
+    QString m_crashtargetdir;
 
     static DeviceBridge *m_instance;
 

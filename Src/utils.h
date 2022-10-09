@@ -31,15 +31,13 @@ enum DIRECTORY_TYPE
     LOCALDATA,
     TEMP,
     DISKIMAGES,
-    SCREENSHOT
+    SCREENSHOT,
+    CRASHLOGS
 };
 QString GetDirectory(DIRECTORY_TYPE dirtype);
 
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
 int zip_get_app_directory(struct zip* zf, QString &path);
 bool zip_extract_all(struct zip *zf, QString dist);
-
-int afc_upload_file(afc_client_t afc, QString &filename, QString &dstfn);
-void afc_upload_dir(afc_client_t afc, QString &path,  QString &afcpath);
 
 #endif // UTILS_H
