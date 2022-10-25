@@ -110,6 +110,7 @@ signals:
      void SystemLogsReceived(LogPacket log);
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
      void MounterStatusChanged(QString messages);
+     void CrashlogsStatusChanged(QString messages);
 };
 
 #endif // DEVICEBRIDGE_H

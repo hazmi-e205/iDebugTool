@@ -111,7 +111,7 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
     char** list = NULL;
         afc_error = afc_read_directory(afc, device_directory, &list);
         if (afc_error != AFC_E_SUCCESS) {
-            fprintf(stderr, "ERROR: Could not read device directory '%s'\n", device_directory);
+            emit CrashlogsStatusChanged(QString("ERROR: Could not read device directory '%1'").arg(device_directory));
             return res;
         }
 
@@ -164,7 +164,7 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
             /* get file information */
             afc_get_file_info(afc, source_filename, &fileinfo);
             if (!fileinfo) {
-                printf("Failed to read information for '%s'. Skipping...\n", source_filename);
+                emit CrashlogsStatusChanged(QString("Failed to read information for '%1'. Skipping...").arg(source_filename));
                 continue;
             }
 
@@ -195,7 +195,7 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
                     stbuf.st_mtime = (time_t)(atoll(fileinfo[i+1]) / 1000000000);
                 } else if (!strcmp(fileinfo[i], "LinkTarget")) {
                     /* report latest crash report filename */
-                    printf("Link: %s\n", (char*)target_filename + strlen(target_directory));
+                    emit CrashlogsStatusChanged(QString("Link: %1").arg(target_filename));
 
                     /* remove any previous symlink */
                     if (file_exists(target_filename)) {
@@ -244,18 +244,18 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
                     if (afc_error == AFC_E_OBJECT_NOT_FOUND) {
                         continue;
                     }
-                    fprintf(stderr, "Unable to open device file '%s' (%d). Skipping...\n", source_filename, afc_error);
+                    emit CrashlogsStatusChanged(QString("Unable to open device file '%1' (%2). Skipping...").arg(source_filename, afc_error));
                     continue;
                 }
 
                 FILE* output = fopen(target_filename, "wb");
                 if(output == NULL) {
-                    fprintf(stderr, "Unable to open local file '%s'. Skipping...\n", target_filename);
+                    emit CrashlogsStatusChanged(QString("Unable to open local file '%1'. Skipping...").arg(target_filename));
                     afc_file_close(afc, handle);
                     continue;
                 }
 
-                printf("%s: %s\n", (true ? "Copy": "Move") , (char*)target_filename + strlen(target_directory));
+                emit CrashlogsStatusChanged(QString("Copy: %1...").arg(target_filename));
 
                 uint32_t bytes_read = 0;
                 uint32_t bytes_total = 0;
@@ -271,7 +271,7 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
                 fclose(output);
 
                 if ((uint32_t)stbuf.st_size != bytes_total) {
-                    fprintf(stderr, "File size mismatch. Skipping...\n");
+                    emit CrashlogsStatusChanged("File size mismatch. Skipping...");
                     continue;
                 }
 

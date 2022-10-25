@@ -89,5 +89,6 @@ private slots:
     void OnScreenshotClicked();
     void OnSocketClicked();
     void OnCopyCrashClicked();
+    void OnCrashlogsStatusChanged(QString text);
 };
 #endif // MAINWINDOW_H

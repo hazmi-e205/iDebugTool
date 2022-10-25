@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->appInfoBtn, SIGNAL(pressed()), this, SLOT(OnAppInfoClicked()));
 
     connect(ui->CopyCrashBtn, SIGNAL(pressed()), this, SLOT(OnCopyCrashClicked()));
+    connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -602,4 +603,9 @@ void MainWindow::OnSocketClicked()
 void MainWindow::OnCopyCrashClicked()
 {
     qDebug() << DeviceBridge::Get()->CopyCrashlogToDir(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
+}
+
+void MainWindow::OnCrashlogsStatusChanged(QString text)
+{
+    ui->CrashlogsOut->append(text);
 }
