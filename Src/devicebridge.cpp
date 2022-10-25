@@ -301,9 +301,10 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
     lockdownd_error_t lerr = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
     lockdownd_service_descriptor_t service = nullptr;
     QString service_id;
-    for ( const auto& service_id : service_ids)
+    for ( const auto& svc_id : service_ids)
     {
-        lerr = lockdownd_start_service(m_client, service_id.toUtf8().data(), &service);
+        service_id = svc_id;
+        lerr = lockdownd_start_service(m_client, svc_id.toUtf8().data(), &service);
         if(lerr == LOCKDOWN_E_SUCCESS) { break; }
     }
 
