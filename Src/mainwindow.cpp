@@ -6,6 +6,7 @@
 #include "logpacket.h"
 #include "userconfigs.h"
 #include "usbmuxd.h"
+#include "crashsymbolicator.h"
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
@@ -97,6 +98,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->CopyCrashBtn, SIGNAL(pressed()), this, SLOT(OnCopyCrashClicked()));
     connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
+    connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
+    connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
+    connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
 }
 
 MainWindow::~MainWindow()
@@ -608,4 +612,24 @@ void MainWindow::OnCopyCrashClicked()
 void MainWindow::OnCrashlogsStatusChanged(QString text)
 {
     ui->CrashlogsOut->append(text);
+}
+
+void MainWindow::OnCrashlogClicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+    ui->crashlogEdit->setText(filename);
+}
+
+void MainWindow::OnDsymClicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+    ui->dsymEdit->setText(filename);
+}
+
+void MainWindow::OnSymbolicateClicked()
+{
+    QString crashpath = ui->crashlogEdit->text();
+    QString dsympath = ui->dsymEdit->text();
+    QString sybolicated = CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
+    ui->CrashlogsOut->setText(sybolicated);
 }

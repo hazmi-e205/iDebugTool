@@ -7,7 +7,7 @@
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "ef7cf8eb545d9ed3fb1f351376dec71608d0127b",
+            "revision": "b314f04bd791b263cf43fadc6ac0756e67ab4ed0",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -33,6 +33,21 @@
             "branch": "master",
             "revision": "c3af449543795ad4d3ab178120ff69e90fdd2cc8",
             "path": "Externals/libplist",
+            "use_submodules": false
+        },
+        {
+            "project": "MachOLib",
+            "url": "https://github.com/hazmi-e205/MachOLib",
+            "branch": "main",
+            "revision": "c6c346d4e96a03dac17b1b373964aecc35148650",
+            "path": "Externals/MachOLib",
+            "use_submodules": false
+        },
+        {
+            "project": "rapidjson",
+            "url": "https://github.com/Tencent/rapidjson",
+            "branch": "v1.1.0",
+            "path": "Externals/rapidjson",
             "use_submodules": false
         },
         {

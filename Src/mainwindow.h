@@ -90,5 +90,8 @@ private slots:
     void OnSocketClicked();
     void OnCopyCrashClicked();
     void OnCrashlogsStatusChanged(QString text);
+    void OnCrashlogClicked();
+    void OnDsymClicked();
+    void OnSymbolicateClicked();
 };
 #endif // MAINWINDOW_H

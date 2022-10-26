@@ -201,7 +201,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="dashboardTab">
             <attribute name="title">
@@ -218,8 +218,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>874</width>
-                  <height>430</height>
+                  <width>888</width>
+                  <height>438</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_23">
@@ -1900,7 +1900,7 @@ background-color: rgb(4, 111, 182);</string>
             <attribute name="title">
              <string>Crashlog</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_26">
+            <layout class="QVBoxLayout" name="verticalLayout_28">
              <item>
               <widget class="QWidget" name="widget_44" native="true">
                <property name="sizePolicy">
@@ -1934,6 +1934,92 @@ color: rgb(255, 255, 255);</string>
                   </property>
                   <property name="text">
                    <string>Sync to folder</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupBox_4">
+               <property name="title">
+                <string>Symbolicator</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_26">
+                <item>
+                 <widget class="QWidget" name="widget_45" native="true">
+                  <layout class="QHBoxLayout" name="horizontalLayout_26">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="label_23">
+                     <property name="text">
+                      <string>Crashlog Path</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="crashlogEdit"/>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="crashlogBtn">
+                     <property name="text">
+                      <string>Browse...</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QWidget" name="widget_46" native="true">
+                  <layout class="QHBoxLayout" name="horizontalLayout_27">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>0</number>
+                   </property>
+                   <item>
+                    <widget class="QLabel" name="label_24">
+                     <property name="text">
+                      <string>DSym Path</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="dsymEdit"/>
+                   </item>
+                   <item>
+                    <widget class="QPushButton" name="dsymBtn">
+                     <property name="text">
+                      <string>Browse...</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="symbolicateBtn">
+                  <property name="text">
+                   <string>Symbolicate!</string>
                   </property>
                  </widget>
                 </item>

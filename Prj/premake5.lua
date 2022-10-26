@@ -8,6 +8,7 @@ solution "iDebugTool"
     include "libusbmuxd.lua"
     include "libimobiledevice.lua"
     include "libimobiledevice-glue.lua"
+    include "macholib.lua"
 
 project "iDebugTool"
     kind "WindowedApp"
@@ -50,6 +51,8 @@ project "iDebugTool"
         "../Externals/libzip/lib",
         "../Externals/libzip/build",
         "../Externals/zlib",
+        "../Externals/zlib/contrib/minizip",
+        "../Externals/MachOLib",
     }
 
     links
@@ -63,6 +66,8 @@ project "iDebugTool"
         "imobiledevice",
         "zip",
         "zlib",
+        "MachOLib",
+        "unzip",
     }
 
     libdirs
