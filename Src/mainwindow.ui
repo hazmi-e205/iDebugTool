@@ -2033,7 +2033,14 @@ color: rgb(255, 255, 255);</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_27">
                 <item>
-                 <widget class="QTextEdit" name="CrashlogsOut"/>
+                 <widget class="QPlainTextEdit" name="crashlogsOut">
+                  <property name="lineWrapMode">
+                   <enum>QPlainTextEdit::NoWrap</enum>
+                  </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>

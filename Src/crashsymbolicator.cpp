@@ -44,7 +44,7 @@ QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
     QString line = "";
     std::wstring name = m_dsym->GetName();
 
-    CMachOW* crashed_macho = m_fat->GetMachO(m_crashlog->GetUUID());
+    CMachOW* crashed_macho = m_dsym->GetMachO(m_crashlog->GetUUID());
     std::ifstream infile(crashlogPath.toStdString());
     std::string cline;
     while (std::getline(infile, cline))
@@ -72,7 +72,7 @@ QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
                         }
                         else
                         {
-                            symbol = QString::fromWCharArray(m_fat->GetSymbolNameAt(m_crashlog->GetUUID(), addr64).c_str());
+                            symbol = QString::fromWCharArray(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64).c_str());
                         }
                         line = line.mid(0, replace_start) + " " + symbol + " " + line.mid(replace_end);
                     }
@@ -121,7 +121,7 @@ QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
                         }
                         else
                         {
-                            symbol = QString::fromWCharArray(m_fat->GetSymbolNameAt(m_crashlog->GetUUID(), addr64 - m_crashlog->Start()).c_str());
+                            symbol = QString::fromWCharArray(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64 - m_crashlog->Start()).c_str());
                         }
                         QString hexvalue = QString("%1").arg(addr64, 8, 16, QLatin1Char( '0' ));
                         _template = QString("%1%2\t0x%3 %4").arg(i, -4).arg(QString::fromWCharArray(m_crashlog->GetImageName().c_str())).arg(hexvalue).arg(symbol);//String.Format("{0,-4:d}{1,-30:s}\t0x{2:x} {3:s}", i, m_crashlog->GetImageName(), addr64, symbol);
@@ -149,7 +149,7 @@ void CrashSymbolicator::onFind(CMachOCrashLog &crashlog)
 
 void CrashSymbolicator::onFind(CMachODSym &dsym)
 {
-    m_fat = new CMachODSymW(dsym);
+    m_dsym = new CMachODSymW(dsym);
     m_dsym = new CMachODSymW(dsym);
 }
 

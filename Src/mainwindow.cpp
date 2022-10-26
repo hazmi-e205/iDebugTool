@@ -611,18 +611,18 @@ void MainWindow::OnCopyCrashClicked()
 
 void MainWindow::OnCrashlogsStatusChanged(QString text)
 {
-    ui->CrashlogsOut->append(text);
+    ui->crashlogsOut->appendPlainText(text);
 }
 
 void MainWindow::OnCrashlogClicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+    QString filename = QFileDialog::getOpenFileName(this, "Choose crashlog");
     ui->crashlogEdit->setText(filename);
 }
 
 void MainWindow::OnDsymClicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose File");
+    QString filename = QFileDialog::getExistingDirectory(this, "Choose dSYM");
     ui->dsymEdit->setText(filename);
 }
 
@@ -631,5 +631,5 @@ void MainWindow::OnSymbolicateClicked()
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
     QString sybolicated = CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
-    ui->CrashlogsOut->setText(sybolicated);
+    ui->crashlogsOut->setPlainText(sybolicated);
 }

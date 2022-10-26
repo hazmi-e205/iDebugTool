@@ -32,7 +32,6 @@ private:
     static CrashSymbolicator *m_instance;
     CMachOCrashLogW* m_crashlog;
     CMachODSymW* m_dsym;
-    CMachODSymW* m_fat;
 };
 
 #endif // CRASHSYMBOLICATOR_H
