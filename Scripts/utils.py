@@ -137,6 +137,10 @@ class Git:
         shellout(["git", "submodule", "update", "--init", "--recursive"], path, **kwargs)
 
     @staticmethod
+    def reset(path, **kwargs):
+        shellout(['git', 'reset', '--hard'], path, **kwargs)
+
+    @staticmethod
     def create_patch(lib_path, patch_path, **kwargs):
         call(["git", "diff", "--ignore-submodules", "--output=" + patch_path], lib_path)
 

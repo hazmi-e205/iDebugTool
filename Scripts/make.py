@@ -98,6 +98,8 @@ def UpdateExternal(repoItem):
     local_exist = utils.Git.is_repository(external_path)
     
     if local_exist:
+        cprint(repo_str + "Git reset...", 'yellow', attrs=['reverse', 'blink'])
+        utils.Git.reset(external_path, printout=is_debug)
         cprint(repo_str + "Git pull...", 'yellow', attrs=['reverse', 'blink'])
         utils.Git.pull(external_path, printout=is_debug)
         cprint(repo_str + "Git pull ended", 'yellow', attrs=['reverse', 'blink'])
