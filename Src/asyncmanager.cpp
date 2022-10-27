@@ -1,14 +1,20 @@
-#include "AsyncManager.h"
+#include "asyncmanager.h"
 #include <QDebug>
 
-AsyncManager::AsyncManager(size_t numberOfThreads)
+AsyncManager *AsyncManager::m_instance = nullptr;
+AsyncManager *AsyncManager::Get()
 {
-    m_stop = false;
+    if(!m_instance)
+        m_instance = new AsyncManager();
+    return m_instance;
+}
 
-    for (size_t i = 0; i < numberOfThreads; ++i)
+void AsyncManager::Destroy()
+{
+    if (m_instance)
     {
-        std::thread t(&AsyncManager::WorkerThread, this);
-        m_workers.emplace_back(std::move(t));
+        delete m_instance;
+        m_instance = nullptr;
     }
 }
 
@@ -47,9 +53,23 @@ void AsyncManager::WorkerThread()
     }
 }
 
+AsyncManager::AsyncManager()
+{
+}
+
 AsyncManager::~AsyncManager()
 {
     StopThreads();
+}
+
+void AsyncManager::Init(size_t numberOfThreads)
+{
+    m_stop = false;
+    for (size_t i = 0; i < numberOfThreads; ++i)
+    {
+        std::thread t(&AsyncManager::WorkerThread, this);
+        m_workers.emplace_back(std::move(t));
+    }
 }
 
 bool AsyncManager::StartAsyncRequest(const std::function<void(void)>& function)

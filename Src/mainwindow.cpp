@@ -7,6 +7,7 @@
 #include "userconfigs.h"
 #include "usbmuxd.h"
 #include "crashsymbolicator.h"
+#include "asyncmanager.h"
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
@@ -36,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    AsyncManager::Get()->Init(4);
     m_appInfo = new AppInfo(this);
     QMainWindow::setWindowTitle(m_appInfo->GetFullname());
     QMainWindow::setWindowIcon(QIcon(":res/bulb.ico"));
@@ -120,6 +122,7 @@ MainWindow::~MainWindow()
     delete m_textDialog;
     delete m_imageMounter;
     delete m_proxyDialog;
+    AsyncManager::Destroy();
     delete ui;
 }
 
@@ -560,24 +563,7 @@ void MainWindow::OnScreenshotClicked()
 
 
     QString imagePath = GetDirectory(DIRECTORY_TYPE::SCREENSHOT) + "Screenshot_" + QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") + ".png";
-    if (DeviceBridge::Get()->Screenshot(imagePath))
-    {
-        ui->statusbar->showMessage("Screenshot saved to '" + imagePath + "'!");
-
-        QMessageBox msgBox(QMessageBox::Question, "Screenshot", "Screenshot has been taken!\n" + imagePath);
-        QPushButton *shotButton = msgBox.addButton("Take another shot!", QMessageBox::ButtonRole::ActionRole);
-        QPushButton *dirButton = msgBox.addButton("Go to directory...", QMessageBox::ButtonRole::ActionRole);
-        msgBox.addButton(QMessageBox::StandardButton::Close);
-        msgBox.exec();
-        if (msgBox.clickedButton() == shotButton)
-        {
-            OnScreenshotClicked();
-        }
-        else if (msgBox.clickedButton() == dirButton)
-        {
-            QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SCREENSHOT));
-        }
-    }
+    DeviceBridge::Get()->Screenshot(imagePath);
 }
 
 void MainWindow::OnSocketClicked()
@@ -607,7 +593,7 @@ void MainWindow::OnSocketClicked()
 
 void MainWindow::OnSyncCrashlogsClicked()
 {
-    qDebug() << DeviceBridge::Get()->CopyCrashlogToDir(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
+    DeviceBridge::Get()->SyncCrashlogs(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
 }
 
 void MainWindow::OnCrashlogsStatusChanged(QString text)
@@ -633,4 +619,22 @@ void MainWindow::OnSymbolicateClicked()
     QString dsympath = ui->dsymEdit->text();
     QString sybolicated = CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
     ui->crashlogsOut->setPlainText(sybolicated);
+}
+
+void MainWindow::OnScreenshotReceived(QString imagePath)
+{
+    ui->statusbar->showMessage("Screenshot saved to '" + imagePath + "'!");
+    QMessageBox msgBox(QMessageBox::Question, "Screenshot", "Screenshot has been taken!\n" + imagePath);
+    QPushButton *shotButton = msgBox.addButton("Take another shot!", QMessageBox::ButtonRole::ActionRole);
+    QPushButton *dirButton = msgBox.addButton("Go to directory...", QMessageBox::ButtonRole::ActionRole);
+    msgBox.addButton(QMessageBox::StandardButton::Close);
+    msgBox.exec();
+    if (msgBox.clickedButton() == shotButton)
+    {
+        OnScreenshotClicked();
+    }
+    else if (msgBox.clickedButton() == dirButton)
+    {
+        QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SCREENSHOT));
+    }
 }

@@ -93,5 +93,6 @@ private slots:
     void OnCrashlogClicked();
     void OnDsymClicked();
     void OnSymbolicateClicked();
+    void OnScreenshotReceived(QString imagePath);
 };
 #endif // MAINWINDOW_H

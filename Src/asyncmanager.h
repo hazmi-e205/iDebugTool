@@ -4,16 +4,20 @@
 #include <thread>
 #include <functional>
 
-class AsyncManager final
+class AsyncManager
 {
 
 public:
-    AsyncManager(size_t numberOfThreads);
+    AsyncManager();
     ~AsyncManager();
 
+    void Init(size_t numberOfThreads);
     bool StartAsyncRequest(const std::function<void(void)>& function);
     void StopThreads();
     bool IsRunning();
+
+    static AsyncManager *Get();
+    static void Destroy();
 
 private:
 
@@ -29,4 +33,5 @@ private:
     std::mutex				m_queue_mutex;
     std::condition_variable_any m_condition;
     bool m_stop;
+    static AsyncManager *m_instance;
 };

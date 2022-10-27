@@ -10,7 +10,7 @@
 #endif
 #include <string.h>
 
-int DeviceBridge::afc_upload_file(afc_client_t &afc, QString &filename, QString &dstfn)
+int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn)
 {
     FILE *f = NULL;
     uint64_t af = 0;
@@ -57,7 +57,7 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, QString &filename, QString 
     return 0;
 }
 
-void DeviceBridge::afc_upload_dir(afc_client_t &afc, QString &path, QString &afcpath)
+void DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath)
 {
     afc_make_directory(afc, afcpath.toUtf8().data());
 

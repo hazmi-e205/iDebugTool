@@ -1,5 +1,6 @@
 #include "devicebridge.h"
 #include "utils.h"
+#include "asyncmanager.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileInfo>
@@ -129,22 +130,24 @@ void DeviceBridge::ResetConnection()
 
 void DeviceBridge::ConnectToDevice(QString udid)
 {
-    ResetConnection();
+    AsyncManager::Get()->StartAsyncRequest([this, udid]() {
+        ResetConnection();
 
-    //connect to udid
-    idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
-    if (!m_device) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + udid, QMessageBox::Ok);
-        return;
-    }
-    if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
-        idevice_free(m_device);
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
-        return;
-    }
+        //connect to udid
+        idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
+        if (!m_device) {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + udid, QMessageBox::Ok);
+            return;
+        }
+        if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
+            idevice_free(m_device);
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
+            return;
+        }
 
-    m_currentUdid = udid;
-    UpdateDeviceInfo();
+        m_currentUdid = udid;
+        UpdateDeviceInfo();
+    });
 }
 
 QString DeviceBridge::GetCurrentUdid()
@@ -327,36 +330,38 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
 
 void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 {
-    if (m_diagnostics) {
-        switch (mode) {
-        case CMD_SLEEP:
-            if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS) {
-                QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
-            } else {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
+    AsyncManager::Get()->StartAsyncRequest([this, mode]() {
+        if (m_diagnostics)
+        {
+            switch (mode)
+            {
+            case CMD_SLEEP:
+                if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                    QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
+                else
+                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
+                break;
+            case CMD_RESTART:
+                if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                    QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
+                else
+                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
+                break;
+            case CMD_SHUTDOWN:
+                if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                    QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
+                else
+                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
+                break;
+            default:
+                break;
             }
-            break;
-        case CMD_RESTART:
-            if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
-                QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
-            } else {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
-            }
-            break;
-        case CMD_SHUTDOWN:
-            if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS) {
-                QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
-            } else {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
-            }
-            break;
-        default:
-            break;
         }
-
-    } else {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
-    }
+        else
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
+        }
+    });
 }
 
 QStringList DeviceBridge::GetMountedImages()
@@ -395,51 +400,52 @@ bool DeviceBridge::IsImageMounted()
 
 void DeviceBridge::MountImage(QString image_path, QString signature_path)
 {
-    char sig[8192];
-    size_t sig_length = 0;
-    size_t image_size = 0;
-    mobile_image_mounter_error_t err = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
-    plist_t result = NULL;
+    AsyncManager::Get()->StartAsyncRequest([this, image_path, signature_path]() {
+        char sig[8192];
+        size_t sig_length = 0;
+        size_t image_size = 0;
+        mobile_image_mounter_error_t err = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
+        plist_t result = NULL;
 
-    FILE *f = fopen(signature_path.toUtf8().data(), "rb");
-    if (!f) {
-        emit MounterStatusChanged("Error: opening signature file '" + signature_path + "' : " + strerror(errno));
-        return;
-    }
-    sig_length = fread(sig, 1, sizeof(sig), f);
-    fclose(f);
-    if (sig_length == 0) {
-        emit MounterStatusChanged("Error: Could not read signature from file '" + signature_path + "'");
-        return;
-    }
+        FILE *f = fopen(signature_path.toUtf8().data(), "rb");
+        if (!f) {
+            emit MounterStatusChanged("Error: opening signature file '" + signature_path + "' : " + strerror(errno));
+            return;
+        }
+        sig_length = fread(sig, 1, sizeof(sig), f);
+        fclose(f);
+        if (sig_length == 0) {
+            emit MounterStatusChanged("Error: Could not read signature from file '" + signature_path + "'");
+            return;
+        }
 
-    f = fopen(image_path.toUtf8().data(), "rb");
-    if (!f) {
-        emit MounterStatusChanged("Error: opening image file '" + image_path + "' : " + strerror(errno));
-        return;
-    }
+        f = fopen(image_path.toUtf8().data(), "rb");
+        if (!f) {
+            emit MounterStatusChanged("Error: opening image file '" + image_path + "' : " + strerror(errno));
+            return;
+        }
 
-    struct stat fst;
-    if (stat(image_path.toUtf8().data(), &fst) != 0) {
-        emit MounterStatusChanged("Error: stat: '" + image_path + "' : " + strerror(errno));
-        return;
-    }
-    image_size = fst.st_size;
-    if (stat(signature_path.toUtf8().data(), &fst) != 0) {
-        emit MounterStatusChanged("Error: stat: '" + signature_path + "' : " + strerror(errno));
-        return;
-    }
+        struct stat fst;
+        if (stat(image_path.toUtf8().data(), &fst) != 0) {
+            emit MounterStatusChanged("Error: stat: '" + image_path + "' : " + strerror(errno));
+            return;
+        }
+        image_size = fst.st_size;
+        if (stat(signature_path.toUtf8().data(), &fst) != 0) {
+            emit MounterStatusChanged("Error: stat: '" + signature_path + "' : " + strerror(errno));
+            return;
+        }
 
-    QString targetname = QString(PKG_PATH) + "/staging.dimage";
-    QString mountname = QString(PATH_PREFIX) + "/" + targetname;
+        QString targetname = QString(PKG_PATH) + "/staging.dimage";
+        QString mountname = QString(PATH_PREFIX) + "/" + targetname;
 
-    MounterType mount_type = DISK_IMAGE_UPLOAD_TYPE_AFC;
-    QStringList os_version = m_deviceInfo[m_currentUdid]["ProductVersion"].toString().split(".");
-    if (os_version[0].toInt() >= 7) {
-        mount_type = DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE;
-    }
+        MounterType mount_type = DISK_IMAGE_UPLOAD_TYPE_AFC;
+        QStringList os_version = m_deviceInfo[m_currentUdid]["ProductVersion"].toString().split(".");
+        if (os_version[0].toInt() >= 7) {
+            mount_type = DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE;
+        }
 
-    switch (mount_type) {
+        switch (mount_type) {
         case DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE:
             emit MounterStatusChanged("Uploading '" + QFileInfo(image_path).fileName() + "' to device...");
             err = mobile_image_mounter_upload_image(m_imageMounter, "Developer", image_size, sig, sig_length, ImageMounterCallback, f);
@@ -503,54 +509,59 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
 
             afc_file_close(m_afc, af);
             break;
-    }
-    fclose(f);
-    emit MounterStatusChanged("Image uploaded.");
+        }
+        fclose(f);
+        emit MounterStatusChanged("Image uploaded.");
 
-    emit MounterStatusChanged("Mounting...");
-    err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
-    if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
-    {
-        emit MounterStatusChanged("Developer disk image mounted");
-        ConnectToDevice(m_currentUdid); //hack to fix LOCKDOWN_E_MUX_ERROR after mounted
-    }
-    else
-    {
-        emit MounterStatusChanged("Error: mount_image returned " + QString::number(err));
-    }
+        emit MounterStatusChanged("Mounting...");
+        err = mobile_image_mounter_mount_image(m_imageMounter, mountname.toUtf8().data(), sig, sig_length, "Developer", &result);
+        if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
+        {
+            emit MounterStatusChanged("Developer disk image mounted");
+            ConnectToDevice(m_currentUdid); //hack to fix LOCKDOWN_E_MUX_ERROR after mounted
+        }
+        else
+        {
+            emit MounterStatusChanged("Error: mount_image returned " + QString::number(err));
+        }
 
-    if (result)
-    {
-        emit MounterStatusChanged(PlistToJson(result).toJson());
-        plist_free(result);
-    }
+        if (result)
+        {
+            emit MounterStatusChanged(PlistToJson(result).toJson());
+            plist_free(result);
+        }
+    });
 }
 
-bool DeviceBridge::Screenshot(QString path)
+void DeviceBridge::Screenshot(QString path)
 {
-    char *imgdata = NULL;
-    uint64_t imgsize = 0;
-    screenshotr_error_t error = screenshotr_take_screenshot(m_screenshot, &imgdata, &imgsize);
-    if (error == SCREENSHOTR_E_SUCCESS)
-    {
-        QFileInfo file_info(path);
-        QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
-        QSaveFile file(path);
-        file.open(QIODevice::WriteOnly);
-        file.write(imgdata, imgsize);
-        file.commit();
-    }
-    else
-    {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: screenshotr_take_screenshot returned " + QString::number(error), QMessageBox::Ok);
-    }
-    return error == SCREENSHOTR_E_SUCCESS;
+    AsyncManager::Get()->StartAsyncRequest([this, path]() {
+        char *imgdata = NULL;
+        uint64_t imgsize = 0;
+        screenshotr_error_t error = screenshotr_take_screenshot(m_screenshot, &imgdata, &imgsize);
+        if (error == SCREENSHOTR_E_SUCCESS)
+        {
+            QFileInfo file_info(path);
+            QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
+            QSaveFile file(path);
+            file.open(QIODevice::WriteOnly);
+            file.write(imgdata, imgsize);
+            file.commit();
+            emit ScreenshotReceived(path);
+        }
+        else
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "Error: screenshotr_take_screenshot returned " + QString::number(error), QMessageBox::Ok);
+        }
+    });
 }
 
-bool DeviceBridge::CopyCrashlogToDir(QString path)
+void DeviceBridge::SyncCrashlogs(QString path)
 {
-    QDir().mkpath(path);
-    return afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data()) >= 0;
+    AsyncManager::Get()->StartAsyncRequest([this, path]() {
+        QDir().mkpath(path);
+        qDebug() << __FUNCTION__ << "::" << afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data());
+    });
 }
 
 void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid)

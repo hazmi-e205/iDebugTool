@@ -64,8 +64,8 @@ public:
     QStringList GetMountedImages();
     bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
-    bool Screenshot(QString path);
-    bool CopyCrashlogToDir(QString path);
+    void Screenshot(QString path);
+    void SyncCrashlogs(QString path);
 
     static DeviceBridge *Get();
     static void Destroy();
@@ -78,8 +78,8 @@ private:
     void TriggerSystemLogsReceived(LogPacket log);
     void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
-    int afc_upload_file(afc_client_t &afc, QString &filename, QString &dstfn);
-    void afc_upload_dir(afc_client_t &afc, QString &path,  QString &afcpath);
+    int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn);
+    void afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath);
     int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
@@ -111,6 +111,7 @@ signals:
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
      void MounterStatusChanged(QString messages);
      void CrashlogsStatusChanged(QString messages);
+     void ScreenshotReceived(QString imagepath);
 };
 
 #endif // DEVICEBRIDGE_H
