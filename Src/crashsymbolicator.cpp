@@ -1,5 +1,7 @@
 #include "crashsymbolicator.h"
 #include <QDebug>
+#include <QFile>
+#include <QFileInfo>
 #include <fstream>
 #include "utility/CDirectory.h"
 
@@ -26,12 +28,18 @@ void CrashSymbolicator::Destroy()
 
 CrashSymbolicator::CrashSymbolicator()
 {
-
 }
 
 QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
 {
     QString out;
+
+    QString oldstyle = ConvertToOldStyle(crashlogPath);
+    if (!oldstyle.isEmpty())
+    {
+        return Proccess(oldstyle, dsymDir);
+    }
+
     bool result = CSearchMachO::Search(crashlogPath.toStdWString().c_str(), *this);
     qDebug() << "crashlog: " << result;
     if (!result) return out;
@@ -142,6 +150,163 @@ QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
     return out;
 }
 
+QString CrashSymbolicator::ConvertToOldStyle(QString crashlogPath)
+{
+    QFile inputFile(crashlogPath);
+    QString header, content;
+    if (inputFile.open(QIODevice::ReadOnly))
+    {
+       QTextStream in(&inputFile);
+       while (!in.atEnd())
+       {
+           if (header.isEmpty())
+           {
+               header = in.readLine();
+           }
+           else
+           {
+               content += in.readLine() + "\n";
+           }
+       }
+       inputFile.close();
+    }
+
+    QJsonParseError error;
+    QJsonDocument headerDoc = QJsonDocument::fromJson(header.toUtf8(), &error);
+    if (error.error != QJsonParseError::NoError) return "";
+    QJsonDocument contentDoc = QJsonDocument::fromJson(content.toUtf8(), &error);
+    if (error.error != QJsonParseError::NoError) return "";
+
+    QFileInfo info(crashlogPath);
+    QString filepath = info.absolutePath() + "/" + info.baseName() + "_old." + info.completeSuffix();
+    QString oldStyle = header + "\n" + ConvertToOldStyle(headerDoc, contentDoc);
+    QFile f(filepath);
+    if (f.open(QIODevice::ReadWrite))
+    {
+        QTextStream stream(&f);
+        stream << oldStyle;
+        f.close();
+        return filepath;
+    }
+    return "";
+}
+
+QString CrashSymbolicator::ConvertToOldStyle(const QJsonDocument& ipsHeader, const QJsonDocument& payload)
+{
+    QString content = buildHeader(ipsHeader, payload);
+    QJsonArray binaryImages = payload["usedImages"].toArray();
+
+    if (payload["threads"].isArray())
+    {
+        QJsonArray threads = payload["threads"].toArray();
+        foreach (auto _thread, threads)
+        {
+            content.append("\n");
+            QJsonObject thread = _thread.toObject();
+
+            if (thread["name"].isString() || thread["queue"].isString())
+            {
+                QString name = thread["name"].isString() ? thread["name"].toString("") : thread["queue"].toString("");
+                content.append(QString("Thread %1 name:  %2\n").arg(thread["id"].toInt()).arg(name));
+            }
+
+            if (thread["triggered"].isBool() && thread["triggered"].toBool() == false)
+                content.append(QString("Thread %1 Crashed:\n").arg(thread["id"].toInt()));
+            else
+                content.append(QString("Thread %1:\n").arg(thread["id"].toInt()));
+            content.append(buildFrameStack(thread["frames"].toArray(), binaryImages));
+        }
+    }
+    content.append(buildBinaryImages(binaryImages));
+    return content;
+}
+
+QString CrashSymbolicator::buildHeader(const QJsonDocument &ipsHeader, const QJsonDocument &payload)
+{
+    QString content = "";
+    content.append(QString("Incident Identifier: %1\n").arg(ipsHeader["incident_id"].toString("")));
+    content.append(QString("CrashReporter Key:   %1\n").arg(payload["crashReporterKey"].toString("")));
+    content.append(QString("Hardware Model:      %1\n").arg(payload["modelCode"].toString("")));
+    content.append(QString("Process:             %1 [%2]\n").arg(payload["procName"].toString("")).arg(payload["pid"].toInt()));
+    content.append(QString("Path:                %1\n").arg(payload["procPath"].toString("")));
+    if (payload["bundleInfo"].isObject())
+    {
+        QJsonObject bundleInfo = payload["bundleInfo"].toObject();
+        content.append(QString("Identifier:          %1\n").arg(bundleInfo["CFBundleIdentifier"].toString("")));
+        content.append(QString("Version:             %1 (%2)\n").arg(bundleInfo["CFBundleShortVersionString"].toString("")).arg(bundleInfo["CFBundleVersion"].toString("")));
+    }
+    content.append(QString("Report Version:      104\n"));
+    content.append(QString("Code Type:           %1 (Native)\n").arg(payload["cpuType"].toString("")));
+    content.append(QString("Role:                %1\n").arg(payload["procRole"].toString("")));
+    content.append(QString("Parent Process:      %1 [%2]\n").arg(payload["parentProc"].toString("")).arg(payload["parentPid"].toInt()));
+    content.append(QString("Coalition:           %1 [%2]\n").arg(payload["coalitionName"].toString("")).arg(payload["coalitionID"].toInt()));
+    content.append(QString("\n"));
+    content.append(QString("Date/Time:           %1\n").arg(payload["captureTime"].toString("")));
+    content.append(QString("Launch Time:         %1\n").arg(payload["procLaunch"].toString("")));
+    content.append(QString("OS Version:          %1\n").arg(ipsHeader["os_version"].toString("")));
+    content.append(QString("Release Type:        %1\n").arg(payload["osVersion"]["releaseType"].toString("")));
+    content.append(QString("Baseband Version:    %1\n").arg(payload["basebandVersion"].toString("")));
+    content.append(QString("\n"));
+
+    QJsonObject exception = payload["exception"].toObject();
+    content.append(QString("Exception Type:  %1 (%2)\n").arg(exception["type"].toString("")).arg(exception["signal"].toString("")));
+    content.append(QString("Exception Codes: %1\n").arg(exception["codes"].toString("")));
+    content.append(QString("Triggered by Thread:  %1\n").arg(payload["faultingThread"].toInt()));
+    content.append(QString("\n"));
+    return content;
+}
+
+QString CrashSymbolicator::buildFrameStack(const QJsonArray &frames, const QJsonArray &binaryImages)
+{
+    QString content = "";
+    int idx = 0;
+    foreach (auto _frame, frames)
+    {
+        QJsonObject frame = _frame.toObject();
+        QJsonObject binaryImage = binaryImages[frame["imageIndex"].toInt()].toObject();
+        int address = frame["imageOffset"].toInt() + binaryImage["base"].toInt();
+        content.append(QString("%1").arg(idx, -5));
+        content.append(QString("%1").arg(binaryImage["name"].toString(""), -40));
+
+        QString hexvalue = QString("%1").arg(address, 8, 16, QLatin1Char( '0' ));
+        content.append(QString("0x%1 ").arg(hexvalue));
+
+        if (frame["symbol"].isString() && frame["symbolLocation"].isDouble())
+        {
+            content.append(QString("%1 + %2").arg(frame["symbol"].toString("")).arg(frame["symbolLocation"].toInt()));
+        }
+        else
+        {
+            int64_t base = binaryImage["base"].toInteger();
+            QString hexbase = QString("%1").arg(base, 8, 16, QLatin1Char( '0' ));
+            content.append(QString("0x%1 + %2").arg(hexbase).arg(frame["imageOffset"].toInt()));
+        }
+
+        if (frame["sourceFile"].isString() && frame["sourceLine"].isDouble())
+        {
+            content.append(QString(" (%1:%2)").arg(frame["sourceFile"].toString("")).arg(frame["sourceLine"].toInt()));
+        }
+        content.append("\n");
+        idx++;
+    }
+    return content;
+}
+
+QString CrashSymbolicator::buildBinaryImages(const QJsonArray &binaryImages)
+{
+    QString content = "\nBinary Images:\n";
+    foreach (auto _image, binaryImages)
+    {
+        QJsonObject image = _image.toObject();
+        QString hexbase = QString("%1").arg(image["base"].toInteger(), 8, 16, QLatin1Char( '0' ));
+        QString hexbase2 = QString("%1").arg(image["base"].toInteger() + image["size"].toInteger() - 1, 8, 16, QLatin1Char( '0' ));
+        content.append(QString("0x%1 - 0x%2 ").arg(hexbase).arg(hexbase2));
+        content.append(QString("%1 %2 ").arg(image["name"].toString(""), image["arch"].toString("")));
+        content.append(QString("<%1> %2\n").arg(image["uuid"].toString("").replace('-', "")).arg(image["path"].toString("")));
+    }
+    return content;
+}
+
 void CrashSymbolicator::onFind(CMachOCrashLog &crashlog)
 {
     m_crashlog = new CMachOCrashLogW(crashlog);
@@ -149,7 +314,6 @@ void CrashSymbolicator::onFind(CMachOCrashLog &crashlog)
 
 void CrashSymbolicator::onFind(CMachODSym &dsym)
 {
-    m_dsym = new CMachODSymW(dsym);
     m_dsym = new CMachODSymW(dsym);
 }
 
