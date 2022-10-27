@@ -105,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    CrashSymbolicator::Destroy();
     m_logModel->clear();
     delete m_logModel;
     m_devicesModel->clear();
