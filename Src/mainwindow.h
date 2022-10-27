@@ -88,7 +88,7 @@ private slots:
     void OnImageMounterClicked();
     void OnScreenshotClicked();
     void OnSocketClicked();
-    void OnCopyCrashClicked();
+    void OnSyncCrashlogsClicked();
     void OnCrashlogsStatusChanged(QString text);
     void OnCrashlogClicked();
     void OnDsymClicked();

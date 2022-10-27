@@ -96,7 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
     connect(ui->appInfoBtn, SIGNAL(pressed()), this, SLOT(OnAppInfoClicked()));
 
-    connect(ui->CopyCrashBtn, SIGNAL(pressed()), this, SLOT(OnCopyCrashClicked()));
+    connect(ui->syncCrashlogsBtn, SIGNAL(pressed()), this, SLOT(OnSyncCrashlogsClicked()));
     connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
     connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
     connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
@@ -605,7 +605,7 @@ void MainWindow::OnSocketClicked()
     OnUpdateDevices(DeviceBridge::Get()->GetDevices());
 }
 
-void MainWindow::OnCopyCrashClicked()
+void MainWindow::OnSyncCrashlogsClicked()
 {
     qDebug() << DeviceBridge::Get()->CopyCrashlogToDir(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
 }
