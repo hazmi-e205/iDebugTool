@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupDevicesTable();
     SetupLogsTable();
     UpdateStatusbar();
+    RefreshSocketList();
 
     setAcceptDrops(true);
     ui->installBar->setAlignment(Qt::AlignCenter);
@@ -286,6 +287,19 @@ void MainWindow::SaveLogMessages(bool savefile)
     else
     {
         QApplication::clipboard()->setText(data_str);
+    }
+}
+
+void MainWindow::RefreshSocketList()
+{
+    QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
+    QStringList histories = historyData.split(";");
+
+    ui->socketBox->clear();
+    foreach (auto history, histories)
+    {
+        if (history.contains(":"))
+            ui->socketBox->addItem(history);
     }
 }
 
@@ -575,9 +589,19 @@ void MainWindow::OnSocketClicked()
         if (text_split.length() == 2)
         {
             if (usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt()) >= 0)
+            {
                 ui->socketBtn->setText("Disconnect");
+                QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
+                if (!historyData.contains(text))
+                {
+                    UserConfigs::Get()->SaveData("SocketHistory", text + ";");
+                    RefreshSocketList();
+                }
+            }
             else
+            {
                 QMessageBox::critical(this, "Error", "Error: fail to connect '" + text + "' device via socket", QMessageBox::Ok);
+            }
         }
     }
     else

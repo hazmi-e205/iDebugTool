@@ -37,6 +37,7 @@ private:
     void UpdateStatusbar();
     void UpdateInfoWidget();
     void SaveLogMessages(bool savefile = true);
+    void RefreshSocketList();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     QStandardItemModel *m_logModel;
