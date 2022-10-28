@@ -12,7 +12,7 @@ public:
 
     void Parse(QString rawString);
     QString GetRawData();
-    bool Filter(QString text_or_regex, QString pid_name, QString exclude_text);
+    bool Filter(QString text_or_regex, QString pid_name, QString exclude_text, QString exclude_system);
     bool IsHeader(QString rawString);
     bool IsEmpty();
     void Clear();

@@ -51,7 +51,7 @@ QString LogPacket::GetRawData()
     return m_DateTime + " " + m_ProcessID + " " + m_LogType + ": " + m_LogMessage;
 }
 
-bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_text)
+bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_text, QString exclude_system)
 {
     bool isPassed = true;
 
@@ -76,6 +76,14 @@ bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_
         isPassed = isPassed &&
                 !(GetRawData().toLower().contains(exclude_text.toLower())
                 || !FindRegex(GetRawData(), exclude_text).isEmpty());
+    }
+
+    //exclude text or regex for system
+    if (!exclude_system.isEmpty())
+    {
+        isPassed = isPassed &&
+                !(GetRawData().toLower().contains(exclude_system.toLower())
+                || !FindRegex(GetRawData(), exclude_system).isEmpty());
     }
 
     return isPassed;

@@ -38,6 +38,7 @@ private:
     void UpdateInfoWidget();
     void SaveLogMessages(bool savefile = true);
     void RefreshSocketList();
+    void ExcludeSystemLogs();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     QStandardItemModel *m_logModel;
@@ -47,13 +48,14 @@ private:
     QString m_currentFilter;
     QString m_pidFilter;
     QString m_excludeFilter;
+    QString m_excludeSystemFilter;
     QString m_choosenBundleId;
     QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
     std::map<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
-    unsigned int m_maxCachedLogs, m_maxShownLogs, m_scrollInterval;
+    unsigned int m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
@@ -95,5 +97,6 @@ private slots:
     void OnDsymClicked();
     void OnSymbolicateClicked();
     void OnScreenshotReceived(QString imagePath);
+    void OnExcludeSystemLogListClicked();
 };
 #endif // MAINWINDOW_H

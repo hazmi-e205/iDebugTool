@@ -28,7 +28,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
-    , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxCachedLogs", "100").toUInt())
     , m_maxShownLogs(UserConfigs::Get()->GetData("MaxShownLogs", "100").toUInt())
     , m_scrollInterval(UserConfigs::Get()->GetData("ScrollInterval", "250").toUInt())
     , m_textDialog(nullptr)
@@ -79,11 +78,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
     connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
-    ui->maxCachedLogs->setText(QString::number(m_maxCachedLogs));
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
     connect(ui->proxyBtn, SIGNAL(pressed()), this, SLOT(OnProxyClicked()));
+    connect(ui->excludeSytemBtn, SIGNAL(pressed()), this, SLOT(OnExcludeSystemLogListClicked()));
     m_proxyDialog = new ProxyDialog(this);
     m_proxyDialog->UseExisting();
 
@@ -206,7 +205,7 @@ void MainWindow::UpdateLogsFilter()
     {
         for (LogPacket& m_Log : m_liveLogs)
         {
-            if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter)) {
+            if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter)) {
                 AddLogToTable(m_Log);
             }
         }
@@ -303,6 +302,31 @@ void MainWindow::RefreshSocketList()
     }
 }
 
+void MainWindow::ExcludeSystemLogs()
+{
+    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", "lockdownd;crash_mover;securityd;trustd;remindd;CommCenter;kernel;locationd;mobile_storage_proxy;wifid;dasd;UserEventAgent;exchangesyncd;runningboardd;powerd;mDNSResponder;symptomsd;WirelessRadioManagerd;nsurlsessiond;searchpartyd;mediaserverd;homed;rapportd;powerlogHelperd;aggregated;cloudd;keybagd;sharingd;tccd;bluetoothd;identityservicesd;nearbyd;PowerUIAgent;maild;timed;syncdefaultsd;distnoted;accountsd;analyticsd;apsd;ProtectedCloudKeySyncing;testmanagerd;backboardd;SpringBoard;familycircled;useractivityd;contextstored;Preferences;passd;IDSRemoteURLConnectionAgent;nfcd;coreduetd;duetexpertd;navd;destinationd;com.apple.Safari.SafeBrowsing.Service;dataaccessd;HeuristicInterpreter;pasted;suggestd;appstored;rtcreportingd;awdd;parsec-fbf;");
+    QStringList excludes = excludeData.split(";");
+
+    if (ui->excludeSystemCheck->isChecked())
+    {
+        QString fullregex;
+        for (uint64_t idx = 0; idx < (uint64_t)excludes.count(); idx++)
+        {
+            fullregex.append(QString("%1\\[[0-9]+\\]|").arg(excludes.at(idx)));
+            fullregex.append(QString("%1\\([\\S]*\\)\\[[0-9]+\\]").arg(excludes.at(idx)));
+            if (idx != (uint64_t)excludes.count() - 1)
+                fullregex.append("|");
+        }
+        m_excludeSystemFilter = fullregex;
+    }
+    else
+    {
+        m_excludeSystemFilter.clear();
+    }
+    UpdateLogsFilter();
+
+}
+
 void MainWindow::OnTopSplitterMoved(int pos, int index)
 {
     m_ratioTopWidth = (float)ui->deviceWidget->width() / m_topWidth;
@@ -371,12 +395,12 @@ void MainWindow::OnSystemLogsReceived(LogPacket log)
         return;
 
     m_liveLogs.push_back(log);
-    while ((unsigned int)m_liveLogs.size() > m_maxCachedLogs)
+    while ((unsigned int)m_liveLogs.size() > m_maxShownLogs)
     {
         m_liveLogs.erase(m_liveLogs.begin());
     }
 
-    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter))
+    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter))
     {
         AddLogToTable(log);
     }
@@ -503,13 +527,12 @@ void MainWindow::OnScrollTimerTick()
 
 void MainWindow::OnConfigureClicked()
 {
-    m_maxCachedLogs = ui->maxCachedLogs->text().toUInt();
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
     m_scrollInterval = ui->scrollInterval->text().toUInt();
 
-    UserConfigs::Get()->SaveData("MaxCachedLogs", ui->maxCachedLogs->text());
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
     UserConfigs::Get()->SaveData("ScrollInterval", ui->scrollInterval->text());
+    ExcludeSystemLogs();
 }
 
 void MainWindow::OnProxyClicked()
@@ -574,7 +597,6 @@ void MainWindow::OnScreenshotClicked()
         m_imageMounter->exec();
         if (!DeviceBridge::Get()->IsImageMounted()) return;
     }
-
 
     QString imagePath = GetDirectory(DIRECTORY_TYPE::SCREENSHOT) + "Screenshot_" + QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz") + ".png";
     DeviceBridge::Get()->Screenshot(imagePath);
@@ -662,4 +684,16 @@ void MainWindow::OnScreenshotReceived(QString imagePath)
     {
         QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SCREENSHOT));
     }
+}
+
+void MainWindow::OnExcludeSystemLogListClicked()
+{
+    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", "");
+    QStringList excludes = excludeData.split(";");
+
+    excludeData = excludes.join('\n');
+    m_textDialog->ShowText("System Logs Exclude List", excludeData, [](QString data){
+        QStringList excludes = data.split("\n");
+        UserConfigs::Get()->SaveData("SystemLogList", excludes.join(';'));
+    });
 }
