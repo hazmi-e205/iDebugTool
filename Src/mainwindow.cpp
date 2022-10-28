@@ -594,7 +594,8 @@ void MainWindow::OnSocketClicked()
                 QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
                 if (!historyData.contains(text))
                 {
-                    UserConfigs::Get()->SaveData("SocketHistory", text + ";");
+                    historyData.append(text + ";");
+                    UserConfigs::Get()->SaveData("SocketHistory", historyData);
                     RefreshSocketList();
                 }
             }
