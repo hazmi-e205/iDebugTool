@@ -14,8 +14,9 @@ public:
     static void Destroy();
     UserConfigs();
 
-    void SaveData(QString key, QString value);
+    void SaveData(QString key, QJsonValue value);
     QString GetData(QString key, QString defaultvalue);
+    bool GetBool(QString key, bool defaultvalue);
     void SaveToFile();
     void ReadFromFile();
 };

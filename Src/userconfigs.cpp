@@ -22,7 +22,7 @@ UserConfigs::UserConfigs()
 {
 }
 
-void UserConfigs::SaveData(QString key, QString value)
+void UserConfigs::SaveData(QString key, QJsonValue value)
 {
     ReadFromFile();
     QJsonObject jobject = m_json.object();
@@ -34,10 +34,16 @@ void UserConfigs::SaveData(QString key, QString value)
 QString UserConfigs::GetData(QString key, QString defaultvalue)
 {
     ReadFromFile();
-    QString data = m_json[key].toString();
+    QString data = m_json[key].toString(defaultvalue);
     if (!data.isEmpty())
         return data;
     return defaultvalue;
+}
+
+bool UserConfigs::GetBool(QString key, bool defaultvalue)
+{
+    ReadFromFile();
+    return m_json[key].toBool(defaultvalue);
 }
 
 void UserConfigs::SaveToFile()
