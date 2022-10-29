@@ -72,6 +72,7 @@ private slots:
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
     void OnAutoScrollChecked(int state);
+    void OnExcludeSystemLogsChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);

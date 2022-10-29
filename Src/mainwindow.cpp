@@ -20,6 +20,8 @@
 #include <QClipboard>
 #include <QDesktopServices>
 
+#define SYSTEM_LIST "lockdownd|crash_mover|securityd|trustd|remindd|CommCenter|kernel|locationd|mobile_storage_proxy|wifid|dasd|UserEventAgent|exchangesyncd|runningboardd|powerd|mDNSResponder|symptomsd|WirelessRadioManagerd|nsurlsessiond|searchpartyd|mediaserverd|homed|rapportd|powerlogHelperd|aggregated|cloudd|keybagd|sharingd|tccd|bluetoothd|identityservicesd|nearbyd|PowerUIAgent|maild|timed|syncdefaultsd|distnoted|accountsd|analyticsd|apsd|ProtectedCloudKeySyncing|testmanagerd|backboardd|SpringBoard|familycircled|useractivityd|contextstored|Preferences|passd|IDSRemoteURLConnectionAgent|nfcd|coreduetd|duetexpertd|navd|destinationd|com.apple.Safari.SafeBrowsing.Service|dataaccessd|HeuristicInterpreter|pasted|suggestd|appstored|rtcreportingd|awdd|parsec-fbf|lsd|chronod|com.apple.WebKit.Networking|callservicesd|druid|kbd|mediaremoted|watchdogd|MTLCompilerService|itunesstored|EnforcementService|gamed|adprivacyd|profiled|CAReportingService|assistantd|itunescloudd|parsecd|osanalyticshelper|triald|deleted|Spotlight|searchd|mobileassetd|contactsdonationagent|followupd|containermanagerd|ThreeBarsXPCService|routined|accessoryd|healthd|SafariBookmarksSyncAgent|ScreenTimeAgent"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -85,6 +87,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->excludeSytemBtn, SIGNAL(pressed()), this, SLOT(OnExcludeSystemLogListClicked()));
     m_proxyDialog = new ProxyDialog(this);
     m_proxyDialog->UseExisting();
+
+    connect(ui->excludeSystemCheck, SIGNAL(stateChanged(int)), this, SLOT(OnExcludeSystemLogsChecked(int)));
+    bool IsExcludeSystem = UserConfigs::Get()->GetBool("ExcludeSystemLogs", true);
+    ui->excludeSystemCheck->setCheckState(IsExcludeSystem ? Qt::Checked : Qt::Unchecked);
+    ExcludeSystemLogs();
 
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
@@ -195,19 +202,10 @@ void MainWindow::UpdateLogsFilter()
 {
     m_logModel->clear();
     SetupLogsTable();
-    if (m_currentFilter.isEmpty() && m_pidFilter.isEmpty())
+    for (LogPacket& m_Log : m_liveLogs)
     {
-        for (LogPacket& m_Log : m_liveLogs) {
+        if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter)) {
             AddLogToTable(m_Log);
-        }
-    }
-    else
-    {
-        for (LogPacket& m_Log : m_liveLogs)
-        {
-            if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter)) {
-                AddLogToTable(m_Log);
-            }
         }
     }
 }
@@ -304,20 +302,10 @@ void MainWindow::RefreshSocketList()
 
 void MainWindow::ExcludeSystemLogs()
 {
-    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", "lockdownd;crash_mover;securityd;trustd;remindd;CommCenter;kernel;locationd;mobile_storage_proxy;wifid;dasd;UserEventAgent;exchangesyncd;runningboardd;powerd;mDNSResponder;symptomsd;WirelessRadioManagerd;nsurlsessiond;searchpartyd;mediaserverd;homed;rapportd;powerlogHelperd;aggregated;cloudd;keybagd;sharingd;tccd;bluetoothd;identityservicesd;nearbyd;PowerUIAgent;maild;timed;syncdefaultsd;distnoted;accountsd;analyticsd;apsd;ProtectedCloudKeySyncing;testmanagerd;backboardd;SpringBoard;familycircled;useractivityd;contextstored;Preferences;passd;IDSRemoteURLConnectionAgent;nfcd;coreduetd;duetexpertd;navd;destinationd;com.apple.Safari.SafeBrowsing.Service;dataaccessd;HeuristicInterpreter;pasted;suggestd;appstored;rtcreportingd;awdd;parsec-fbf;");
-    QStringList excludes = excludeData.split(";");
-
+    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", SYSTEM_LIST);
     if (ui->excludeSystemCheck->isChecked())
     {
-        QString fullregex;
-        for (uint64_t idx = 0; idx < (uint64_t)excludes.count(); idx++)
-        {
-            fullregex.append(QString("%1\\[[0-9]+\\]|").arg(excludes.at(idx)));
-            fullregex.append(QString("%1\\([\\S]*\\)\\[[0-9]+\\]").arg(excludes.at(idx)));
-            if (idx != (uint64_t)excludes.count() - 1)
-                fullregex.append("|");
-        }
-        m_excludeSystemFilter = fullregex;
+        m_excludeSystemFilter = excludeData;
     }
     else
     {
@@ -451,6 +439,12 @@ void MainWindow::OnAutoScrollChecked(int state)
     } else {
         m_scrollTimer->stop();
     }
+}
+
+void MainWindow::OnExcludeSystemLogsChecked(int state)
+{
+    UserConfigs::Get()->SaveData("ExcludeSystemLogs", state == 0 ? false : true);
+    ExcludeSystemLogs();
 }
 
 void MainWindow::OnClearClicked()
@@ -688,12 +682,12 @@ void MainWindow::OnScreenshotReceived(QString imagePath)
 
 void MainWindow::OnExcludeSystemLogListClicked()
 {
-    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", "");
-    QStringList excludes = excludeData.split(";");
+    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", SYSTEM_LIST);
+    QStringList excludes = excludeData.split("|");
 
     excludeData = excludes.join('\n');
     m_textDialog->ShowText("System Logs Exclude List", excludeData, [](QString data){
         QStringList excludes = data.split("\n");
-        UserConfigs::Get()->SaveData("SystemLogList", excludes.join(';'));
+        UserConfigs::Get()->SaveData("SystemLogList", excludes.join('|'));
     });
 }

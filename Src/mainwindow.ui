@@ -1049,7 +1049,7 @@ color: rgb(255, 255, 255);</string>
                                    <item>
                                     <widget class="QLabel" name="label_28">
                                      <property name="sizePolicy">
-                                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
@@ -1108,7 +1108,7 @@ color: rgb(255, 255, 255);</string>
                                    <item>
                                     <widget class="QLabel" name="label_30">
                                      <property name="sizePolicy">
-                                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
@@ -1181,20 +1181,13 @@ color: rgb(255, 255, 255);</string>
                                     </widget>
                                    </item>
                                    <item>
-                                    <widget class="QCheckBox" name="excludeSystemCheck">
+                                    <widget class="QPushButton" name="excludeSytemBtn">
                                      <property name="sizePolicy">
-                                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
                                      </property>
-                                     <property name="text">
-                                      <string>Enable</string>
-                                     </property>
-                                    </widget>
-                                   </item>
-                                   <item>
-                                    <widget class="QPushButton" name="excludeSytemBtn">
                                      <property name="text">
                                       <string>Update List</string>
                                      </property>
@@ -2104,6 +2097,19 @@ color: rgb(255, 255, 255);</string>
           </item>
           <item>
            <widget class="QLineEdit" name="excludeEdit"/>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="excludeSystemCheck">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Exclude System Logs</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

@@ -82,8 +82,8 @@ bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_
     if (!exclude_system.isEmpty())
     {
         isPassed = isPassed &&
-                !(GetRawData().toLower().contains(exclude_system.toLower())
-                || !FindRegex(GetRawData(), exclude_system).isEmpty());
+                !(getProcessID().toLower().contains(exclude_system.toLower())
+                || !FindRegex(getProcessID(), exclude_system).isEmpty());
     }
 
     return isPassed;
