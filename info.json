@@ -39,15 +39,8 @@
             "project": "MachOLib",
             "url": "https://github.com/hazmi-e205/MachOLib",
             "branch": "main",
-            "revision": "c6c346d4e96a03dac17b1b373964aecc35148650",
+            "revision": "d09c7aaa829f91cffbc5efae0674afc270bf1e75",
             "path": "Externals/MachOLib",
-            "use_submodules": false
-        },
-        {
-            "project": "rapidjson",
-            "url": "https://github.com/Tencent/rapidjson",
-            "branch": "v1.1.0",
-            "path": "Externals/rapidjson",
             "use_submodules": false
         },
         {

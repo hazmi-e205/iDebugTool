@@ -37,14 +37,5 @@ project "MachOLib"
         "../Externals/MachOLib/libiberty",
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
-        "../Externals/rapidjson/include",
-    }
-
-    defines
-    {
-        "HAVE_CONFIG_H",
-    }
-
-    buildoptions
-    {
+        -- "../Externals/rapidjson/include",
     }
