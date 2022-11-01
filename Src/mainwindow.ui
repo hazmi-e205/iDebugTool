@@ -2090,7 +2090,11 @@ color: rgb(255, 255, 255);</string>
          </layout>
         </item>
         <item>
-         <widget class="QTableView" name="logTable"/>
+         <widget class="QTableView" name="logTable">
+          <property name="autoScroll">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
