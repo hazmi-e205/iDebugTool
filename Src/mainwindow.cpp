@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
     , m_proxyDialog(nullptr)
+    , m_loading(nullptr)
 {
     ui->setupUi(this);
 
@@ -47,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
+    connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
     connect(ui->deviceTable, SIGNAL(clicked(QModelIndex)), this, SLOT(OnDevicesTableClicked(QModelIndex)));
     connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
@@ -69,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
     ui->installBar->setAlignment(Qt::AlignCenter);
 
+    m_loading = new LoadingDialog(this);
     m_eventFilter = new CustomKeyFilter();
     ui->logTable->installEventFilter(m_eventFilter);
     ui->installDrop->installEventFilter(m_eventFilter);
@@ -130,6 +133,7 @@ MainWindow::~MainWindow()
     delete m_textDialog;
     delete m_imageMounter;
     delete m_proxyDialog;
+    delete m_loading;
     AsyncManager::Destroy();
     delete ui;
 }
@@ -400,8 +404,14 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
     switch (command)
     {
     case InstallerMode::CMD_INSTALL:
-        m_installerLogs += (percentage >= 0 ? ("(" + QString::number(percentage) + "%) ") : "") + message + "\n";
-        ui->installBar->setValue(percentage);
+        {
+            QString messages = (percentage >= 0 ? ("(" + QString::number(percentage) + "%) ") : "") + message;
+            m_installerLogs += m_installerLogs.isEmpty() ? messages : ("\n" + messages);
+            ui->installBar->setFormat("%p% " + message);
+            ui->installBar->setValue(percentage);
+            if (m_textDialog->isActiveWindow() && m_textDialog->windowTitle().contains("Installer"))
+                m_textDialog->AppendText(messages);
+        }
         break;
 
     case InstallerMode::CMD_UNINSTALL:
@@ -691,4 +701,16 @@ void MainWindow::OnExcludeSystemLogListClicked()
         QStringList excludes = data.split("\n");
         UserConfigs::Get()->SaveData("SystemLogList", excludes.join('|'));
     });
+}
+
+void MainWindow::OnProcessStatusChanged(int percentage, QString message)
+{
+    if (m_loading->isActiveWindow())
+    {
+        m_loading->SetProgress(percentage, message);
+    }
+    else
+    {
+        m_loading->ShowProgress("Connet to device...", false);
+    }
 }

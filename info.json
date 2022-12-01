@@ -1,7 +1,7 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha3",
+    "status": "alpha4",
     "dependencies": [
         {
             "project": "libimobiledevice",
@@ -31,7 +31,7 @@
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "c3af449543795ad4d3ab178120ff69e90fdd2cc8",
+            "revision": "155861581817cdb02ec2470ab33fdeee128a5f23",
             "path": "Externals/libplist",
             "use_submodules": false
         },

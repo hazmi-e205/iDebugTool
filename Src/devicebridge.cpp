@@ -131,22 +131,28 @@ void DeviceBridge::ResetConnection()
 void DeviceBridge::ConnectToDevice(QString udid)
 {
     AsyncManager::Get()->StartAsyncRequest([this, udid]() {
+        emit ProcessStatusChanged(0, "Reset previous connection...");
         ResetConnection();
 
         //connect to udid
+        emit ProcessStatusChanged(10, "Connecting to " + udid + "...");
         idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
         if (!m_device) {
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + udid, QMessageBox::Ok);
             return;
         }
+
+        emit ProcessStatusChanged(15, "Handshaking client...");
         if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
             idevice_free(m_device);
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
             return;
         }
 
+        emit ProcessStatusChanged(20, "Getting device info...");
         m_currentUdid = udid;
         UpdateDeviceInfo();
+        emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
     });
 }
 
@@ -184,6 +190,7 @@ QJsonDocument DeviceBridge::GetDeviceInfo()
 
 void DeviceBridge::StartServices()
 {
+    emit ProcessStatusChanged(30, "Starting syslog relay service...");
     QStringList serviceIds;
     serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
     StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
@@ -205,6 +212,7 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(40, "Starting installation proxy service...");
     serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
     StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
@@ -214,6 +222,7 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(50, "Starting crash report mover service...");
     serviceIds = QStringList() << "com.apple.crashreportmover";
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         service_client_t svcmove = NULL;
@@ -247,6 +256,7 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(60, "Starting crash report copy service...");
     serviceIds = QStringList() << "com.apple.crashreportcopymobile";
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_crashlog);
@@ -256,6 +266,7 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(70, "Starting afc service...");
     serviceIds = QStringList() << "com.apple.afc";
     StartLockdown(!m_afc, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_afc);
@@ -265,6 +276,7 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(80, "Starting image mounter service...");
     serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
     StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
@@ -274,22 +286,11 @@ void DeviceBridge::StartServices()
         }
     });
 
+    emit ProcessStatusChanged(90, "Starting diagnostics relay service...");
     serviceIds = QStringList() << "com.apple.mobile.diagnostics_relay" << "com.apple.iosdiagnostics.relay";
     StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
         if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
-    });
-
-    if (!IsImageMounted())
-        return;
-
-    serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
-    StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
-        if (err != SCREENSHOTR_E_SUCCESS)
         {
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
         }
@@ -536,6 +537,15 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
 void DeviceBridge::Screenshot(QString path)
 {
     AsyncManager::Get()->StartAsyncRequest([this, path]() {
+        QStringList serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
+        StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+            screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
+            if (err != SCREENSHOTR_E_SUCCESS)
+            {
+                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+            }
+        });
+
         char *imgdata = NULL;
         uint64_t imgsize = 0;
         screenshotr_error_t error = screenshotr_take_screenshot(m_screenshot, &imgdata, &imgsize);

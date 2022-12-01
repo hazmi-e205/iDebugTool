@@ -109,6 +109,7 @@ signals:
      void DeviceConnected();
      void SystemLogsReceived(LogPacket log);
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
+     void ProcessStatusChanged(int percentage, QString message);
      void MounterStatusChanged(QString messages);
      void CrashlogsStatusChanged(QString messages);
      void ScreenshotReceived(QString imagepath);
