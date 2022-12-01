@@ -75,6 +75,9 @@ if IsQt() then
 
 	filter {"Debug*"}
 		targetsuffix "_d"
+		defines {"DEBUG"}
+	filter {"Release*"}
+		defines {"NDEBUG"}
 	filter {}
 end
 
