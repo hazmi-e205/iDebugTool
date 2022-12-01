@@ -5,11 +5,13 @@
 #include <QResizeEvent>
 #include <QStandardItemModel>
 #include <QTimer>
+#include <QSplashScreen>
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
 #include "imagemounter.h"
 #include "proxydialog.h"
+#include "loadingdialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -59,6 +61,7 @@ private:
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
+    LoadingDialog *m_loading;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -99,5 +102,6 @@ private slots:
     void OnSymbolicateClicked();
     void OnScreenshotReceived(QString imagePath);
     void OnExcludeSystemLogListClicked();
+    void OnProcessStatusChanged(int percentage, QString message);
 };
 #endif // MAINWINDOW_H

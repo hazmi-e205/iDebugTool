@@ -117,7 +117,7 @@ void LogPacket::Clear()
 void LogPacket::SetRegexValue()
 {
     m_dateRegex = "((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (( [1-9])|([1-2][0-9])|([3][0-1])) (?:[0-1]\\d|2[0-3]):(?:[0-5]\\d):(?:[0-5]\\d))";
-    m_devRegex  = "[\\S]*-[\\S]*";
+    m_devRegex  = "[\\S]*iPhone";
     m_appRegex  = "[\\S]*\\[[0-9]+\\]";
     m_typeRegex = "<[\\S]*>";
     m_headRegex = m_dateRegex + " " + m_devRegex + " " + m_appRegex + " " + m_typeRegex + ": ";

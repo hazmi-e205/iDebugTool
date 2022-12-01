@@ -1,6 +1,7 @@
 #include "devicebridge.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QFileInfo>
 #include <zip.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -305,7 +306,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             /* copy archive to device */
             pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
 
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, -1, "Copying '" + path + "' to device...");
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Sending " + QFileInfo(path).fileName());
             if (afc_upload_file(m_afc, path, pkgname) < 0) {
                 return;
             }
@@ -327,10 +328,10 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 
         /* perform installation or upgrade */
         if (cmd == CMD_INSTALL) {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Installing '" + QString(bundleidentifier) + "'...");
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Installing " + QString(bundleidentifier));
             instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
         } else {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Upgrading '" + QString(bundleidentifier) + "'...");
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Upgrading " + QString(bundleidentifier));
             instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
         }
         instproxy_client_options_free(client_opts);

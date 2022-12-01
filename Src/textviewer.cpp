@@ -25,10 +25,14 @@ void TextViewer::ShowText(QString title, QString text, const std::function<void(
     show();
 }
 
+void TextViewer::AppendText(QString text)
+{
+    ui->textEdit->append(text);
+}
+
 void TextViewer::OnOkPressed()
 {
     if (m_callback)
         m_callback(ui->textEdit->toPlainText());
-
     close();
 }

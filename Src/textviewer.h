@@ -22,6 +22,7 @@ public:
      * @param callback if you want to use it as text editor, nullptr mean read only.
      */
     void ShowText(QString title, QString text, const std::function<void(QString)>& textCallback = nullptr);
+    void AppendText(QString text);
 
 private:
     std::function<void (QString)> m_callback;
