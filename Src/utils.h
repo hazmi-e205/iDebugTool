@@ -36,6 +36,14 @@ enum DIRECTORY_TYPE
 };
 QString GetDirectory(DIRECTORY_TYPE dirtype);
 
+enum BROWSE_TYPE
+{
+    OPEN_FILE,
+    SAVE_FILE,
+    OPEN_DIR
+};
+QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString());
+
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
 int zip_get_app_directory(struct zip* zf, QString &path);
 bool zip_extract_all(struct zip *zf, QString dist);

@@ -218,13 +218,13 @@ void ImageMounter::ChangeDownloadState(DOWNLOAD_STATE downloadState)
 
 void ImageMounter::OnImageClicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose Image File");
+    QString filename = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Image", this);
     ui->imageEdit->setText(filename);
 }
 
 void ImageMounter::OnSignatureClicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose Signature File");
+    QString filename = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Signature", this);
     ui->signatureEdit->setText(filename);
 }
 

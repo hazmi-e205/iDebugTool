@@ -263,8 +263,8 @@ void MainWindow::SaveLogMessages(bool savefile)
 
     if (savefile)
     {
-        QString filename = QFileDialog::getSaveFileName(this, "Save logs file...", "", "Text File (*.txt)");
-        QFile f(filename);
+        QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+        QFile f(filepath);
         if (f.open(QIODevice::ReadWrite))
         {
             QTextStream stream(&f);
@@ -459,8 +459,8 @@ void MainWindow::OnClickedEvent(QObject* object)
 {
     if(object->objectName() == ui->installDrop->objectName())
     {
-        QString filename = QFileDialog::getOpenFileName(this, "Choose File");
-        ui->installPath->setText(filename);
+        QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "App", this);
+        ui->installPath->setText(filepath);
     }
 
     if(object->objectName() == ui->bundleIds->objectName())
@@ -640,14 +640,14 @@ void MainWindow::OnCrashlogsStatusChanged(QString text)
 
 void MainWindow::OnCrashlogClicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Choose crashlog");
-    ui->crashlogEdit->setText(filename);
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Crashlog", this);
+    ui->crashlogEdit->setText(filepath);
 }
 
 void MainWindow::OnDsymClicked()
 {
-    QString filename = QFileDialog::getExistingDirectory(this, "Choose dSYM");
-    ui->dsymEdit->setText(filename);
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_DIR, "dSYM", this);
+    ui->dsymEdit->setText(filepath);
 }
 
 void MainWindow::OnSymbolicateClicked()

@@ -10,12 +10,14 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QDirIterator>
+#include <QFileDialog>
 #include <zip.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "simplerequest.h"
+#include "userconfigs.h"
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -522,4 +524,30 @@ QString ParseVersion(QString version_raw)
     QString version_str = FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+");
     version_str = version_str.isEmpty() ? FindRegex(version_raw, "\\d+\\.\\d+") : version_str;
     return version_str;
+}
+
+QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidget *parent, const QString &filter)
+{
+    QString last_dir = UserConfigs::Get()->GetData("Last" + titleType + "Dir", "");
+    QString result, result_dir;
+
+    switch (browsetype)
+    {
+    case BROWSE_TYPE::OPEN_FILE:
+        result = result_dir = QFileDialog::getOpenFileName(parent, "Choose " + titleType + "...", last_dir, filter);
+        break;
+
+    case BROWSE_TYPE::SAVE_FILE:
+        result = result_dir = QFileDialog::getSaveFileName(parent, "Save " + titleType + "...", last_dir, filter);
+        break;
+
+    case BROWSE_TYPE::OPEN_DIR:
+        result = result_dir = QFileDialog::getExistingDirectory(parent, "Choose " + titleType + "...", last_dir);
+        break;
+    }
+
+    if (!result_dir.isEmpty())
+        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", result_dir.remove(QFileInfo(result_dir).fileName()));
+
+    return result;
 }
