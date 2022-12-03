@@ -63,9 +63,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
 
+    ui->statusbar->showMessage("Idle");
     SetupDevicesTable();
     SetupLogsTable();
-    UpdateStatusbar();
     RefreshSocketList();
 
     setAcceptDrops(true);
@@ -231,20 +231,6 @@ void MainWindow::AddLogToTable(LogPacket log)
     }
 }
 
-void MainWindow::UpdateStatusbar()
-{
-    if (DeviceBridge::Get()->IsConnected())
-    {
-        QString device_name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
-        device_name = device_name.isEmpty() ? DeviceBridge::Get()->GetCurrentUdid() : device_name;
-        ui->statusbar->showMessage("Connected to " + device_name);
-    }
-    else
-    {
-        ui->statusbar->showMessage("Idle");
-    }
-}
-
 void MainWindow::UpdateInfoWidget()
 {
     auto deviceinfo = DeviceBridge::Get()->GetDeviceInfo();
@@ -366,18 +352,17 @@ void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
 
     if (!DeviceBridge::Get()->IsConnected())
     {
+        ui->statusbar->showMessage("Idle");
         if (devices.size() > 0)
         {
             DeviceBridge::Get()->ConnectToDevice(devices.firstKey());
         }
-        UpdateStatusbar();
         UpdateInfoWidget();
     }
 }
 
 void MainWindow::OnDeviceConnected()
 {
-    UpdateStatusbar();
     UpdateInfoWidget();
     OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
 }
@@ -705,12 +690,9 @@ void MainWindow::OnExcludeSystemLogListClicked()
 
 void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 {
-    if (m_loading->isActiveWindow())
-    {
-        m_loading->SetProgress(percentage, message);
-    }
-    else
-    {
-        m_loading->ShowProgress("Connet to device...", false);
-    }
+    if (!m_loading->isActiveWindow())
+        m_loading->ShowProgress("Connect to device...");
+
+    m_loading->SetProgress(percentage, message);
+    ui->statusbar->showMessage(message);
 }

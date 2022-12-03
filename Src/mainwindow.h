@@ -36,7 +36,6 @@ private:
     void SetupLogsTable();
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
-    void UpdateStatusbar();
     void UpdateInfoWidget();
     void SaveLogMessages(bool savefile = true);
     void RefreshSocketList();
