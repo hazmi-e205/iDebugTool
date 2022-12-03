@@ -1758,7 +1758,18 @@ background-color: rgb(7, 148, 255);</string>
                           </sizepolicy>
                          </property>
                          <property name="text">
-                          <string>Image Mounter</string>
+                          <string>Image
+Mounter</string>
+                         </property>
+                         <property name="icon">
+                          <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                           <normaloff>:/res/Assets/cd.png</normaloff>:/res/Assets/cd.png</iconset>
+                         </property>
+                         <property name="iconSize">
+                          <size>
+                           <width>24</width>
+                           <height>24</height>
+                          </size>
                          </property>
                         </widget>
                        </item>
@@ -1773,6 +1784,16 @@ background-color: rgb(7, 148, 255);</string>
                          <property name="text">
                           <string>Screenshot</string>
                          </property>
+                         <property name="icon">
+                          <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                           <normaloff>:/res/Assets/camera.png</normaloff>:/res/Assets/camera.png</iconset>
+                         </property>
+                         <property name="iconSize">
+                          <size>
+                           <width>20</width>
+                           <height>20</height>
+                          </size>
+                         </property>
                         </widget>
                        </item>
                        <item>
@@ -1785,6 +1806,16 @@ background-color: rgb(7, 148, 255);</string>
                          </property>
                          <property name="text">
                           <string>Sleep</string>
+                         </property>
+                         <property name="icon">
+                          <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                           <normaloff>:/res/Assets/moon.png</normaloff>:/res/Assets/moon.png</iconset>
+                         </property>
+                         <property name="iconSize">
+                          <size>
+                           <width>20</width>
+                           <height>20</height>
+                          </size>
                          </property>
                         </widget>
                        </item>
@@ -1799,6 +1830,16 @@ background-color: rgb(7, 148, 255);</string>
                          <property name="text">
                           <string>Shutdown</string>
                          </property>
+                         <property name="icon">
+                          <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                           <normaloff>:/res/Assets/power.png</normaloff>:/res/Assets/power.png</iconset>
+                         </property>
+                         <property name="iconSize">
+                          <size>
+                           <width>20</width>
+                           <height>20</height>
+                          </size>
+                         </property>
                         </widget>
                        </item>
                        <item>
@@ -1811,6 +1852,16 @@ background-color: rgb(7, 148, 255);</string>
                          </property>
                          <property name="text">
                           <string>Restart</string>
+                         </property>
+                         <property name="icon">
+                          <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                           <normaloff>:/res/Assets/restart.png</normaloff>:/res/Assets/restart.png</iconset>
+                         </property>
+                         <property name="iconSize">
+                          <size>
+                           <width>20</width>
+                           <height>20</height>
+                          </size>
                          </property>
                         </widget>
                        </item>
@@ -2141,6 +2192,8 @@ color: rgb(255, 255, 255);</string>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources/>
+ <resources>
+  <include location="../Prj/Qt-windows/iDebugTool/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
