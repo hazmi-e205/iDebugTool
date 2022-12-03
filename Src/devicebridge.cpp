@@ -89,14 +89,6 @@ void DeviceBridge::ResetConnection()
         m_imageMounter = nullptr;
     }
 
-    if (m_diagnostics)
-    {
-        if (is_exist)
-            diagnostics_relay_goodbye(m_diagnostics);
-        diagnostics_relay_client_free(m_diagnostics);
-        m_diagnostics = nullptr;
-    }
-
     if (m_afc)
     {
         afc_client_free(m_afc);
@@ -285,16 +277,6 @@ void DeviceBridge::StartServices()
             QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
         }
     });
-
-    emit ProcessStatusChanged(90, "Starting diagnostics relay service...");
-    serviceIds = QStringList() << "com.apple.mobile.diagnostics_relay" << "com.apple.iosdiagnostics.relay";
-    StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
-        if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
-    });
 }
 
 void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
@@ -331,6 +313,15 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
 
 void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 {
+    QStringList serviceIds = QStringList() << "com.apple.mobile.diagnostics_relay" << "com.apple.iosdiagnostics.relay";
+    StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
+        if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
+        {
+            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+        }
+    });
+
     if (m_diagnostics)
     {
         switch (mode)
@@ -356,6 +347,10 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
         default:
             break;
         }
+
+        diagnostics_relay_goodbye(m_diagnostics);
+        diagnostics_relay_client_free(m_diagnostics);
+        m_diagnostics = nullptr;
     }
     else
     {
