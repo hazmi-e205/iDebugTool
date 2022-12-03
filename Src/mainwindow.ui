@@ -1771,6 +1771,9 @@ Mounter</string>
                            <height>24</height>
                           </size>
                          </property>
+                         <property name="flat">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                        <item>
@@ -1793,6 +1796,9 @@ Mounter</string>
                            <width>20</width>
                            <height>20</height>
                           </size>
+                         </property>
+                         <property name="flat">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
@@ -1817,6 +1823,9 @@ Mounter</string>
                            <height>20</height>
                           </size>
                          </property>
+                         <property name="flat">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                        <item>
@@ -1840,6 +1849,9 @@ Mounter</string>
                            <height>20</height>
                           </size>
                          </property>
+                         <property name="flat">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                        <item>
@@ -1862,6 +1874,9 @@ Mounter</string>
                            <width>20</width>
                            <height>20</height>
                           </size>
+                         </property>
+                         <property name="flat">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
