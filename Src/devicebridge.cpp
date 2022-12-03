@@ -331,38 +331,36 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
 
 void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 {
-    AsyncManager::Get()->StartAsyncRequest([this, mode]() {
-        if (m_diagnostics)
+    if (m_diagnostics)
+    {
+        switch (mode)
         {
-            switch (mode)
-            {
-            case CMD_SLEEP:
-                if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                    QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
-                else
-                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
-                break;
-            case CMD_RESTART:
-                if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                    QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
-                else
-                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
-                break;
-            case CMD_SHUTDOWN:
-                if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                    QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
-                else
-                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
-                break;
-            default:
-                break;
-            }
+        case CMD_SLEEP:
+            if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
+            else
+                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
+            break;
+        case CMD_RESTART:
+            if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
+            else
+                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
+            break;
+        case CMD_SHUTDOWN:
+            if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
+                QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
+            else
+                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
+            break;
+        default:
+            break;
         }
-        else
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
-        }
-    });
+    }
+    else
+    {
+        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
+    }
 }
 
 QStringList DeviceBridge::GetMountedImages()
