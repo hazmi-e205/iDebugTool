@@ -86,10 +86,10 @@ index dd37fff..408bfee 100644
 -    SUBDIRS += demos
 -}
 diff --git a/qicstable_config.pri b/qicstable_config.pri
-index 57c5b81..366c770 100644
+index 57c5b81..d1fbe6d 100644
 --- a/qicstable_config.pri
 +++ b/qicstable_config.pri
-@@ -27,9 +27,9 @@ exists(local_config.pri) {
+@@ -27,15 +27,15 @@ exists(local_config.pri) {
  
  # Do not change this line
  CONFIG += qt
@@ -101,6 +101,14 @@ index 57c5b81..366c770 100644
  
  # Chose one of the following two lines to configure the build
  
+ #CONFIG += release                 	# Compile and link QicsTable with debugging turned off.
+-#CONFIG += debug                   	# Compile and link QicsTable with debugging turned on.
+-CONFIG += debug_and_release build_all	# Compile and link two QicsTable libraries, with and without debugging turned on.
++CONFIG += debug                   	# Compile and link QicsTable with debugging turned on.
++#CONFIG += debug_and_release build_all	# Compile and link two QicsTable libraries, with and without debugging turned on.
+ 
+ # Uncomment this line if you want to use saving to XML, designer plugin, advanced spreadsheet demo.
+ CONFIG += xml
 @@ -83,7 +83,7 @@ CONFIG(debug, debug|release) {
          TARGET = $$join(TARGET,,,_debug)
      }
