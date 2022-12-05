@@ -52,6 +52,11 @@ api.register {
     scope = "project",
     kind = "list:file",
 }
+api.register {
+    name= "QtIncludes",
+    scope = "project",
+    kind = "list:file",
+}
 
 p.modules.qt = {}
 local qt = p.modules.qt
@@ -207,6 +212,12 @@ function qt.project_pro(prj)
     end
     if #prj.defines > 0 then
         _p('DEFINES += ' .. table.concat(prj.defines, " "))
+    end
+    if #prj.QtIncludes > 0 then
+        for k,v in ipairs(prj.QtIncludes) do
+            local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
+            _p('include(' .. relative_str .. ')')
+        end
     end
 
     -- compiler & linker flags

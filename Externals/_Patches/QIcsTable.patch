@@ -1,15 +1,18 @@
 diff --git a/designer/designer.pro b/designer/designer.pro
-index 2a289e3..e360fa6 100644
+index 2a289e3..90bbfd3 100644
 --- a/designer/designer.pro
 +++ b/designer/designer.pro
-@@ -22,7 +22,7 @@ include($$QICSTABLE_PATH/qicstable_config.pri)
+@@ -22,9 +22,9 @@ include($$QICSTABLE_PATH/qicstable_config.pri)
  CONFIG += qt warn_on plugin
  
  equals(QT_MAJOR_VERSION, 4): CONFIG += designer
 -equals(QT_MAJOR_VERSION, 5): QT += designer
 +greaterThan(QT_MAJOR_VERSION, 5): QT += designer
  
- win32::CONFIG += dll
+-win32::CONFIG += dll
++win32::CONFIG += staticlib
+ 
+ QT += xml
  
 diff --git a/include/QicsTable.h b/include/QicsTable.h
 index f0de6fd..0924bfb 100644

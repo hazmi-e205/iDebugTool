@@ -63,6 +63,8 @@ private:
     ProxyDialog *m_proxyDialog;
     LoadingDialog *m_loading;
     SyslogHandler *m_logHandler;
+    QicsDataModelDefault *m_dataModel;
+    QicsTable *m_table;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);

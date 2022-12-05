@@ -219,7 +219,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>888</width>
-                  <height>438</height>
+                  <height>591</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_23">
@@ -2176,7 +2176,7 @@ color: rgb(255, 255, 255);</string>
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="logView" native="true"/>
+         <layout class="QVBoxLayout" name="logLayout"/>
         </item>
         <item>
          <widget class="QWidget" name="widget_37" native="true">

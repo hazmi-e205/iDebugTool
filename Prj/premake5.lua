@@ -26,9 +26,15 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    QtIncludes
+    {
+        "../Externals/QIcsTable/qicstable_config.pri",
+    }
+
     QtModules
     {
         "network",
+        "xml",
     }
 
     QtResources

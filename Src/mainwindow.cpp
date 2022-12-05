@@ -74,9 +74,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_loading = new LoadingDialog(this);
 
-    QicsDataModelDefault *dataModel = new QicsDataModelDefault(250, 5);
-    QicsTable *table = new QicsTable(dataModel, this);
-    m_logHandler = new SyslogHandler(&table);
+    m_dataModel = new QicsDataModelDefault(250, 5);
+    m_table = new QicsTable(m_dataModel);
+    ui->logLayout->addWidget(m_table);
+    m_logHandler = new SyslogHandler(&m_table);
 
 
     m_eventFilter = new CustomKeyFilter();
