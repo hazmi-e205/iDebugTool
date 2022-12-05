@@ -278,6 +278,28 @@ function qt.project_pro(prj)
         _p('')
     end
 
+    if #prj.prelinkcommands > 0 then
+        _p('QMAKE_PRE_LINK += \\')
+        for k,v in ipairs(prj.prelinkcommands) do
+            if k ~= #prj.prelinkcommands then
+                v = v .. ' \\'
+            end
+            _p(1, v)
+        end
+        _p('')
+    end
+
+    if #prj.postbuildcommands > 0 then
+        _p('QMAKE_POST_LINK += \\')
+        for k,v in ipairs(prj.postbuildcommands) do
+            if k ~= #prj.postbuildcommands then
+                v = v .. ' \\'
+            end
+            _p(1, v)
+        end
+        _p('')
+    end
+
     -- links
     qt.parse_links(prj)
     if #links["Release"] > 0 or #links["Debug"] > 0 or #links["Common"] > 0 then

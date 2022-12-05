@@ -26,6 +26,12 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    if IsWindows() then
+        prelinkcommands {"copy ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable_d.a ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable.a"}
+    else
+        prelinkcommands {"cp ../../../Externals/QIcsTable/lib/qicstable_d.a ../../../Externals/QIcsTable/lib/qicstable.a"}
+    end
+
     QtIncludes
     {
         "../Externals/QIcsTable/qicstable_config.pri",
