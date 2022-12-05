@@ -2,6 +2,10 @@ include "common.lua"
 
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
+    external "qicstable"
+        location  ("../Externals")
+		kind "None"
+    
     include "openssl.lua"
     include "libzip.lua"
     include "libplist.lua"
@@ -53,6 +57,7 @@ project "iDebugTool"
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
+        "../Externals/QIcsTable/include",
     }
 
     links
@@ -68,11 +73,13 @@ project "iDebugTool"
         "zlib",
         "MachOLib",
         "unzip",
+        "qicstable",
     }
 
     libdirs
     {
         "../Build/" .. GetPathFromPlatform() .. "/libs",
+        "../Externals/QIcsTable/lib",
     }
 
     if IsWindows() then

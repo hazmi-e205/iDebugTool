@@ -1,0 +1,199 @@
+diff --git a/designer/designer.pro b/designer/designer.pro
+index 2a289e3..e360fa6 100644
+--- a/designer/designer.pro
++++ b/designer/designer.pro
+@@ -22,7 +22,7 @@ include($$QICSTABLE_PATH/qicstable_config.pri)
+ CONFIG += qt warn_on plugin
+ 
+ equals(QT_MAJOR_VERSION, 4): CONFIG += designer
+-equals(QT_MAJOR_VERSION, 5): QT += designer
++greaterThan(QT_MAJOR_VERSION, 5): QT += designer
+ 
+ win32::CONFIG += dll
+ 
+diff --git a/include/QicsTable.h b/include/QicsTable.h
+index f0de6fd..0924bfb 100644
+--- a/include/QicsTable.h
++++ b/include/QicsTable.h
+@@ -15,7 +15,9 @@
+ 
+ #include <QVector>
+ #include <QPixmap>
++#ifdef USE_PRINTER_SUPPORT
+ #include <QPrinter>
++#endif
+ 
+ #include "QicsTableCommon.h"
+ #include "QicsRegion.h"
+@@ -4346,7 +4348,7 @@ public slots:
+     */
+     void insertRow(int row);
+ 
+-#ifndef QICSTABLE_GPL
++#ifdef USE_PRINTER_SUPPORT
+     /*!
+     * Prints the table to the specified printer device.
+     */
+@@ -4462,7 +4464,7 @@ public slots:
+     * Selects all the cells in the main grid.
+     * \since 2.2
+     */
+-    virtual void selectAll();
++    virtual void selectAll();
+ 
+     /*!
+     * Deletes data from selected cells.
+diff --git a/include/QicsUtil.h b/include/QicsUtil.h
+index 56f30c3..d226efa 100644
+--- a/include/QicsUtil.h
++++ b/include/QicsUtil.h
+@@ -14,7 +14,7 @@
+ #define QICSUTIL_H
+ 
+ #include <QPaintEngine>
+-#ifndef QICSTABLE_GPL
++#ifdef USE_PRINTER_SUPPORT
+ #include <QPrinter>
+ #endif
+ #include "QicsNamespace.h"
+@@ -110,7 +110,7 @@ inline void addDimension(Qics::QicsIndexType &idx, Qics::QicsIndexType addIdx)
+ */
+ inline bool isPrinterDevice(QPainter *painter, QicsGrid *grid)
+ {
+-#ifndef QICSTABLE_GPL
++#ifdef USE_PRINTER_SUPPORT
+     return dynamic_cast<QPrinter*>(painter->device()) || dynamic_cast<QicsPrintGrid*>(grid);
+ #endif
+ #ifdef QICSTABLE_GPL
+diff --git a/qicstable.pro b/qicstable.pro
+index dd37fff..408bfee 100644
+--- a/qicstable.pro
++++ b/qicstable.pro
+@@ -56,12 +56,3 @@ SUBDIRS  = src
+ #DESIGNER_NOOP
+ SUBDIRS += designer
+ #END_DESIGNER_NOOP
+-
+-# developers can suppress building of examples by creating .no_examples
+-!exists(.no_examples) {
+-    SUBDIRS += examples
+-}
+-
+-!exists(.no_demos) {
+-    SUBDIRS += demos
+-}
+diff --git a/qicstable_config.pri b/qicstable_config.pri
+index 57c5b81..366c770 100644
+--- a/qicstable_config.pri
++++ b/qicstable_config.pri
+@@ -27,9 +27,9 @@ exists(local_config.pri) {
+ 
+ # Do not change this line
+ CONFIG += qt
+-QT += xml
++QT += xml core
+ 
+-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
++greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+ 
+ # Chose one of the following two lines to configure the build
+ 
+@@ -83,7 +83,7 @@ CONFIG(debug, debug|release) {
+         TARGET = $$join(TARGET,,,_debug)
+     }
+     else {
+-        TARGET = $$join(TARGET,,,d)
++        TARGET = $$join(TARGET,,,_d)
+     }
+ }
+ 
+@@ -105,15 +105,15 @@ win32 {
+ 
+ 
+ # Chose one of the following two lines to configure the build
+-#LIB_CONFIG = staticlib
+-LIB_CONFIG = dll
++LIB_CONFIG = staticlib
++#LIB_CONFIG = dll
+ 
+ # QicsTable flags
+ QICSTABLELIB = qicstable
+ 
+ CONFIG(debug, debug|release) {
+     unix: QICSTABLELIB = $$join(QICSTABLELIB,,,_debug)
+-    else: QICSTABLELIB = $$join(QICSTABLELIB,,,d)
++    else: QICSTABLELIB = $$join(QICSTABLELIB,,,_d)
+ }
+ 
+ contains(LIB_CONFIG, staticlib) {
+@@ -129,7 +129,7 @@ contains(LIB_CONFIG, staticlib) {
+ # This line enables KDChart support
+ # You should set KDCHART_PATH=/full/path/to/kdchart
+ 
+-KDCHART_PATH =
++#KDCHART_PATH =
+ 
+ !isEmpty(KDCHART_PATH) {
+     DEFINES += BIND_KDCHART
+diff --git a/src/QicsTable.cpp b/src/QicsTable.cpp
+index a497f32..2f9819f 100644
+--- a/src/QicsTable.cpp
++++ b/src/QicsTable.cpp
+@@ -3786,7 +3786,7 @@ void QicsTable::deleteColumns(int num, int start_position)
+         freezeRightColumns(rightFrozenColumns);
+ }
+ 
+-#ifndef QICSTABLE_GPL
++#ifdef USE_PRINTER_SUPPORT
+ void
+ QicsTable::print(QPrinter *printer)
+ {
+diff --git a/src/src.pro b/src/src.pro
+index 3adc4da..fdc2967 100644
+--- a/src/src.pro
++++ b/src/src.pro
+@@ -222,17 +222,17 @@ SOURCES += QicsGridInfo.cpp \
+             ../addons/table.tree/QicsTreeHeaderGrid.cpp
+ 
+ #PRINTING_NOOP
+-HEADERS +=  ../include/QicsPrintGrid.h \
+-            ../include/QicsTablePrint.h \
+-            ../addons/printing/QicsPrintPreviewPage.h \
+-            ../addons/printing/QicsPrintPreviewWidget.h \
+-            ../addons/printing/QicsPageMetrics.h
++#HEADERS +=  ../include/QicsPrintGrid.h \
++#            ../include/QicsTablePrint.h \
++#            ../addons/printing/QicsPrintPreviewPage.h \
++#            ../addons/printing/QicsPrintPreviewWidget.h \
++#            ../addons/printing/QicsPageMetrics.h
+ 
+-SOURCES +=  QicsPrintGrid.cpp \
+-            QicsTablePrint.cpp \
+-            ../addons/printing/QicsPrintPreviewPage.cpp \
+-            ../addons/printing/QicsPrintPreviewWidget.cpp \
+-            ../addons/printing/QicsPageMetrics.cpp
++#SOURCES +=  QicsPrintGrid.cpp \
++#            QicsTablePrint.cpp \
++#            ../addons/printing/QicsPrintPreviewPage.cpp \
++#            ../addons/printing/QicsPrintPreviewWidget.cpp \
++#            ../addons/printing/QicsPageMetrics.cpp
+ #END_PRINTING_NOOP
+ 
+ #KDCHART_NOOP
+@@ -281,11 +281,11 @@ addons_tabletree.path = $$[QT_INSTALL_HEADERS]/$$INSTALL_INCLUDE_SUFFIX/addons/t
+ INSTALLS += addons_tabletree
+ 
+ #PRINTING_NOOP
+-addons_printing.files = ../addons/printing/QicsPrintPreviewPage.h \
+-                        ../addons/printing/QicsPrintPreviewWidget.h \
+-                        ../addons/printing/QicsPageMetrics.h
+-addons_printing.path = $$[QT_INSTALL_HEADERS]/$$INSTALL_INCLUDE_SUFFIX/addons/printing
+-INSTALLS += addons_printing
++#addons_printing.files = ../addons/printing/QicsPrintPreviewPage.h \
++#                        ../addons/printing/QicsPrintPreviewWidget.h \
++#                        ../addons/printing/QicsPageMetrics.h
++#addons_printing.path = $$[QT_INSTALL_HEADERS]/$$INSTALL_INCLUDE_SUFFIX/addons/printing
++#INSTALLS += addons_printing
+ #END_PRINTING_NOOP
+ 
+ 

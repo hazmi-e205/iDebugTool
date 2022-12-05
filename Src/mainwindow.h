@@ -12,6 +12,7 @@
 #include "imagemounter.h"
 #include "proxydialog.h"
 #include "loadingdialog.h"
+#include "sysloghandler.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -61,6 +62,7 @@ private:
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
     LoadingDialog *m_loading;
+    SyslogHandler *m_logHandler;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
