@@ -6,13 +6,14 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QSplashScreen>
+#include <QicsDataModelDefault.h>
+#include <QicsTable.h>
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
 #include "imagemounter.h"
 #include "proxydialog.h"
 #include "loadingdialog.h"
-#include "sysloghandler.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -43,7 +44,6 @@ private:
     void ExcludeSystemLogs();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
-    QStandardItemModel *m_logModel;
     AppInfo *m_appInfo;
     float m_ratioTopWidth;
     float m_topWidth;
@@ -57,12 +57,11 @@ private:
     std::map<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
-    unsigned int m_maxShownLogs, m_scrollInterval;
+    quint64 m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
     LoadingDialog *m_loading;
-    SyslogHandler *m_logHandler;
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
 

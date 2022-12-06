@@ -26,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_devicesModel(nullptr)
-    , m_logModel(nullptr)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
@@ -36,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_imageMounter(nullptr)
     , m_proxyDialog(nullptr)
     , m_loading(nullptr)
-    , m_logHandler(nullptr)
+    , m_table(nullptr)
 {
     ui->setupUi(this);
 
@@ -73,13 +72,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->installBar->setAlignment(Qt::AlignCenter);
 
     m_loading = new LoadingDialog(this);
-
-    m_dataModel = new QicsDataModelDefault(250, 5);
-    m_table = new QicsTable(m_dataModel);
-    ui->logLayout->addWidget(m_table);
-    m_logHandler = new SyslogHandler(&m_table);
-
-
     m_eventFilter = new CustomKeyFilter();
     //ui->logTable->installEventFilter(m_eventFilter);
     ui->installDrop->installEventFilter(m_eventFilter);
@@ -127,12 +119,10 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     CrashSymbolicator::Destroy();
-//    m_logModel->clear();
-//    delete m_logModel;
     m_devicesModel->clear();
     delete m_devicesModel;
-    //ui->logTable->setModel(nullptr);
-    delete m_logHandler;
+    delete m_table;
+    delete m_dataModel;
     ui->deviceTable->setModel(nullptr);
     DeviceBridge::Destroy();
     delete m_eventFilter;
@@ -193,28 +183,22 @@ void MainWindow::SetupDevicesTable()
 
 void MainWindow::SetupLogsTable()
 {
-//    if (!m_logModel) {
-//        m_logModel = new QStandardItemModel();
-//        ui->logTable->setModel(m_logModel);
-//        ui->logTable->setWordWrap(false);
-//        ui->logTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-//        ui->logTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
-//        ui->logTable->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
-//        ui->logTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
-//        ui->logTable->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-//        ui->logTable->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-//    }
-//    m_logModel->setHorizontalHeaderItem(0, new QStandardItem("DateTime"));
-//    m_logModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
-//    m_logModel->setHorizontalHeaderItem(2, new QStandardItem("ProcessID"));
-//    m_logModel->setHorizontalHeaderItem(3, new QStandardItem("Type"));
-//    m_logModel->setHorizontalHeaderItem(4, new QStandardItem("Messages"));
-//    ui->logTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeMode::ResizeToContents);
+    if (!m_table)
+    {
+        m_dataModel = new QicsDataModelDefault(0, 5);
+        m_table = new QicsTable(m_dataModel);
+        m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
+        m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
+        m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
+        m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
+        m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
+        ui->logLayout->addWidget(m_table);
+    }
 }
 
 void MainWindow::UpdateLogsFilter()
 {
-//    m_logModel->clear();
+    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
     SetupLogsTable();
     for (LogPacket& m_Log : m_liveLogs)
     {
@@ -226,17 +210,18 @@ void MainWindow::UpdateLogsFilter()
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
-    QList<QStandardItem*> rowData;
-    rowData << new QStandardItem(log.getDateTime());
-    rowData << new QStandardItem(log.getDeviceName());
-    rowData << new QStandardItem(log.getProcessID());
-    rowData << new QStandardItem(log.getLogType());
-    rowData << new QStandardItem(log.getLogMessage());
-//    m_logModel->appendRow(rowData);
+    m_dataModel->addRows(1);
+    auto idx = m_dataModel->numRows() - 1;
+    m_dataModel->setItem(idx, 0, QicsDataString(log.getDateTime()));
+    m_dataModel->setItem(idx, 1, QicsDataString(log.getDeviceName()));
+    m_dataModel->setItem(idx, 2, QicsDataString(log.getProcessID()));
+    m_dataModel->setItem(idx, 3, QicsDataString(log.getLogType()));
+    m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
 
-    while ((unsigned int)m_logModel->rowCount() > m_maxShownLogs)
+    if (m_dataModel->numRows() > m_maxShownLogs)
     {
-//        m_logModel->removeRow(0);
+        quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
+        m_dataModel->deleteRows(deleteCount, 0);
     }
 }
 
@@ -454,8 +439,8 @@ void MainWindow::OnExcludeSystemLogsChecked(int state)
 
 void MainWindow::OnClearClicked()
 {
+    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
     m_liveLogs.clear();
-//    m_logModel->clear();
     SetupLogsTable();
 }
 
