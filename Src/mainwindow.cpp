@@ -8,6 +8,7 @@
 #include "usbmuxd.h"
 #include "crashsymbolicator.h"
 #include "asyncmanager.h"
+#include "customgrid.h"
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
@@ -63,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
 
+    m_loading = new LoadingDialog(this);
+    m_eventFilter = new CustomKeyFilter();
     ui->statusbar->showMessage("Idle");
     SetupDevicesTable();
     SetupLogsTable();
@@ -71,13 +74,9 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
     ui->installBar->setAlignment(Qt::AlignCenter);
 
-    m_loading = new LoadingDialog(this);
-    m_eventFilter = new CustomKeyFilter();
-    //ui->logTable->installEventFilter(m_eventFilter);
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
-    connect(m_eventFilter, SIGNAL(keyReleased(QObject*,QKeyEvent*)), this, SLOT(OnKeyReleased(QObject*,QKeyEvent*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
     connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
@@ -186,7 +185,7 @@ void MainWindow::SetupLogsTable()
     if (!m_table)
     {
         m_dataModel = new QicsDataModelDefault(0, 5);
-        m_table = new QicsTable(m_dataModel);
+        m_table = new QicsTable(0, 0, CustomGrid::createGrid, 0, m_dataModel);
         m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
         m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
         m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
@@ -251,43 +250,6 @@ void MainWindow::UpdateInfoWidget()
     ui->OSVersion->setText(deviceinfo["ProductVersion"].toString());
     ui->CPUArch->setText(deviceinfo["CPUArchitecture"].toString());
     ui->UDID->setText(deviceinfo["UniqueDeviceID"].toString());
-}
-
-void MainWindow::SaveLogMessages(bool savefile)
-{
-    QModelIndexList indexes = QModelIndexList();//ui->logTable->selectionModel()->selection().indexes();
-    int last_row = -1;
-    QString data_str = "";
-    for (int i = 0; i < indexes.count(); ++i)
-    {
-        QModelIndex index = indexes.at(i);
-        if (last_row > 0 && last_row != index.row())
-        {
-            data_str += "\n";
-        }
-        if (index.column() > 0)
-        {
-            data_str += "\t";
-        }
-        data_str += index.model()->index(index.row(),index.column()).data().toString();
-        last_row = index.row();
-    }
-
-    if (savefile)
-    {
-        QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
-        QFile f(filepath);
-        if (f.open(QIODevice::ReadWrite))
-        {
-            QTextStream stream(&f);
-            stream << data_str;
-            f.close();
-        }
-    }
-    else
-    {
-        QApplication::clipboard()->setText(data_str);
-    }
 }
 
 void MainWindow::RefreshSocketList()
@@ -464,7 +426,32 @@ void MainWindow::OnClearClicked()
 
 void MainWindow::OnSaveClicked()
 {
-    SaveLogMessages();
+    bool turnBack = false;
+    if (!ui->stopCheck->isChecked())
+    {
+        turnBack = true;
+        ui->stopCheck->click();
+    }
+
+    int rowCount = m_table->selectionList(true)->rows().count();
+    int columnCount = m_table->selectionList(true)->columns().count();
+    if (rowCount <= 1 && columnCount <= 1)
+        m_table->selectAll();
+
+    m_table->copy();
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+    QFile f(filepath);
+    if (f.open(QIODevice::WriteOnly))
+    {
+        QTextStream stream(&f);
+        stream << clipboard->text();
+        f.close();
+    }
+
+    if (turnBack)
+        ui->stopCheck->click();
+    m_table->clearSelectionList();
 }
 
 void MainWindow::OnClickedEvent(QObject* object)
@@ -487,17 +474,6 @@ void MainWindow::OnClickedEvent(QObject* object)
             QJsonDocument app_info;
             app_info.setObject(apps[idx].toObject());
             m_installedApps[bundle_id] = app_info;
-        }
-    }
-}
-
-void MainWindow::OnKeyReleased(QObject *object, QKeyEvent *keyEvent)
-{
-    if(object->objectName() == "")//ui->logTable->objectName())
-    {
-        if(keyEvent->matches(QKeySequence::Copy))
-        {
-            SaveLogMessages(false);
         }
     }
 }

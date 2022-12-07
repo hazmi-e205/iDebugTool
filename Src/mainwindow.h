@@ -39,7 +39,6 @@ private:
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
     void UpdateInfoWidget();
-    void SaveLogMessages(bool savefile = true);
     void RefreshSocketList();
     void ExcludeSystemLogs();
     Ui::MainWindow *ui;
@@ -81,7 +80,6 @@ private slots:
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);
-    void OnKeyReleased(QObject* object, QKeyEvent* keyEvent);
     void OnInstallClicked();
     void OnUninstallClicked();
     void OnInstallLogsClicked();
