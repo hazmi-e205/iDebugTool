@@ -192,6 +192,8 @@ void MainWindow::SetupLogsTable()
         m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
         m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
         m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
+        //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
+        m_table->setReadOnly(true);
         ui->logLayout->addWidget(m_table);
     }
 }
@@ -216,7 +218,23 @@ void MainWindow::AddLogToTable(LogPacket log)
     m_dataModel->setItem(idx, 1, QicsDataString(log.getDeviceName()));
     m_dataModel->setItem(idx, 2, QicsDataString(log.getProcessID()));
     m_dataModel->setItem(idx, 3, QicsDataString(log.getLogType()));
-    m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
+
+    auto lines = log.getLogMessage().split('\n');
+    if (lines.count() > 0)
+    {
+        for (quint64 line_idx = 0; line_idx < lines.count(); line_idx++)
+        {
+            if (line_idx > 0)
+            {
+                m_dataModel->addRows(1);
+            }
+            m_dataModel->setItem(idx + line_idx, 4, QicsDataString(lines[line_idx]));
+        }
+    }
+    else
+    {
+        m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
+    }
 
     if (m_dataModel->numRows() > m_maxShownLogs)
     {
