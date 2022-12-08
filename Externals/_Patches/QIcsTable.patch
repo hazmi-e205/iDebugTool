@@ -69,13 +69,17 @@ index 56f30c3..d226efa 100644
  #endif
  #ifdef QICSTABLE_GPL
 diff --git a/qicstable.pro b/qicstable.pro
-index dd37fff..408bfee 100644
+index dd37fff..aca26a1 100644
 --- a/qicstable.pro
 +++ b/qicstable.pro
-@@ -56,12 +56,3 @@ SUBDIRS  = src
- #DESIGNER_NOOP
- SUBDIRS += designer
- #END_DESIGNER_NOOP
+@@ -52,16 +52,3 @@ TEMPLATE = subdirs
+ CONFIG += ordered
+ 
+ SUBDIRS  = src
+-
+-#DESIGNER_NOOP
+-SUBDIRS += designer
+-#END_DESIGNER_NOOP
 -
 -# developers can suppress building of examples by creating .no_examples
 -!exists(.no_examples) {
@@ -86,7 +90,7 @@ index dd37fff..408bfee 100644
 -    SUBDIRS += demos
 -}
 diff --git a/qicstable_config.pri b/qicstable_config.pri
-index 57c5b81..d1fbe6d 100644
+index 57c5b81..7259d7d 100644
 --- a/qicstable_config.pri
 +++ b/qicstable_config.pri
 @@ -27,15 +27,15 @@ exists(local_config.pri) {
@@ -102,9 +106,8 @@ index 57c5b81..d1fbe6d 100644
  # Chose one of the following two lines to configure the build
  
  #CONFIG += release                 	# Compile and link QicsTable with debugging turned off.
--#CONFIG += debug                   	# Compile and link QicsTable with debugging turned on.
+ #CONFIG += debug                   	# Compile and link QicsTable with debugging turned on.
 -CONFIG += debug_and_release build_all	# Compile and link two QicsTable libraries, with and without debugging turned on.
-+CONFIG += debug                   	# Compile and link QicsTable with debugging turned on.
 +#CONFIG += debug_and_release build_all	# Compile and link two QicsTable libraries, with and without debugging turned on.
  
  # Uncomment this line if you want to use saving to XML, designer plugin, advanced spreadsheet demo.

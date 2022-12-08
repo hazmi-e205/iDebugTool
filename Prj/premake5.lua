@@ -26,15 +26,18 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    local prj_dir = debug.getinfo(1).source:match("@?(.*/)")
+    local src_path = path.getabsolute("../Externals/qicstable/lib/libqicstable_d.a", prj_dir)
+    local dist_path = path.getabsolute("../Externals/qicstable/lib/libqicstable.a", prj_dir)
     if IsWindows() then
-        prelinkcommands {"copy ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable_d.a ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable.a"}
+        prelinkcommands {"xcopy /Q /Y " .. src_path:gsub("/","\\") .. " " .. dist_path:gsub("/","\\")}
     else
-        prelinkcommands {"cp ../../../Externals/QIcsTable/lib/qicstable_d.a ../../../Externals/QIcsTable/lib/qicstable.a"}
+        prelinkcommands {"cp " .. src_path .. " " .. dist_path}
     end
 
     QtIncludes
     {
-        "../Externals/QIcsTable/qicstable_config.pri",
+        "../Externals/qicstable/qicstable_config.pri",
     }
 
     QtModules
@@ -69,7 +72,7 @@ project "iDebugTool"
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
-        "../Externals/QIcsTable/include",
+        "../Externals/qicstable/include",
     }
 
     links
@@ -91,7 +94,7 @@ project "iDebugTool"
     libdirs
     {
         "../Build/" .. GetPathFromPlatform() .. "/libs",
-        "../Externals/QIcsTable/lib",
+        "../Externals/qicstable/lib",
     }
 
     if IsWindows() then
