@@ -2,13 +2,12 @@
 #include <QMouseEvent>
 #include <QMenu>
 
-CustomGrid::CustomGrid(QWidget *w, QicsGridInfo &info,
-                       int top_row, int left_column)
+CustomGrid::CustomGrid(QWidget *w, QicsGridInfo &info, int top_row, int left_column)
     : QicsTableGrid(w, info, top_row, left_column)
+    , m_table((QicsTable*)w)
 {
     m_menu = new QMenu(this);
     m_menu->addAction(tr("&Copy"), QKeySequence("Ctrl+C"), w, SLOT(copy()));
-    m_table = (QicsTable*)w;
 }
 
 QicsTableGrid *CustomGrid::createGrid(QWidget *w, QicsGridInfo &info, int top_row, int left_column)
@@ -34,6 +33,12 @@ bool CustomGrid::event(QEvent *e)
     if (keyEvent && keyEvent->matches(QKeySequence::Copy))
     {
         m_table->copy();
+        return true;
+    }
+
+    if (keyEvent && keyEvent->matches(QKeySequence::SelectAll))
+    {
+        m_table->selectAll();
         return true;
     }
     return QicsTableGrid::event(e);
