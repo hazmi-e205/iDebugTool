@@ -21,6 +21,12 @@
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QWidget" name="widget" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
        <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <widget class="QSplitter" name="topSplitter">
@@ -219,7 +225,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>888</width>
-                  <height>591</height>
+                  <height>605</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_23">
@@ -2080,6 +2086,12 @@ color: rgb(255, 255, 255);</string>
        </layout>
       </widget>
       <widget class="QWidget" name="widget_2" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>4</verstretch>
+        </sizepolicy>
+       </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <widget class="QWidget" name="widget_31" native="true">
