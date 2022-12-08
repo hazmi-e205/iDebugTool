@@ -52,6 +52,11 @@ api.register {
     scope = "project",
     kind = "list:file",
 }
+api.register {
+    name= "QtIncludes",
+    scope = "project",
+    kind = "list:file",
+}
 
 p.modules.qt = {}
 local qt = p.modules.qt
@@ -208,6 +213,12 @@ function qt.project_pro(prj)
     if #prj.defines > 0 then
         _p('DEFINES += ' .. table.concat(prj.defines, " "))
     end
+    if #prj.QtIncludes > 0 then
+        for k,v in ipairs(prj.QtIncludes) do
+            local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
+            _p('include(' .. relative_str .. ')')
+        end
+    end
 
     -- compiler & linker flags
     if #prj.buildoptions > 0 then
@@ -260,6 +271,28 @@ function qt.project_pro(prj)
         _p('FORMS += \\')
         for k,v in ipairs(ui_list) do
             if k ~= #ui_list then
+                v = v .. ' \\'
+            end
+            _p(1, v)
+        end
+        _p('')
+    end
+
+    if #prj.prelinkcommands > 0 then
+        _p('QMAKE_PRE_LINK += \\')
+        for k,v in ipairs(prj.prelinkcommands) do
+            if k ~= #prj.prelinkcommands then
+                v = v .. ' \\'
+            end
+            _p(1, v)
+        end
+        _p('')
+    end
+
+    if #prj.postbuildcommands > 0 then
+        _p('QMAKE_POST_LINK += \\')
+        for k,v in ipairs(prj.postbuildcommands) do
+            if k ~= #prj.postbuildcommands then
                 v = v .. ' \\'
             end
             _p(1, v)

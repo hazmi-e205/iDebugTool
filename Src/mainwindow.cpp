@@ -8,6 +8,7 @@
 #include "usbmuxd.h"
 #include "crashsymbolicator.h"
 #include "asyncmanager.h"
+#include "customgrid.h"
 #include <QSplitter>
 #include <QTableView>
 #include <QAbstractItemView>
@@ -26,7 +27,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_devicesModel(nullptr)
-    , m_logModel(nullptr)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_imageMounter(nullptr)
     , m_proxyDialog(nullptr)
     , m_loading(nullptr)
+    , m_table(nullptr)
 {
     ui->setupUi(this);
 
@@ -63,6 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
 
+    m_loading = new LoadingDialog(this);
+    m_eventFilter = new CustomKeyFilter();
     ui->statusbar->showMessage("Idle");
     SetupDevicesTable();
     SetupLogsTable();
@@ -71,13 +74,9 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
     ui->installBar->setAlignment(Qt::AlignCenter);
 
-    m_loading = new LoadingDialog(this);
-    m_eventFilter = new CustomKeyFilter();
-    ui->logTable->installEventFilter(m_eventFilter);
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
-    connect(m_eventFilter, SIGNAL(keyReleased(QObject*,QKeyEvent*)), this, SLOT(OnKeyReleased(QObject*,QKeyEvent*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
     connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
@@ -119,11 +118,10 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     CrashSymbolicator::Destroy();
-    m_logModel->clear();
-    delete m_logModel;
     m_devicesModel->clear();
     delete m_devicesModel;
-    ui->logTable->setModel(nullptr);
+    delete m_table;
+    delete m_dataModel;
     ui->deviceTable->setModel(nullptr);
     DeviceBridge::Destroy();
     delete m_eventFilter;
@@ -184,28 +182,25 @@ void MainWindow::SetupDevicesTable()
 
 void MainWindow::SetupLogsTable()
 {
-    if (!m_logModel) {
-        m_logModel = new QStandardItemModel();
-        ui->logTable->setModel(m_logModel);
-        ui->logTable->setWordWrap(false);
-        ui->logTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-        ui->logTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
-        ui->logTable->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
-        ui->logTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
-        ui->logTable->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-        ui->logTable->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+    if (!m_table)
+    {
+        m_dataModel = new QicsDataModelDefault(0, 5);
+        m_table = new QicsTable(0, 0, CustomGrid::createGrid, 0, m_dataModel);
+        m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
+        m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
+        m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
+        m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
+        m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
+        m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
+        //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
+        m_table->setReadOnly(true);
+        ui->logLayout->addWidget(m_table);
     }
-    m_logModel->setHorizontalHeaderItem(0, new QStandardItem("DateTime"));
-    m_logModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
-    m_logModel->setHorizontalHeaderItem(2, new QStandardItem("ProcessID"));
-    m_logModel->setHorizontalHeaderItem(3, new QStandardItem("Type"));
-    m_logModel->setHorizontalHeaderItem(4, new QStandardItem("Messages"));
-    ui->logTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeMode::ResizeToContents);
 }
 
 void MainWindow::UpdateLogsFilter()
 {
-    m_logModel->clear();
+    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
     SetupLogsTable();
     for (LogPacket& m_Log : m_liveLogs)
     {
@@ -217,17 +212,34 @@ void MainWindow::UpdateLogsFilter()
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
-    QList<QStandardItem*> rowData;
-    rowData << new QStandardItem(log.getDateTime());
-    rowData << new QStandardItem(log.getDeviceName());
-    rowData << new QStandardItem(log.getProcessID());
-    rowData << new QStandardItem(log.getLogType());
-    rowData << new QStandardItem(log.getLogMessage());
-    m_logModel->appendRow(rowData);
+    m_dataModel->addRows(1);
+    auto idx = m_dataModel->numRows() - 1;
+    m_dataModel->setItem(idx, 0, QicsDataString(log.getDateTime()));
+    m_dataModel->setItem(idx, 1, QicsDataString(log.getDeviceName()));
+    m_dataModel->setItem(idx, 2, QicsDataString(log.getProcessID()));
+    m_dataModel->setItem(idx, 3, QicsDataString(log.getLogType()));
 
-    while ((unsigned int)m_logModel->rowCount() > m_maxShownLogs)
+    auto lines = log.getLogMessage().split('\n');
+    if (lines.count() > 0)
     {
-        m_logModel->removeRow(0);
+        for (quint64 line_idx = 0; line_idx < lines.count(); line_idx++)
+        {
+            if (line_idx > 0)
+            {
+                m_dataModel->addRows(1);
+            }
+            m_dataModel->setItem(idx + line_idx, 4, QicsDataString(lines[line_idx]));
+        }
+    }
+    else
+    {
+        m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
+    }
+
+    if (m_dataModel->numRows() > m_maxShownLogs)
+    {
+        quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
+        m_dataModel->deleteRows(deleteCount, 0);
     }
 }
 
@@ -239,43 +251,6 @@ void MainWindow::UpdateInfoWidget()
     ui->OSVersion->setText(deviceinfo["ProductVersion"].toString());
     ui->CPUArch->setText(deviceinfo["CPUArchitecture"].toString());
     ui->UDID->setText(deviceinfo["UniqueDeviceID"].toString());
-}
-
-void MainWindow::SaveLogMessages(bool savefile)
-{
-    QModelIndexList indexes = ui->logTable->selectionModel()->selection().indexes();
-    int last_row = -1;
-    QString data_str = "";
-    for (int i = 0; i < indexes.count(); ++i)
-    {
-        QModelIndex index = indexes.at(i);
-        if (last_row > 0 && last_row != index.row())
-        {
-            data_str += "\n";
-        }
-        if (index.column() > 0)
-        {
-            data_str += "\t";
-        }
-        data_str += index.model()->index(index.row(),index.column()).data().toString();
-        last_row = index.row();
-    }
-
-    if (savefile)
-    {
-        QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
-        QFile f(filepath);
-        if (f.open(QIODevice::ReadWrite))
-        {
-            QTextStream stream(&f);
-            stream << data_str;
-            f.close();
-        }
-    }
-    else
-    {
-        QApplication::clipboard()->setText(data_str);
-    }
 }
 
 void MainWindow::RefreshSocketList()
@@ -445,14 +420,39 @@ void MainWindow::OnExcludeSystemLogsChecked(int state)
 
 void MainWindow::OnClearClicked()
 {
+    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
     m_liveLogs.clear();
-    m_logModel->clear();
     SetupLogsTable();
 }
 
 void MainWindow::OnSaveClicked()
 {
-    SaveLogMessages();
+    bool turnBack = false;
+    if (!ui->stopCheck->isChecked())
+    {
+        turnBack = true;
+        ui->stopCheck->click();
+    }
+
+    int rowCount = m_table->selectionList(true)->rows().count();
+    int columnCount = m_table->selectionList(true)->columns().count();
+    if (rowCount <= 1 && columnCount <= 1)
+        m_table->selectAll();
+
+    m_table->copy();
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+    QFile f(filepath);
+    if (f.open(QIODevice::WriteOnly))
+    {
+        QTextStream stream(&f);
+        stream << clipboard->text();
+        f.close();
+    }
+
+    if (turnBack)
+        ui->stopCheck->click();
+    m_table->clearSelectionList();
 }
 
 void MainWindow::OnClickedEvent(QObject* object)
@@ -479,17 +479,6 @@ void MainWindow::OnClickedEvent(QObject* object)
     }
 }
 
-void MainWindow::OnKeyReleased(QObject *object, QKeyEvent *keyEvent)
-{
-    if(object->objectName() == ui->logTable->objectName())
-    {
-        if(keyEvent->matches(QKeySequence::Copy))
-        {
-            SaveLogMessages(false);
-        }
-    }
-}
-
 void MainWindow::OnInstallClicked()
 {
     m_installerLogs.clear();
@@ -512,7 +501,7 @@ void MainWindow::OnInstallLogsClicked()
 
 void MainWindow::OnScrollTimerTick()
 {
-    ui->logTable->scrollToBottom();
+//    ui->logTable->scrollToBottom();
 }
 
 void MainWindow::OnConfigureClicked()

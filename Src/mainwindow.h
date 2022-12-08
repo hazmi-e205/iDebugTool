@@ -6,6 +6,8 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QSplashScreen>
+#include <QicsDataModelDefault.h>
+#include <QicsTable.h>
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
@@ -37,12 +39,10 @@ private:
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
     void UpdateInfoWidget();
-    void SaveLogMessages(bool savefile = true);
     void RefreshSocketList();
     void ExcludeSystemLogs();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
-    QStandardItemModel *m_logModel;
     AppInfo *m_appInfo;
     float m_ratioTopWidth;
     float m_topWidth;
@@ -56,11 +56,13 @@ private:
     std::map<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
-    unsigned int m_maxShownLogs, m_scrollInterval;
+    quint64 m_maxShownLogs, m_scrollInterval;
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
     LoadingDialog *m_loading;
+    QicsDataModelDefault *m_dataModel;
+    QicsTable *m_table;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -78,7 +80,6 @@ private slots:
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);
-    void OnKeyReleased(QObject* object, QKeyEvent* keyEvent);
     void OnInstallClicked();
     void OnUninstallClicked();
     void OnInstallLogsClicked();

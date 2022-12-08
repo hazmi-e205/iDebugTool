@@ -2,6 +2,10 @@ include "common.lua"
 
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
+    external "qicstable"
+        location  ("../Externals")
+		kind "None"
+    
     include "openssl.lua"
     include "libzip.lua"
     include "libplist.lua"
@@ -22,9 +26,21 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    if IsWindows() then
+        prelinkcommands {"copy ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable_d.a ..\\..\\..\\Externals\\QIcsTable\\lib\\libqicstable.a"}
+    else
+        prelinkcommands {"cp ../../../Externals/QIcsTable/lib/qicstable_d.a ../../../Externals/QIcsTable/lib/qicstable.a"}
+    end
+
+    QtIncludes
+    {
+        "../Externals/QIcsTable/qicstable_config.pri",
+    }
+
     QtModules
     {
         "network",
+        "xml",
     }
 
     QtResources
@@ -53,6 +69,7 @@ project "iDebugTool"
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
+        "../Externals/QIcsTable/include",
     }
 
     links
@@ -68,11 +85,13 @@ project "iDebugTool"
         "zlib",
         "MachOLib",
         "unzip",
+        "qicstable",
     }
 
     libdirs
     {
         "../Build/" .. GetPathFromPlatform() .. "/libs",
+        "../Externals/QIcsTable/lib",
     }
 
     if IsWindows() then
