@@ -191,6 +191,7 @@ void MainWindow::SetupLogsTable()
         m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
         m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
         m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
+        m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
         //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
         m_table->setReadOnly(true);
         ui->logLayout->addWidget(m_table);
