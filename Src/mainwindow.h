@@ -6,6 +6,7 @@
 #include <QStandardItemModel>
 #include <QTimer>
 #include <QSplashScreen>
+#include <QMutex>
 #include <QicsDataModelDefault.h>
 #include <QicsTable.h>
 #include "devicebridge.h"
@@ -38,6 +39,7 @@ private:
     void SetupLogsTable();
     void UpdateLogsFilter();
     void AddLogToTable(LogPacket log);
+    void AddLogToTable(QList<LogPacket> logs);
     void UpdateInfoWidget();
     void RefreshSocketList();
     void ExcludeSystemLogs();
@@ -63,6 +65,7 @@ private:
     LoadingDialog *m_loading;
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
+    QMutex m_mutex;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);

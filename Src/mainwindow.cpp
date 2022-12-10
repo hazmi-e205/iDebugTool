@@ -184,35 +184,44 @@ void MainWindow::SetupLogsTable()
 {
     if (!m_table)
     {
-        m_dataModel = new QicsDataModelDefault(0, 5);
+        m_dataModel = new QicsDataModelDefault(0, 0);
         m_table = new QicsTable(0, 0, CustomGrid::createGrid, 0, m_dataModel);
-        m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
-        m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
-        m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
-        m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
-        m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
-        m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
-        //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
-        m_table->setReadOnly(true);
         ui->logLayout->addWidget(m_table);
     }
+    m_table->addColumns(5);
+    m_table->addRows(1);
+    m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
+    m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
+    m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
+    m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
+    m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
+    m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
+    //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
+    m_table->setReadOnly(true);
 }
 
 void MainWindow::UpdateLogsFilter()
 {
-    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
+    m_mutex.lock();
+    m_table->clearTable();
     SetupLogsTable();
+
+    QList<LogPacket> logs;
     for (LogPacket& m_Log : m_liveLogs)
     {
         if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter)) {
-            AddLogToTable(m_Log);
+            logs << m_Log;
         }
     }
+    AddLogToTable(logs);
+    m_mutex.unlock();
 }
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
-    m_dataModel->addRows(1);
+    if (!m_dataModel->isRowEmpty(0))
+        m_dataModel->addRows(1);
+
     auto idx = m_dataModel->numRows() - 1;
     m_dataModel->setItem(idx, 0, QicsDataString(log.getDateTime()));
     m_dataModel->setItem(idx, 1, QicsDataString(log.getDeviceName()));
@@ -234,6 +243,45 @@ void MainWindow::AddLogToTable(LogPacket log)
     else
     {
         m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
+    }
+
+    if (m_dataModel->numRows() > m_maxShownLogs)
+    {
+        quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
+        m_dataModel->deleteRows(deleteCount, 0);
+    }
+}
+
+void MainWindow::AddLogToTable(QList<LogPacket> logs)
+{
+    if (logs.count() == 0)
+        return;
+
+    m_dataModel->addRows(m_dataModel->isRowEmpty(0) ? logs.count()-1 : logs.count());
+    auto first_idx = m_dataModel->numRows() - logs.count() - 1;
+    for (int idx = 0; idx <logs.count(); idx++)
+    {
+        m_dataModel->setItem(first_idx + idx, 0, QicsDataString(logs[idx].getDateTime()));
+        m_dataModel->setItem(first_idx + idx, 1, QicsDataString(logs[idx].getDeviceName()));
+        m_dataModel->setItem(first_idx + idx, 2, QicsDataString(logs[idx].getProcessID()));
+        m_dataModel->setItem(first_idx + idx, 3, QicsDataString(logs[idx].getLogType()));
+
+        auto lines = logs[idx].getLogMessage().split('\n');
+        if (lines.count() > 0)
+        {
+            for (quint64 line_idx = 0; line_idx < lines.count(); line_idx++)
+            {
+                if (line_idx > 0)
+                {
+                    m_dataModel->addRows(1);
+                }
+                m_dataModel->setItem(idx + line_idx, 4, QicsDataString(lines[line_idx]));
+            }
+        }
+        else
+        {
+            m_dataModel->setItem(idx, 4, QicsDataString(logs[idx].getLogMessage()));
+        }
     }
 
     if (m_dataModel->numRows() > m_maxShownLogs)
@@ -420,9 +468,19 @@ void MainWindow::OnExcludeSystemLogsChecked(int state)
 
 void MainWindow::OnClearClicked()
 {
-    m_dataModel->deleteRows(m_dataModel->numRows(), 0);
+    bool turnBack = false;
+    if (!ui->stopCheck->isChecked())
+    {
+        turnBack = true;
+        ui->stopCheck->click();
+    }
+
+    m_table->clearTable();
     m_liveLogs.clear();
     SetupLogsTable();
+
+    if (turnBack)
+        ui->stopCheck->click();
 }
 
 void MainWindow::OnSaveClicked()
