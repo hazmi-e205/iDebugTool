@@ -559,7 +559,23 @@ void MainWindow::OnInstallLogsClicked()
 
 void MainWindow::OnScrollTimerTick()
 {
-//    ui->logTable->scrollToBottom();
+    int max_value = m_table->verticalScrollBar()->maximum();
+    int value = m_table->verticalScrollBar()->value();
+    if (max_value != value)
+    {
+        if (m_lastAutoScroll && (m_lastMaxScroll == max_value))
+        {
+            ui->scrollCheck->setCheckState(Qt::CheckState::Unchecked);
+            m_lastAutoScroll = false;
+        }
+
+        if (ui->scrollCheck->isChecked())
+        {
+            m_table->verticalScrollBar()->setValue(max_value);
+            m_lastAutoScroll = true;
+        }
+    }
+    m_lastMaxScroll = max_value;
 }
 
 void MainWindow::OnConfigureClicked()

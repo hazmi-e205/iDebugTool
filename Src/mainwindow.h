@@ -66,6 +66,8 @@ private:
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
     QMutex m_mutex;
+    bool m_lastAutoScroll;
+    int m_lastMaxScroll;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
