@@ -78,7 +78,7 @@ private:
     void TriggerSystemLogsReceived(LogPacket log);
     void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
-    int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn);
+    int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
     void afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath);
     int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
 

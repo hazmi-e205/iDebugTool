@@ -1,5 +1,6 @@
 #include "devicebridge.h"
 
+#include <QFileInfo>
 #include <libimobiledevice-glue/utils.h>
 #include <dirent.h>
 
@@ -10,11 +11,13 @@
 #endif
 #include <string.h>
 
-int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn)
+int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
 {
     FILE *f = NULL;
     uint64_t af = 0;
     char buf[1048576];
+    size_t total_bytes = QFileInfo(filename).size();
+    size_t uploaded_bytes = 0;
 
     f = fopen(filename.toUtf8().data(), "rb");
     if (!f) {
@@ -41,6 +44,9 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
                     break;
                 }
                 total += written;
+                uploaded_bytes += written;
+                if (callback)
+                    callback(uploaded_bytes, total_bytes);
             }
             if (total != amount) {
                 fprintf(stderr, "Error: wrote only %u of %u\n", total, (uint32_t)amount);

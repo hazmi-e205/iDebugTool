@@ -307,7 +307,13 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
 
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Sending " + QFileInfo(path).fileName());
-            if (afc_upload_file(m_afc, path, pkgname) < 0) {
+            auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
+            {
+                int percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
+                QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, message);
+            };
+            if (afc_upload_file(m_afc, path, pkgname, callback) < 0) {
                 return;
             }
 
@@ -328,10 +334,10 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 
         /* perform installation or upgrade */
         if (cmd == CMD_INSTALL) {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Installing " + QString(bundleidentifier));
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Installing " + QString(bundleidentifier));
             instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
         } else {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Upgrading " + QString(bundleidentifier));
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
             instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
         }
         instproxy_client_options_free(client_opts);
@@ -346,7 +352,8 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     QString pMessage = status["Status"].toString();
     StringWithSpaces(pMessage, true);
 
-    emit InstallerStatusChanged(pCommand, pBundleId, pMessage == "Complete" ? 100 : status["PercentComplete"].toInt(), pMessage);
+    int percentage = pMessage == "Complete" ? 100 : (50 + status["PercentComplete"].toInt() / 2);
+    emit InstallerStatusChanged(pCommand, pBundleId, percentage, pMessage);
 }
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)

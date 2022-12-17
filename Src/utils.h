@@ -24,6 +24,7 @@ quint64 VersionToUInt(QString version_raw);
 QString UIntToVersion(quint64 version_int);
 bool FilterVersion(QStringList& versions, QString version);
 QStringList FindFiles(QString dir, QStringList criteria);
+QString BytesToString(uint32_t bytes);
 
 enum DIRECTORY_TYPE
 {
