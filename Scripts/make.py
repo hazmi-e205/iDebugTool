@@ -24,7 +24,7 @@ if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"
 
 #compiler
 qt_dir           = "C:/Qt"
-qt_version       = "6.3.0"
+qt_version       = "6.4.1"
 compiler_name    = "mingw"
 compiler_version = "1120"
 compiler_arch    = "64"

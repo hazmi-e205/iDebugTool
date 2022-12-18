@@ -1,13 +1,13 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha4",
+    "status": "alpha5",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "b314f04bd791b263cf43fadc6ac0756e67ab4ed0",
+            "revision": "7a8e432e9b492bd3e800861f435d1bbe751076b0",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
