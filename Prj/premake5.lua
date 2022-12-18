@@ -30,7 +30,7 @@ project "iDebugTool"
     local src_path = path.getabsolute("../Externals/qicstable/lib/libqicstable_d.a", prj_dir)
     local dist_path = path.getabsolute("../Externals/qicstable/lib/libqicstable.a", prj_dir)
     if IsWindows() then
-        prelinkcommands {"xcopy /Q /Y " .. src_path:gsub("/","\\") .. " " .. dist_path:gsub("/","\\")}
+        prelinkcommands {"copy /y " .. src_path:gsub("/","\\") .. " " .. dist_path:gsub("/","\\")}
     else
         prelinkcommands {"cp " .. src_path .. " " .. dist_path}
     end

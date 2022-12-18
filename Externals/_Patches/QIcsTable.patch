@@ -163,9 +163,18 @@ index a497f32..2f9819f 100644
  QicsTable::print(QPrinter *printer)
  {
 diff --git a/src/src.pro b/src/src.pro
-index 3adc4da..fdc2967 100644
+index 3adc4da..5ce7a21 100644
 --- a/src/src.pro
 +++ b/src/src.pro
+@@ -18,7 +18,7 @@ include(../qicstable_config.pri)
+ 
+ DESTDIR = ../lib
+ 
+-CONFIG += $$LIB_CONFIG
++CONFIG += $$LIB_CONFIG debug
+ 
+ unix {
+     CLEAN_FILES += $(DESTDIR)/lib$(QMAKE_TARGET)*
 @@ -222,17 +222,17 @@ SOURCES += QicsGridInfo.cpp \
              ../addons/table.tree/QicsTreeHeaderGrid.cpp
  
