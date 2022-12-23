@@ -1,6 +1,5 @@
 #include "simplerequest.h"
 #include <QEventLoop>
-#include "userconfigs.h"
 
 SimpleRequest::SimpleRequest()
     : m_manager(nullptr)

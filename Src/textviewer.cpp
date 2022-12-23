@@ -16,11 +16,12 @@ TextViewer::~TextViewer()
     delete ui;
 }
 
-void TextViewer::ShowText(QString title, QString text, const std::function<void(QString)>& textCallback)
+void TextViewer::ShowText(QString title, QString initialText, bool readOnly, const std::function<void(QString)>& textCallback, QString customButton)
 {
     m_callback = textCallback;
-    ui->textEdit->setReadOnly(!textCallback);
-    ui->textEdit->setText(text);
+    ui->textEdit->setReadOnly(readOnly);
+    ui->textEdit->setText(initialText);
+    ui->okButton->setText(customButton);
     setWindowTitle(title);
     show();
 }

@@ -366,31 +366,70 @@ bool IsInternetOn()
 
 quint64 VersionToUInt(QString version_raw)
 {
-    std::array<int,3> version = {0,0,0};
-    QString version_str = FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+");
-    if (!version_str.isEmpty())
-    {
+    std::array<int,5> version = {0,0,0,3,0};
+    QStringList version_list;
+    version_list << FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+-[\\S]+\\d+");
+    version_list << FindRegex(version_raw, "\\d+\\.\\d+\\.\\d+");
+    version_list << FindRegex(version_raw, "\\d+\\.\\d+");
+
+    foreach (QString version_str, version_list) {
+        if (version_str.isEmpty())
+            continue;
+
         QStringList versions = version_str.split(".");
-        version[0] = versions[0].toInt();
-        version[1] = versions[1].toInt();
-        version[2] = versions[2].toInt();
+        if (version_str.contains('-'))
+        {
+            QStringList splitted = version_str.split('-');
+            versions = splitted.at(0).split(".");
+            for (int idx = 0; idx < versions.count(); idx++)
+                version[idx] = versions[idx].toInt();
+
+            if (splitted.at(1).contains("alpha"))
+                version[3] = 0;
+            else if (splitted.at(1).contains("beta"))
+                version[3] = 1;
+            else if (splitted.at(1).contains("rc"))
+                version[3] = 2;
+
+            QString last = FindRegex(splitted.at(1), "\\d+");
+            if (!last.isEmpty())
+                version[4] = last.toInt();
+        }
+        break;
     }
-    version_str = version_str.isEmpty() ? FindRegex(version_raw, "\\d+\\.\\d+") : version_str;
-    if (!version_str.isEmpty() && version[0] == 0)
-    {
-        QStringList versions = version_str.split(".");
-        version[0] = versions[0].toInt();
-        version[1] = versions[1].toInt();
-    }
-    return (version[0] * 1000000) + (version[1] * 1000) + version[2];
+    return (version[0] * 10000000000) + (version[1] * 10000000) + (version[2] * 10000) + (version[3] * 1000) + version[4];
 }
 
-QString UIntToVersion(quint64 version_int)
+QString UIntToVersion(quint64 version_int, bool full)
 {
-    quint64 major = version_int / 1000000;
-    quint64 minor = (version_int % 1000000) / 1000;
-    quint64 patch = (version_int % 1000);
-    return QString::number(major) + "." + QString::number(minor) + (patch != 0 ? ("." + QString::number(patch)) : "");
+    quint64 major = version_int / 10000000000;
+    quint64 minor = (version_int % 10000000000) / 10000000;
+    quint64 patch = ((version_int % 10000000000) % 10000000) / 10000;
+    quint64 micro = (((version_int % 10000000000) % 10000000) % 10000) / 1000;
+    quint64 nano  = (((version_int % 10000000000) % 10000000) % 10000) % 1000;
+
+    QString version = QString::number(major) + "." + QString::number(minor) + (patch != 0 ? ("." + QString::number(patch)) : "");
+    if (full)
+    {
+        QString status = "";
+        switch (micro)
+        {
+        case 0:
+            status = "alpha";
+            break;
+        case 1:
+            status = "beta";
+            break;
+        case 2:
+            status = "rc";
+            break;
+        }
+
+        if (nano > 0)
+            status += QString::number(nano);
+        version = QString::number(major) + "." + QString::number(minor) + QString::number(patch) + (status.isEmpty() ? "" : status);
+    }
+    return version;
 }
 
 QString GetDirectory(DIRECTORY_TYPE dirtype)

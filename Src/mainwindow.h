@@ -108,5 +108,6 @@ private slots:
     void OnScreenshotReceived(QString imagePath);
     void OnExcludeSystemLogListClicked();
     void OnProcessStatusChanged(int percentage, QString message);
+    void OnUpdateClicked();
 };
 #endif // MAINWINDOW_H

@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
+    connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
@@ -113,6 +114,19 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
     connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
+
+    m_appInfo->CheckUpdate([&](QString changelogs, QString url){
+        if (changelogs.isEmpty() && url.isEmpty())
+        {
+            ui->updateBtn->setText(" You're up to date!");
+            ui->updateBtn->setIcon(QIcon(":res/Assets/GreenCheck.png"));
+        }
+        else
+        {
+            ui->updateBtn->setText(" New version available!");
+            ui->updateBtn->setIcon(QIcon(":res/Assets/YellowInfo.png"));
+        }
+    });
 }
 
 MainWindow::~MainWindow()
@@ -745,7 +759,7 @@ void MainWindow::OnExcludeSystemLogListClicked()
     QStringList excludes = excludeData.split("|");
 
     excludeData = excludes.join('\n');
-    m_textDialog->ShowText("System Logs Exclude List", excludeData, [](QString data){
+    m_textDialog->ShowText("System Logs Exclude List", excludeData, false, [](QString data){
         QStringList excludes = data.split("\n");
         UserConfigs::Get()->SaveData("SystemLogList", excludes.join('|'));
     });
@@ -758,4 +772,17 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 
     m_loading->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
+}
+
+void MainWindow::OnUpdateClicked()
+{
+    m_appInfo->CheckUpdate([&](QString changelogs, QString url)
+    {
+        if (changelogs.isEmpty())
+            return;
+
+        m_textDialog->ShowText("New Versions", changelogs, true, [url](QString){
+            QDesktopServices::openUrl(QUrl(url));
+        }, "Go to download...");
+    });
 }

@@ -21,7 +21,7 @@ public:
      * @param initial text that want to show to text viewer.
      * @param callback if you want to use it as text editor, nullptr mean read only.
      */
-    void ShowText(QString title, QString text, const std::function<void(QString)>& textCallback = nullptr);
+    void ShowText(QString title, QString initialText, bool readOnly = true, const std::function<void(QString)>& textCallback = nullptr, QString customButton = "Ok");
     void AppendText(QString text);
 
 private:

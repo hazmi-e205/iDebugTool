@@ -21,7 +21,7 @@ QString FindRegex(QString rawString, QString regex);
 bool IsInternetOn();
 QString ParseVersion(QString version_raw);
 quint64 VersionToUInt(QString version_raw);
-QString UIntToVersion(quint64 version_int);
+QString UIntToVersion(quint64 version_int, bool full = false);
 bool FilterVersion(QStringList& versions, QString version);
 QStringList FindFiles(QString dir, QStringList criteria);
 QString BytesToString(uint32_t bytes);
