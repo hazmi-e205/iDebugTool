@@ -380,9 +380,6 @@ quint64 VersionToUInt(QString version_raw)
         if (version_str.contains('-'))
         {
             QStringList splitted = version_str.split('-');
-            versions = splitted.at(0).split(".");
-            for (int idx = 0; idx < versions.count(); idx++)
-                version[idx] = versions[idx].toInt();
 
             if (splitted.at(1).contains("alpha"))
                 version[3] = 0;
@@ -394,7 +391,10 @@ quint64 VersionToUInt(QString version_raw)
             QString last = FindRegex(splitted.at(1), "\\d+");
             if (!last.isEmpty())
                 version[4] = last.toInt();
+            versions = splitted.at(0).split(".");
         }
+        for (int idx = 0; idx < versions.count(); idx++)
+            version[idx] = versions[idx].toInt();
         break;
     }
     return (version[0] * 10000000000) + (version[1] * 10000000) + (version[2] * 10000) + (version[3] * 1000) + version[4];
