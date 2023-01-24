@@ -8,6 +8,7 @@ CustomGrid::CustomGrid(QWidget *w, QicsGridInfo &info, int top_row, int left_col
 {
     m_menu = new QMenu(this);
     m_menu->addAction(tr("&Copy"), QKeySequence("Ctrl+C"), w, SLOT(copy()));
+    m_menu->addAction(tr("Select &All"), QKeySequence("Ctrl+A"), w, SLOT(selectAll()));
 }
 
 QicsTableGrid *CustomGrid::createGrid(QWidget *w, QicsGridInfo &info, int top_row, int left_column)
