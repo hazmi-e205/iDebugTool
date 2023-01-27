@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
     , m_proxyDialog(nullptr)
+    , m_aboutDialog(nullptr)
     , m_loading(nullptr)
     , m_table(nullptr)
 {
@@ -64,6 +65,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
+
+    m_aboutDialog = new AboutDialog(&m_appInfo, this);
+    connect(ui->aboutBtn, SIGNAL(pressed()), m_aboutDialog, SLOT(show()));
 
     m_loading = new LoadingDialog(this);
     m_eventFilter = new CustomKeyFilter();
@@ -145,6 +149,7 @@ MainWindow::~MainWindow()
     delete m_textDialog;
     delete m_imageMounter;
     delete m_proxyDialog;
+    delete m_aboutDialog;
     delete m_loading;
     AsyncManager::Destroy();
     delete ui;

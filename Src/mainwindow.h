@@ -15,6 +15,7 @@
 #include "imagemounter.h"
 #include "proxydialog.h"
 #include "loadingdialog.h"
+#include "aboutdialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -62,6 +63,7 @@ private:
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
+    AboutDialog *m_aboutDialog;
     LoadingDialog *m_loading;
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
