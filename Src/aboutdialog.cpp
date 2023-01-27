@@ -13,17 +13,24 @@ AboutDialog::AboutDialog(AppInfo **appInfo, QWidget *parent) :
     ui->name_label->setText((*appInfo)->GetName());
     ui->version_label->setText("v" + (*appInfo)->GetVersion());
 
+    int idx = 0;
     QString contributed = "";
     contributed += "Created by\n";
     contributed += "Hazmi Amalul Arifin (hazmi-e205)\n\n";
 
     contributed += "Contributed projects\n";
+    contributed += QString::number(++idx) + ". " + "Qt6" + "\n";
+    contributed += "Repository: https://github.com/qt/qt5 \n";
+    contributed += "Download: https://www.qt.io/download-open-source \n\n";
+
+    contributed += QString::number(++idx) + ". " + "Premake5" + "\n";
+    contributed += "Repository: https://github.com/premake/premake-core \n";
+    contributed += "Download: https://github.com/premake/premake-core/releases \n\n";
+
     QJsonArray dependencies = (*appInfo)->GetJson()["dependencies"].toArray();
-    int idx = 0;
     foreach (auto data, dependencies)
     {
-        idx += 1;
-        contributed += QString::number(idx) + ". "+ data.toObject()["project"].toString() + "\n";
+        contributed += QString::number(++idx) + ". "+ data.toObject()["project"].toString() + "\n";
         contributed += "Repository: " + data.toObject()["url"].toString() + "\n";
         if (data.toObject().contains("revision"))
             contributed += "Revision: " + data.toObject()["revision"].toString() + "\n";
