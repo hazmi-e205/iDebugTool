@@ -2209,7 +2209,7 @@ background-color: rgb(4, 111, 182);</string>
             <attribute name="title">
              <string>Crashlog</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_28">
+            <layout class="QVBoxLayout" name="verticalLayout_26">
              <item>
               <widget class="QWidget" name="widget_44" native="true">
                <property name="sizePolicy">
@@ -2261,89 +2261,426 @@ QPushButton:focus {
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QPushButton" name="crashlogsDirBtn">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                  </property>
+                  <property name="text">
+                   <string>Go to dir...</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_4">
-               <property name="title">
-                <string>Symbolicator</string>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_26">
+              <widget class="QWidget" name="widget_39" native="true">
+               <layout class="QVBoxLayout" name="verticalLayout_33">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item>
-                 <widget class="QWidget" name="widget_45" native="true">
-                  <layout class="QHBoxLayout" name="horizontalLayout_26">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
+                 <widget class="QWidget" name="widget_67" native="true">
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 146, 1);
+color: rgb(255, 255, 255);</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_41">
                    <item>
-                    <widget class="QLabel" name="label_23">
-                     <property name="text">
-                      <string>Crashlog Path</string>
+                    <widget class="QWidget" name="widget_69" native="true">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
                      </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="crashlogEdit"/>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="crashlogBtn">
-                     <property name="text">
-                      <string>Browse...</string>
-                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_34">
+                      <item>
+                       <widget class="QWidget" name="widget_70" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_40">
+                         <property name="spacing">
+                          <number>6</number>
+                         </property>
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QLabel" name="label_37">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>100</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>9</pointsize>
+                             <bold>true</bold>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>Crashlog Path</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLineEdit" name="crashlogEdit">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QPushButton" name="crashlogBtn">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string>Browse...</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QWidget" name="widget_71" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_39">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QLabel" name="label_38">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>100</width>
+                             <height>16777215</height>
+                            </size>
+                           </property>
+                           <property name="font">
+                            <font>
+                             <pointsize>9</pointsize>
+                             <bold>true</bold>
+                            </font>
+                           </property>
+                           <property name="text">
+                            <string>DSYM Path</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLineEdit" name="dsymEdit">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QPushButton" name="dsymBtn">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string>DSYM Dir...</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QPushButton" name="dwarfBtn">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string>DWARF File...</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QWidget" name="widget_72" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_42">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                        </layout>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QWidget" name="widget_73" native="true">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimumSize">
+                         <size>
+                          <width>0</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <layout class="QHBoxLayout" name="horizontalLayout_43">
+                         <property name="leftMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QPushButton" name="symbolicateBtn">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                           </property>
+                           <property name="text">
+                            <string>Symbolicate!</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </widget>
+                      </item>
+                     </layout>
                     </widget>
                    </item>
                   </layout>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QWidget" name="widget_46" native="true">
-                  <layout class="QHBoxLayout" name="horizontalLayout_27">
-                   <property name="leftMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QLabel" name="label_24">
-                     <property name="text">
-                      <string>DSym Path</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="dsymEdit"/>
-                   </item>
-                   <item>
-                    <widget class="QPushButton" name="dsymBtn">
-                     <property name="text">
-                      <string>Browse...</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="symbolicateBtn">
+                 <widget class="QLabel" name="label_40">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(227, 129, 0);
+color: rgb(255, 255, 255);</string>
+                  </property>
                   <property name="text">
-                   <string>Symbolicate!</string>
+                   <string>Crashlog Symbolicator</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
                   </property>
                  </widget>
                 </item>
