@@ -313,8 +313,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>874</width>
-                  <height>430</height>
+                  <width>893</width>
+                  <height>436</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_23">
@@ -634,6 +634,20 @@ color: rgb(255, 255, 255);</string>
                                              <verstretch>0</verstretch>
                                             </sizepolicy>
                                            </property>
+                                           <property name="styleSheet">
+                                            <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                           </property>
                                            <property name="readOnly">
                                             <bool>true</bool>
                                            </property>
@@ -652,6 +666,21 @@ color: rgb(255, 255, 255);</string>
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
+                                     </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                      </property>
                                      <property name="text">
                                       <string>System information...</string>
@@ -893,7 +922,18 @@ color: rgb(255, 255, 255);</string>
                                    </sizepolicy>
                                   </property>
                                   <property name="styleSheet">
-                                   <string notr="true">border-color: rgb(255, 146, 1);</string>
+                                   <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                   </property>
                                  </widget>
                                 </item>
@@ -917,6 +957,21 @@ color: rgb(255, 255, 255);</string>
                                     <horstretch>0</horstretch>
                                     <verstretch>0</verstretch>
                                    </sizepolicy>
+                                  </property>
+                                  <property name="styleSheet">
+                                   <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                   </property>
                                   <property name="text">
                                    <string>Install</string>
@@ -959,7 +1014,7 @@ color: rgb(255, 255, 255);</string>
                                    </sizepolicy>
                                   </property>
                                   <property name="styleSheet">
-                                   <string notr="true">color: rgb(0, 0, 0);</string>
+                                   <string notr="true"/>
                                   </property>
                                   <property name="value">
                                    <number>0</number>
@@ -973,6 +1028,21 @@ color: rgb(255, 255, 255);</string>
                                     <horstretch>0</horstretch>
                                     <verstretch>0</verstretch>
                                    </sizepolicy>
+                                  </property>
+                                  <property name="styleSheet">
+                                   <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                   </property>
                                   <property name="text">
                                    <string>Logs</string>
@@ -1174,6 +1244,20 @@ color: rgb(255, 255, 255);</string>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
                                      </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                     </property>
                                      <property name="text">
                                       <string>100</string>
                                      </property>
@@ -1233,6 +1317,20 @@ color: rgb(255, 255, 255);</string>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
                                      </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                     </property>
                                      <property name="text">
                                       <string>250</string>
                                      </property>
@@ -1289,6 +1387,21 @@ color: rgb(255, 255, 255);</string>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
                                      </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                     </property>
                                      <property name="text">
                                       <string>Update List</string>
                                      </property>
@@ -1332,6 +1445,21 @@ color: rgb(255, 255, 255);</string>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
                                      </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                     </property>
                                      <property name="text">
                                       <string>Internet Proxy...</string>
                                      </property>
@@ -1344,6 +1472,21 @@ color: rgb(255, 255, 255);</string>
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
+                                     </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                      </property>
                                      <property name="text">
                                       <string>Configure...</string>
@@ -1630,6 +1773,20 @@ color: rgb(255, 255, 255);</string>
                                              <verstretch>0</verstretch>
                                             </sizepolicy>
                                            </property>
+                                           <property name="styleSheet">
+                                            <string notr="true">QLineEdit {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	background-color: rgb(231, 131, 1);
+	padding: 2px;
+}
+QLineEdit:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QLineEdit:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
+                                           </property>
                                            <property name="readOnly">
                                             <bool>true</bool>
                                            </property>
@@ -1648,6 +1805,21 @@ color: rgb(255, 255, 255);</string>
                                        <horstretch>0</horstretch>
                                        <verstretch>0</verstretch>
                                       </sizepolicy>
+                                     </property>
+                                     <property name="styleSheet">
+                                      <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                      </property>
                                      <property name="text">
                                       <string>Show more...</string>
@@ -1734,6 +1906,21 @@ color: rgb(255, 255, 255);</string>
                                           <horstretch>0</horstretch>
                                           <verstretch>0</verstretch>
                                          </sizepolicy>
+                                        </property>
+                                        <property name="styleSheet">
+                                         <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                                         </property>
                                         <property name="text">
                                          <string>Uninstall</string>
@@ -2053,6 +2240,21 @@ color: rgb(255, 255, 255);</string>
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QPushButton {
+	border: 1px solid rgb(255, 149, 5);
+	border-radius: 10px;
+	padding: 4px;
+	background-color: rgb(254, 190, 107);
+	color: rgb(68, 68, 68);
+}
+QPushButton:hover {
+	border: 1px solid rgb(0, 170, 255);
+}
+QPushButton:focus {
+	border: 1px solid rgb(85, 170, 255);
+}</string>
                   </property>
                   <property name="text">
                    <string>Sync to folder</string>
