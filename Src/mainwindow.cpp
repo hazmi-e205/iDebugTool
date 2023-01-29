@@ -131,6 +131,31 @@ MainWindow::MainWindow(QWidget *parent)
             ui->updateBtn->setIcon(QIcon(":res/Assets/YellowInfo.png"));
         }
     });
+
+    MassStylesheet(STYLE_TYPE::ROUNDED_BUTTON_LIGHT, QList<QWidget*>()
+                   << ui->sysInfoBtn
+                   << ui->excludeSytemBtn
+                   << ui->proxyBtn
+                   << ui->configureBtn
+                   << ui->installBtn
+                   << ui->installLogs
+                   << ui->appInfoBtn
+                   << ui->UninstallBtn
+                   << ui->syncCrashlogsBtn
+                   << ui->crashlogsDirBtn
+                   << ui->crashlogBtn
+                   << ui->dsymBtn
+                   << ui->dwarfBtn
+                   << ui->symbolicateBtn);
+
+    MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
+                   << ui->UDID
+                   << ui->maxShownLogs
+                   << ui->scrollInterval
+                   << ui->installPath
+                   << ui->AppSigner
+                   << ui->crashlogEdit
+                   << ui->dsymEdit);
 }
 
 MainWindow::~MainWindow()

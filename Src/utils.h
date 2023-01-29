@@ -45,6 +45,13 @@ enum BROWSE_TYPE
 };
 QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString());
 
+enum STYLE_TYPE
+{
+    ROUNDED_BUTTON_LIGHT,
+    ROUNDED_EDIT_LIGHT
+};
+void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
+
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
 int zip_get_app_directory(struct zip* zf, QString &path);
 bool zip_extract_all(struct zip *zf, QString dist);

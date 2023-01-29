@@ -607,3 +607,49 @@ QString BytesToString(uint32_t bytes)
     }
     return QString().setNum(num, 'f', 2) + " " + unit;
 }
+
+void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
+{
+    QString stylesheet = "";
+    switch (styleType)
+    {
+    case STYLE_TYPE::ROUNDED_BUTTON_LIGHT:
+        stylesheet = QString()
+                + "QPushButton {"
+                + "     border: 1px solid rgb(255, 149, 5);"
+                + "     border-radius: 10px;"
+                + "     padding: 4px;"
+                + "     background-color: rgba(255, 255, 255, 150);"
+                + "     color: rgb(68, 68, 68);"
+                + "}"
+                + "QPushButton:hover {"
+                + "     border: 1px solid rgb(0, 170, 255);"
+                + "}"
+                + "QPushButton:focus {"
+                + "     border: 1px solid rgb(85, 170, 255);"
+                + "}";
+        break;
+
+    case STYLE_TYPE::ROUNDED_EDIT_LIGHT:
+        stylesheet = QString()
+                + "QLineEdit {"
+                + "     border: 1px solid rgb(255, 149, 5);"
+                + "     border-radius: 10px;"
+                + "     padding: 4px;"
+                + "     background-color: rgba(255, 255, 255, 100);"
+                + "     color: rgb(68, 68, 68);"
+                + "}"
+                + "QLineEdit:hover {"
+                + "     border: 1px solid rgb(0, 170, 255);"
+                + "}"
+                + "QLineEdit:focus {"
+                + "     border: 1px solid rgb(85, 170, 255);"
+                + "}";
+        break;
+    }
+
+    foreach (auto widget, widgets)
+    {
+        widget->setStyleSheet(stylesheet);
+    }
+}
