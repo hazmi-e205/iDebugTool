@@ -26,15 +26,6 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
-    local prj_dir = debug.getinfo(1).source:match("@?(.*/)")
-    local src_path = path.getabsolute("../Externals/qicstable/lib/libqicstable_d.a", prj_dir)
-    local dist_path = path.getabsolute("../Externals/qicstable/lib/libqicstable.a", prj_dir)
-    if IsWindows() then
-        prelinkcommands {"copy /y " .. src_path:gsub("/","\\") .. " " .. dist_path:gsub("/","\\")}
-    else
-        prelinkcommands {"cp " .. src_path .. " " .. dist_path}
-    end
-
     QtIncludes
     {
         "../Externals/qicstable/qicstable_config.pri",
@@ -88,7 +79,7 @@ project "iDebugTool"
         "zlib",
         "MachOLib",
         "unzip",
-        "qicstable",
+        "qicstable_d",
     }
 
     libdirs
