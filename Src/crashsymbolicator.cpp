@@ -43,7 +43,16 @@ QString CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
     bool result = CSearchMachO::Search(crashlogPath.toStdWString().c_str(), *this);
     qDebug() << "crashlog: " << result;
     if (!result) return out;
-    result = CSearchMachO::Search(dsymDir.toStdWString().c_str(), *this);
+
+    if (QFileInfo(dsymDir).isFile())
+    {
+        m_dsym = new CMachODSymW(CMachODSym(dsymDir.toStdWString(), dsymDir.toStdWString()));
+        result = true;
+    }
+    else
+    {
+        result = CSearchMachO::Search(dsymDir.toStdWString().c_str(), *this);
+    }
     qDebug() << "dsym: " << result;
     if (!result) return out;
 

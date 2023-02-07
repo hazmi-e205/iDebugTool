@@ -107,6 +107,7 @@ private slots:
     void OnCrashlogsStatusChanged(QString text);
     void OnCrashlogClicked();
     void OnDsymClicked();
+    void OnDwarfClicked();
     void OnSymbolicateClicked();
     void OnScreenshotReceived(QString imagePath);
     void OnExcludeSystemLogListClicked();

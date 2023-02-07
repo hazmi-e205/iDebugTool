@@ -118,6 +118,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
     connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
     connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
+    connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
 
     m_appInfo->CheckUpdate([&](QString changelogs, QString url){
@@ -776,6 +777,12 @@ void MainWindow::OnCrashlogClicked()
 void MainWindow::OnDsymClicked()
 {
     QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_DIR, "dSYM", this);
+    ui->dsymEdit->setText(filepath);
+}
+
+void MainWindow::OnDwarfClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "DWARF", this);
     ui->dsymEdit->setText(filepath);
 }
 

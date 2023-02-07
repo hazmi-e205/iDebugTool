@@ -586,7 +586,7 @@ QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidg
     }
 
     if (!result_dir.isEmpty())
-        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", result_dir.remove(QFileInfo(result_dir).fileName()));
+        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", result_dir.mid(0, result_dir.length() - QFileInfo(result_dir).fileName().length() - 1));
 
     return result;
 }
