@@ -81,6 +81,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
+    ui->pidEdit->installEventFilter(m_eventFilter);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
@@ -565,20 +566,41 @@ void MainWindow::OnClickedEvent(QObject* object)
         ui->installPath->setText(filepath);
     }
 
-    if(object->objectName() == ui->bundleIds->objectName())
+    if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName())
     {
-        ui->bundleIds->clear();
-        auto apps = DeviceBridge::Get()->GetInstalledApps();
+        if (IsInstalledUpdated())
+        {
+            ui->bundleIds->clear();
+            ui->bundleIds->addItems(m_installedApps.keys());
+
+            QString old_string = ui->pidEdit->currentText();
+            ui->pidEdit->clear();
+            foreach (auto appinfo, m_installedApps)
+            {
+                QString bundle_id = appinfo["CFBundleExecutable"].toString();
+                ui->pidEdit->addItem(bundle_id);
+            }
+            ui->pidEdit->setEditText(old_string);
+        }
+    }
+}
+
+bool MainWindow::IsInstalledUpdated()
+{
+    auto apps = DeviceBridge::Get()->GetInstalledApps();
+    if (apps.array().size() != m_installedApps.size())
+    {
+        m_installedApps.clear();
         for (int idx = 0; idx < apps.array().count(); idx++)
         {
             QString bundle_id = apps[idx]["CFBundleIdentifier"].toString();
-            ui->bundleIds->addItem(bundle_id);
-
             QJsonDocument app_info;
             app_info.setObject(apps[idx].toObject());
             m_installedApps[bundle_id] = app_info;
         }
+        return true;
     }
+    return false;
 }
 
 void MainWindow::OnInstallClicked()

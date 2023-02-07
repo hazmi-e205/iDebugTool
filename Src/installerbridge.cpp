@@ -12,7 +12,6 @@ QJsonDocument DeviceBridge::GetInstalledApps()
 {
     QJsonDocument jsonArray;
     if (!m_installer) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
         return jsonArray;
     }
 

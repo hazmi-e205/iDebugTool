@@ -44,6 +44,7 @@ private:
     void UpdateInfoWidget();
     void RefreshSocketList();
     void ExcludeSystemLogs();
+    bool IsInstalledUpdated();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     AppInfo *m_appInfo;
@@ -56,7 +57,7 @@ private:
     QString m_choosenBundleId;
     QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
-    std::map<QString, QJsonDocument> m_installedApps;
+    QMap<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
     quint64 m_maxShownLogs, m_scrollInterval;
