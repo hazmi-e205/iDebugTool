@@ -30,8 +30,7 @@ DeviceBridge::DeviceBridge() :
     m_crashlog(nullptr),
     m_diagnostics(nullptr),
     m_imageMounter(nullptr),
-    m_screenshot(nullptr),
-    m_mainWidget(nullptr)
+    m_screenshot(nullptr)
 {
 }
 
@@ -43,7 +42,6 @@ DeviceBridge::~DeviceBridge()
 
 void DeviceBridge::Init(QWidget *parent)
 {
-    m_mainWidget = parent;
     idevice_set_debug_level(1);
     idevice_event_subscribe(DeviceEventCallback, nullptr);
 }
@@ -130,14 +128,14 @@ void DeviceBridge::ConnectToDevice(QString udid)
         emit ProcessStatusChanged(10, "Connecting to " + udid + "...");
         idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
         if (!m_device) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: No device with UDID " + udid, QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No device with UDID " + udid);
             return;
         }
 
         emit ProcessStatusChanged(15, "Handshaking client...");
         if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
             idevice_free(m_device);
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Connecting to " + udid + " failed!", QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Connecting to " + udid + " failed!");
             return;
         }
 
@@ -190,14 +188,14 @@ void DeviceBridge::StartServices()
         syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
         err = syslog_relay_client_new(m_device, service, &m_syslog);
         if (err != SYSLOG_RELAY_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
             return;
         }
 
         /* start capturing syslog */
         err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
         if (err != SYSLOG_RELAY_E_SUCCESS) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to start capturing syslog.", QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to start capturing syslog.");
             syslog_relay_client_free(m_syslog);
             m_syslog = nullptr;
             return;
@@ -209,9 +207,7 @@ void DeviceBridge::StartServices()
     StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
         if (err != INSTPROXY_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
     emit ProcessStatusChanged(50, "Starting crash report mover service...");
@@ -221,7 +217,7 @@ void DeviceBridge::StartServices()
         service_error_t err = service_client_new(m_device, service, &svcmove);
         if (err != SERVICE_E_SUCCESS)
         {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
             return;
         }
 
@@ -253,9 +249,7 @@ void DeviceBridge::StartServices()
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_crashlog);
         if (err != AFC_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
     emit ProcessStatusChanged(70, "Starting afc service...");
@@ -263,9 +257,7 @@ void DeviceBridge::StartServices()
     StartLockdown(!m_afc, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_afc);
         if (err != AFC_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
     emit ProcessStatusChanged(80, "Starting image mounter service...");
@@ -273,9 +265,7 @@ void DeviceBridge::StartServices()
     StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
         if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 }
 
@@ -302,11 +292,11 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
             break;
 
         case LOCKDOWN_E_PASSWORD_PROTECTED:
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Device is passcode protected, enter passcode on the device to continue.", QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Device is passcode protected, enter passcode on the device to continue.");
             break;
 
         default:
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr), QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr));
             break;
     }
 }
@@ -317,9 +307,7 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
     StartLockdown(!m_diagnostics, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         diagnostics_relay_error_t err = diagnostics_relay_client_new(m_device, service, &m_diagnostics);
         if (err != DIAGNOSTICS_RELAY_E_SUCCESS)
-        {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-        }
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
     if (m_diagnostics)
@@ -328,21 +316,21 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
         {
         case CMD_SLEEP:
             if (diagnostics_relay_sleep(m_diagnostics) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                QMessageBox::information(m_mainWidget, "Info", "Putting device into deep sleep mode.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_INFO, "Putting device into deep sleep mode.");
             else
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to put device into deep sleep mode.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to put device into deep sleep mode.");
             break;
         case CMD_RESTART:
             if (diagnostics_relay_restart(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                QMessageBox::information(m_mainWidget, "Info", "Restarting device.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_INFO, "Restarting device.");
             else
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to restart device.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to restart device.");
             break;
         case CMD_SHUTDOWN:
             if (diagnostics_relay_shutdown(m_diagnostics, DIAGNOSTICS_RELAY_ACTION_FLAG_WAIT_FOR_DISCONNECT) == DIAGNOSTICS_RELAY_E_SUCCESS)
-                QMessageBox::information(m_mainWidget, "Info", "Shutting down device.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_INFO, "Shutting down device.");
             else
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Failed to shutdown device.", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to shutdown device.");
             break;
         default:
             break;
@@ -354,7 +342,7 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
     }
     else
     {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to diagnostics_relay!", QMessageBox::Ok);
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to diagnostics_relay!");
     }
 }
 
@@ -378,7 +366,7 @@ QStringList DeviceBridge::GetMountedImages()
     }
     else
     {
-        QMessageBox::critical(m_mainWidget, "Error", "Error: lookup_image returned " + QString::number(err), QMessageBox::Ok);
+        emit MessagesReceived(MessagesType::MSG_ERROR, "Error: lookup_image returned " + QString::number(err));
     }
 
     if (result)
@@ -534,9 +522,7 @@ void DeviceBridge::Screenshot(QString path)
         StartLockdown(!m_screenshot, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
             screenshotr_error_t err = screenshotr_client_new(m_device, service, &m_screenshot);
             if (err != SCREENSHOTR_E_SUCCESS)
-            {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not connect to " + service_id + " client! " + QString::number(err), QMessageBox::Ok);
-            }
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
         });
 
         char *imgdata = NULL;
@@ -554,7 +540,7 @@ void DeviceBridge::Screenshot(QString path)
         }
         else
         {
-            QMessageBox::critical(m_mainWidget, "Error", "Error: screenshotr_take_screenshot returned " + QString::number(error), QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "Error: screenshotr_take_screenshot returned " + QString::number(error));
         }
     });
 }

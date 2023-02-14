@@ -21,7 +21,7 @@ QJsonDocument DeviceBridge::GetInstalledApps()
     plist_t apps = nullptr;
     instproxy_error_t err = instproxy_browse(m_installer, client_opts, &apps);
     if (err != INSTPROXY_E_SUCCESS || !apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-        QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_browse returnd an invalid plist!", QMessageBox::Ok);
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_browse returnd an invalid plist!");
         return jsonArray;
     }
 
@@ -34,7 +34,6 @@ void DeviceBridge::UninstallApp(QString bundleId)
 {
     AsyncManager::Get()->StartAsyncRequest([this, bundleId]() {
         if (!m_installer) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
             return;
         }
         instproxy_uninstall(m_installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
@@ -45,7 +44,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 {
     AsyncManager::Get()->StartAsyncRequest([this, cmd, path]() {
         if (!m_installer) {
-            QMessageBox::critical(m_mainWidget, "Error", "ERROR: instproxy_client_private is null!", QMessageBox::Ok);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_client_private is null!");
             return;
         }
         char *bundleidentifier = NULL;
@@ -59,7 +58,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         char **strs = NULL;
         if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
             if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
-                QMessageBox::warning(m_mainWidget, "Warning", "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_WARN, "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!");
             }
         }
         if (strs) {
@@ -80,7 +79,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive))) {
             zf = zip_open(path.toUtf8().data(), 0, &errp);
             if (!zf) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: zip_open: " + path + ": " + QString::number(errp), QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
                 return;
             }
 
@@ -108,7 +107,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 
                     dstpath = pkgname + "/" + zname;
                     if (afc_file_open(m_afc, dstpath.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) {
-                        QMessageBox::critical(m_mainWidget, "Error", "ERROR: Can't open afc://" + dstpath + " for writing.", QMessageBox::Ok);
+                        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Can't open afc://" + dstpath + " for writing.");
                         zip_fclose(zfile);
                         continue;
                     }
@@ -116,7 +115,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
                     struct zip_stat zs;
                     zip_stat_init(&zs);
                     if (zip_stat_index(zf, i, 0, &zs) != 0) {
-                        QMessageBox::critical(m_mainWidget, "Error", "ERROR: zip_stat_index " + QString::number(i) + " failed!", QMessageBox::Ok);
+                        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_stat_index " + QString::number(i) + " failed!");
                         zip_fclose(zfile);
                         continue;
                     }
@@ -133,13 +132,13 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
                             while (total < amount) {
                                 written = 0;
                                 if (afc_file_write(m_afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
-                                    QMessageBox::critical(m_mainWidget, "Error", "ERROR: AFC Write error!", QMessageBox::Ok);
+                                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: AFC Write error!");
                                     break;
                                 }
                                 total += written;
                             }
                             if (total != amount) {
-                                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Wrote only " + QString::number(total) + " of " + QString::number(amount), QMessageBox::Ok);
+                                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Wrote only " + QString::number(total) + " of " + QString::number(amount));
                                 afc_file_close(m_afc, af);
                                 zip_fclose(zfile);
                                 return;
@@ -178,14 +177,14 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             FILE *fp = NULL;
 
             if (stat(filename.toUtf8().data(), &st) == -1 || (fp = fopen(filename.toUtf8().data(), "r")) == NULL) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not locate " + filename + " in app!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not locate " + filename + " in app!");
                 return;
             }
             size_t filesize = st.st_size;
             char *ibuf = (char*)malloc(filesize * sizeof(char));
             size_t amount = fread(ibuf, 1, filesize, fp);
             if (amount != filesize) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not read " + QString::number(filesize) + " bytes from " + filename, QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not read " + QString::number(filesize) + " bytes from " + filename);
                 return;
             }
             fclose(fp);
@@ -199,7 +198,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             free(ibuf);
 
             if (!info) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not parse Info.plist!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not parse Info.plist!");
                 return;
             }
 
@@ -212,7 +211,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         } else {
             zf = zip_open(path.toUtf8().data(), 0, &errp);
             if (!zf) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: zip_open: " + path + ": " + QString::number(errp), QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
                 return;
             }
 
@@ -240,7 +239,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             QString app_directory_name;
 
             if (zip_get_app_directory(zf, app_directory_name)) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Unable to locate app directory in archive!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to locate app directory in archive!");
                 return;
             }
 
@@ -248,7 +247,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             filename = app_directory_name + "Info.plist";
 
             if (zip_get_contents(zf, filename.toUtf8().data(), 0, &zbuf, &len) < 0) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not locate " + filename + " in archive!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not locate " + filename + " in archive!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;
@@ -262,7 +261,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             free(zbuf);
 
             if (!info) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not parse Info.plist!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not parse Info.plist!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;
@@ -283,7 +282,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             info = NULL;
 
             if (!bundleexecutable) {
-                QMessageBox::critical(m_mainWidget, "Error", "ERROR: Could not determine value for CFBundleExecutable!", QMessageBox::Ok);
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not determine value for CFBundleExecutable!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;

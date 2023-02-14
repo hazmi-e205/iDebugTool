@@ -41,6 +41,12 @@ enum MounterType {
     DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE
 };
 
+enum MessagesType {
+    MSG_INFO,
+    MSG_ERROR,
+    MSG_WARN
+};
+
 class DeviceBridge : public QObject
 {
     Q_OBJECT
@@ -49,7 +55,6 @@ public:
     ~DeviceBridge();
 
     void Init(QWidget *parent);
-    QWidget *GetMainWidget() { return m_mainWidget; }
 
     void ConnectToDevice(QString udid);
     QString GetCurrentUdid();
@@ -96,7 +101,6 @@ private:
     diagnostics_relay_client_t m_diagnostics;
     mobile_image_mounter_client_t m_imageMounter;
     screenshotr_client_t m_screenshot;
-    QWidget *m_mainWidget;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
@@ -113,6 +117,7 @@ signals:
      void MounterStatusChanged(QString messages);
      void CrashlogsStatusChanged(QString messages);
      void ScreenshotReceived(QString imagepath);
+     void MessagesReceived(MessagesType type, QString messages);
 };
 
 #endif // DEVICEBRIDGE_H

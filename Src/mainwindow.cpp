@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
+    connect(DeviceBridge::Get(), SIGNAL(MessagesReceived(MessagesType,QString)), this, SLOT(OnMessagesReceived(MessagesType,QString)));
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
     connect(ui->deviceTable, SIGNAL(clicked(QModelIndex)), this, SLOT(OnDevicesTableClicked(QModelIndex)));
     connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
@@ -849,4 +850,19 @@ void MainWindow::OnUpdateClicked()
             QDesktopServices::openUrl(QUrl(url));
         }, "Go to download...");
     });
+}
+
+void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
+{
+    switch (type) {
+    case MessagesType::MSG_ERROR:
+        QMessageBox::critical(this, "Error", messages, QMessageBox::Ok);
+        break;
+    case MessagesType::MSG_WARN:
+        QMessageBox::warning(this, "Warning", messages, QMessageBox::Ok);
+        break;
+    default:
+        QMessageBox::information(this, "Information", messages, QMessageBox::Ok);
+        break;
+    }
 }

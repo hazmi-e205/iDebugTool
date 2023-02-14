@@ -113,5 +113,6 @@ private slots:
     void OnExcludeSystemLogListClicked();
     void OnProcessStatusChanged(int percentage, QString message);
     void OnUpdateClicked();
+    void OnMessagesReceived(MessagesType type, QString messages);
 };
 #endif // MAINWINDOW_H
