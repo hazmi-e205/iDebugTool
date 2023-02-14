@@ -635,7 +635,7 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
     case STYLE_TYPE::ROUNDED_EDIT_LIGHT:
         stylesheet = QString()
                 + "QLineEdit {"
-                + "     border: 1px solid rgb(255, 149, 5);"
+                + "     border: 1px solid rgba(0, 0, 0, 50);"
                 + "     border-radius: 10px;"
                 + "     padding: 4px;"
                 + "     background-color: rgba(255, 255, 255, 100);"
@@ -645,6 +645,31 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
                 + "     border: 1px solid rgb(0, 170, 255);"
                 + "}"
                 + "QLineEdit:focus {"
+                + "     border: 1px solid rgb(85, 170, 255);"
+                + "}";
+        break;
+
+    case STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT:
+        stylesheet = QString()
+                + "QComboBox {"
+                + "     border: 1px solid rgba(0, 0, 0, 50);"
+                + "     border-radius: 10px;"
+                + "     padding: 4px;"
+                + "     background-color: rgba(255, 255, 255, 100);"
+                + "     color: rgb(68, 68, 68);"
+                + "}"
+                + "QComboBox::drop-down {"
+                + "     border: 0px;"
+                + "}"
+                + "QComboBox::down-arrow {"
+                + "     image: url(:/res/Assets/arrow-down.png);"
+                + "     width: 12px;"
+                + "     height: 10px;"
+                + "}"
+                + "QComboBox:hover {"
+                + "     border: 1px solid rgb(0, 170, 255);"
+                + "}"
+                + "QComboBox:focus {"
                 + "     border: 1px solid rgb(85, 170, 255);"
                 + "}";
         break;

@@ -163,7 +163,14 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->installPath
                    << ui->AppSigner
                    << ui->crashlogEdit
-                   << ui->dsymEdit);
+                   << ui->dsymEdit
+                   << ui->searchEdit
+                   << ui->excludeEdit);
+
+    MassStylesheet(STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT, QList<QWidget*>()
+                   << ui->bundleIds
+                   << ui->socketBox
+                   << ui->pidEdit);
 }
 
 MainWindow::~MainWindow()

@@ -48,7 +48,8 @@ QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidg
 enum STYLE_TYPE
 {
     ROUNDED_BUTTON_LIGHT,
-    ROUNDED_EDIT_LIGHT
+    ROUNDED_EDIT_LIGHT,
+    ROUNDED_COMBOBOX_LIGHT
 };
 void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
 
