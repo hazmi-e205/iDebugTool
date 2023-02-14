@@ -135,6 +135,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     MassStylesheet(STYLE_TYPE::ROUNDED_BUTTON_LIGHT, QList<QWidget*>()
+                   << ui->aboutBtn
+                   << ui->refreshBtn
                    << ui->sysInfoBtn
                    << ui->excludeSytemBtn
                    << ui->proxyBtn
@@ -148,7 +150,10 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->crashlogBtn
                    << ui->dsymBtn
                    << ui->dwarfBtn
-                   << ui->symbolicateBtn);
+                   << ui->symbolicateBtn
+                   << ui->socketBtn
+                   << ui->saveBtn
+                   << ui->clearBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID

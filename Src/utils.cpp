@@ -616,9 +616,11 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
     case STYLE_TYPE::ROUNDED_BUTTON_LIGHT:
         stylesheet = QString()
                 + "QPushButton {"
-                + "     border: 1px solid rgb(255, 149, 5);"
+                + "     border: 1px solid rgba(0, 0, 0, 50);"
                 + "     border-radius: 10px;"
                 + "     padding: 4px;"
+                + "     padding-right: 10px;"
+                + "     padding-left: 10px;"
                 + "     background-color: rgba(255, 255, 255, 150);"
                 + "     color: rgb(68, 68, 68);"
                 + "}"
