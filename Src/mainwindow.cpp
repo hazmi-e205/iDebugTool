@@ -174,7 +174,6 @@ MainWindow::~MainWindow()
     delete m_table;
     delete m_dataModel;
     ui->deviceTable->setModel(nullptr);
-    DeviceBridge::Destroy();
     delete m_eventFilter;
     m_scrollTimer->stop();
     delete m_scrollTimer;
@@ -186,6 +185,11 @@ MainWindow::~MainWindow()
     delete m_loading;
     AsyncManager::Destroy();
     delete ui;
+#if defined(DESTROY_DEVICE_BRIDGE)
+    DeviceBridge::Destroy();
+#else
+    QApplication::quit();
+#endif
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
