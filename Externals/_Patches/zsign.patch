@@ -1,0 +1,84 @@
+diff --git a/archo.h b/archo.h
+index cee4de1..9a5b637 100644
+--- a/archo.h
++++ b/archo.h
+@@ -37,4 +37,4 @@ public:
+ 	uint32_t m_uLoadCommandsFreeSpace;
+ 	mach_header *m_pHeader;
+ 	uint32_t m_uHeaderSize;
+-};
+\ No newline at end of file
++};
+diff --git a/bundle.cpp b/bundle.cpp
+index 337750b..6efc4e7 100644
+--- a/bundle.cpp
++++ b/bundle.cpp
+@@ -1,7 +1,6 @@
+ #include "bundle.h"
+ #include "macho.h"
+ #include "sys/stat.h"
+-#include "sys/types.h"
+ #include "common/base64.h"
+ #include "common/common.h"
+ 
+diff --git a/common/common.h b/common/common.h
+index 0e1592b..4592a83 100644
+--- a/common/common.h
++++ b/common/common.h
+@@ -4,7 +4,13 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdarg.h>
+-#include <sys/mman.h>
++#ifdef WIN32
++    #include "win32/mman.h"
++    #include "win32/dirent.h"
++#else
++    #include <sys/mman.h>
++    #include <dirent.h>
++#endif
+ #include <errno.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+@@ -14,7 +20,6 @@
+ #include <ftw.h>
+ #include <math.h>
+ #include <assert.h>
+-#include <dirent.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
+@@ -157,4 +162,4 @@ public:
+ 
+ private:
+     static int g_nLogLevel;
+-};
+\ No newline at end of file
++};
+diff --git a/macho.cpp b/macho.cpp
+index 6e56ac0..384f809 100644
+--- a/macho.cpp
++++ b/macho.cpp
+@@ -2,7 +2,6 @@
+ #include "common/json.h"
+ #include "common/mach-o.h"
+ #include "openssl.h"
+-#include "signing.h"
+ #include "macho.h"
+ 
+ ZMachO::ZMachO()
+diff --git a/zsign.cpp b/zsign.cpp
+index 2698cf9..b39a9d3 100644
+--- a/zsign.cpp
++++ b/zsign.cpp
+@@ -1,10 +1,8 @@
+ #include "common/common.h"
+-#include "common/json.h"
+ #include "openssl.h"
+ #include "macho.h"
+ #include "bundle.h"
+ #include <libgen.h>
+-#include <dirent.h>
+ #include <getopt.h>
+ 
+ const struct option options[] = {

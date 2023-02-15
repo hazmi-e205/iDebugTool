@@ -13,6 +13,7 @@ solution "iDebugTool"
     include "libimobiledevice.lua"
     include "libimobiledevice-glue.lua"
     include "macholib.lua"
+    include "zsign.lua"
 
 project "iDebugTool"
     kind "WindowedApp"
@@ -64,6 +65,7 @@ project "iDebugTool"
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
         "../Externals/qicstable/include",
+        "../Externals/zsign",
     }
 
     links
@@ -79,6 +81,7 @@ project "iDebugTool"
         "zlib",
         "MachOLib",
         "unzip",
+        "zsign",
         "qicstable_d",
     }
 

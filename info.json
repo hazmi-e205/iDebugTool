@@ -52,6 +52,22 @@
             "use_submodules": false
         },
         {
+            "project": "zsign",
+            "url": "https://github.com/zhlynn/zsign",
+            "branch": "master",
+            "revision": "27016df1150eeaf27e8d8c148ccb3cad10d31e73",
+            "path": "Externals/zsign",
+            "use_submodules": false
+        },
+        {
+            "project": "mman",
+            "url": "https://github.com/alitrack/mman-win32",
+            "branch": "master",
+            "revision": "2d1c576e62b99e85d99407e1a88794c6e44c3310",
+            "path": "Externals/zsign/win32",
+            "use_submodules": false
+        },
+        {
             "project": "openssl",
             "url": "https://github.com/openssl/openssl",
             "branch": "OpenSSL_1_1_1m",
