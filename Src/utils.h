@@ -33,7 +33,8 @@ enum DIRECTORY_TYPE
     TEMP,
     DISKIMAGES,
     SCREENSHOT,
-    CRASHLOGS
+    CRASHLOGS,
+    SYMBOLICATED
 };
 QString GetDirectory(DIRECTORY_TYPE dirtype);
 

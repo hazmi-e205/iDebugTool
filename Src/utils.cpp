@@ -448,7 +448,8 @@ QString GetDirectory(DIRECTORY_TYPE dirtype)
         return QCoreApplication::applicationDirPath() + "/LocalData/Screenshot/";
     case DIRECTORY_TYPE::CRASHLOGS:
         return QCoreApplication::applicationDirPath() + "/LocalData/Crashlogs/";
-        break;
+    case DIRECTORY_TYPE::SYMBOLICATED:
+        return QCoreApplication::applicationDirPath() + "/LocalData/Symbolicated/";
     default:
         break;
     }

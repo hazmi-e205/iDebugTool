@@ -109,6 +109,7 @@ private slots:
     void OnDsymClicked();
     void OnDwarfClicked();
     void OnSymbolicateClicked();
+    void OnSymbolicateResult(QString messages, bool error);
     void OnScreenshotReceived(QString imagePath);
     void OnExcludeSystemLogListClicked();
     void OnProcessStatusChanged(int percentage, QString message);

@@ -10,16 +10,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QObject>
 
 using namespace MachO;
 
-class CrashSymbolicator : public CSearchMachO::ISender
+class CrashSymbolicator : public QObject, public CSearchMachO::ISender
 {
+    Q_OBJECT
 public:
     static CrashSymbolicator *Get();
     static void Destroy();
     CrashSymbolicator();
-    QString Proccess(QString crashlogPath, QString dsymDir);
+    void Proccess(QString crashlogPath, QString dsymDir);
     QString ConvertToOldStyle(QString crashlogPath);
 
 protected:
@@ -41,6 +43,9 @@ private:
     static CrashSymbolicator *m_instance;
     CMachOCrashLogW* m_crashlog;
     CMachODSymW* m_dsym;
+
+signals:
+    void SymbolicateResult(QString messages, bool error = false);
 };
 
 #endif // CRASHSYMBOLICATOR_H

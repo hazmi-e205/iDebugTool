@@ -121,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
     connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
+    connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult(QString,bool)), this, SLOT(OnSymbolicateResult(QString,bool)));
 
     m_appInfo->CheckUpdate([&](QString changelogs, QString url){
         if (changelogs.isEmpty() && url.isEmpty())
@@ -807,8 +808,33 @@ void MainWindow::OnSymbolicateClicked()
 {
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
-    QString sybolicated = CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
-    ui->crashlogsOut->setPlainText(sybolicated);
+    CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
+}
+
+void MainWindow::OnSymbolicateResult(QString messages, bool error)
+{
+    if (error)
+    {
+        QMessageBox::critical(this, "Error", messages, QMessageBox::Ok);
+        ui->statusbar->showMessage("Symbolication failed because " + messages + "!");
+    }
+    else
+    {
+        QMessageBox msgBox(QMessageBox::Question, "Symbolication", "Symbolication success and saved to\n" + messages);
+        QPushButton *openButton = msgBox.addButton("Open it!", QMessageBox::ButtonRole::ActionRole);
+        QPushButton *dirButton = msgBox.addButton("Go to directory...", QMessageBox::ButtonRole::ActionRole);
+        msgBox.addButton(QMessageBox::StandardButton::Close);
+        msgBox.exec();
+        if (msgBox.clickedButton() == openButton)
+        {
+            QDesktopServices::openUrl(messages);
+        }
+        else if (msgBox.clickedButton() == dirButton)
+        {
+            QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SYMBOLICATED));
+        }
+        ui->statusbar->showMessage("Symbolicated file saved to '" + messages + "'!");
+    }
 }
 
 void MainWindow::OnScreenshotReceived(QString imagePath)
