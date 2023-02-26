@@ -34,14 +34,14 @@ CrashSymbolicator::CrashSymbolicator()
 {
 }
 
-void CrashSymbolicator::Proccess(QString crashlogPath, QString dsymDir)
+void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
 {
     AsyncManager::Get()->StartAsyncRequest([&, crashlogPath, dsymDir](){
         QString out;
         QString oldstyle = ConvertToOldStyle(crashlogPath);
         if (!oldstyle.isEmpty())
         {
-            Proccess(oldstyle, dsymDir);
+            Process(oldstyle, dsymDir);
         }
 
         bool result = CSearchMachO::Search(crashlogPath.toStdWString().c_str(), *this);

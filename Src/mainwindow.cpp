@@ -808,7 +808,7 @@ void MainWindow::OnSymbolicateClicked()
 {
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
-    CrashSymbolicator::Get()->Proccess(crashpath, dsympath);
+    CrashSymbolicator::Get()->Process(crashpath, dsympath);
 }
 
 void MainWindow::OnSymbolicateResult(QString messages, bool error)

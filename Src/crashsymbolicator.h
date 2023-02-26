@@ -21,7 +21,7 @@ public:
     static CrashSymbolicator *Get();
     static void Destroy();
     CrashSymbolicator();
-    void Proccess(QString crashlogPath, QString dsymDir);
+    void Process(QString crashlogPath, QString dsymDir);
     QString ConvertToOldStyle(QString crashlogPath);
 
 protected:
