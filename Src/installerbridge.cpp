@@ -347,10 +347,21 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     InstallerMode pCommand = command["Command"].toString() == "Install" ? InstallerMode::CMD_INSTALL : InstallerMode::CMD_UNINSTALL;
     QString pBundleId = pCommand == InstallerMode::CMD_INSTALL ? command["ClientOptions"]["CFBundleIdentifier"].toString() : command["ApplicationIdentifier"].toString();
 
+    int percentage = 0;
     QString pMessage = status["Status"].toString();
     StringWithSpaces(pMessage, true);
+    if (pMessage.isEmpty())
+    {
+        pMessage = status["Error"].toString();
+        StringWithSpaces(pMessage, true);
 
-    int percentage = pMessage == "Complete" ? 100 : (50 + status["PercentComplete"].toInt() / 2);
+        pMessage += "\n" + status["ErrorDescription"].toString();
+        percentage = 100;
+    }
+    else
+    {
+        percentage = pMessage == "Complete" ? 100 : (50 + status["PercentComplete"].toInt() / 2);
+    }
     emit InstallerStatusChanged(pCommand, pBundleId, percentage, pMessage);
 }
 

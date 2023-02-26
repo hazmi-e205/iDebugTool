@@ -479,7 +479,7 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
         {
             QString messages = (percentage >= 0 ? ("(" + QString::number(percentage) + "%) ") : "") + message;
             m_installerLogs += m_installerLogs.isEmpty() ? messages : ("\n" + messages);
-            ui->installBar->setFormat("%p% " + message);
+            ui->installBar->setFormat("%p% " + (message.contains('\n') ? message.split('\n').at(0) : message));
             ui->installBar->setValue(percentage);
             if (m_textDialog->isActiveWindow() && m_textDialog->windowTitle().contains("Installer"))
                 m_textDialog->AppendText(messages);
