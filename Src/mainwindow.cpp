@@ -7,6 +7,7 @@
 #include "userconfigs.h"
 #include "usbmuxd.h"
 #include "crashsymbolicator.h"
+#include "recodesigner.h"
 #include "asyncmanager.h"
 #include "customgrid.h"
 #include <QSplitter>
@@ -122,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
     connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult(QString,bool)), this, SLOT(OnSymbolicateResult(QString,bool)));
+    connect(Recodesigner::Get(), SIGNAL(SigningResult(Recodesigner::SigningStatus,QString)), this, SLOT(OnSigningResult(Recodesigner::SigningStatus,QString)));
 
     m_appInfo->CheckUpdate([&](QString changelogs, QString url){
         if (changelogs.isEmpty() && url.isEmpty())
@@ -809,6 +811,8 @@ void MainWindow::OnSymbolicateClicked()
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
     CrashSymbolicator::Get()->Process(crashpath, dsympath);
+
+    //Recodesigner::Get()->Process("p12","xxxxxxx","mobileprovision","ipa");
 }
 
 void MainWindow::OnSymbolicateResult(QString messages, bool error)
@@ -902,4 +906,9 @@ void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
         QMessageBox::information(this, "Information", messages, QMessageBox::Ok);
         break;
     }
+}
+
+void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)
+{
+    qDebug() << messages;
 }

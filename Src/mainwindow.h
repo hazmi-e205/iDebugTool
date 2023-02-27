@@ -16,6 +16,7 @@
 #include "proxydialog.h"
 #include "loadingdialog.h"
 #include "aboutdialog.h"
+#include "recodesigner.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -115,5 +116,6 @@ private slots:
     void OnProcessStatusChanged(int percentage, QString message);
     void OnUpdateClicked();
     void OnMessagesReceived(MessagesType type, QString messages);
+    void OnSigningResult(Recodesigner::SigningStatus status, QString messages);
 };
 #endif // MAINWINDOW_H
