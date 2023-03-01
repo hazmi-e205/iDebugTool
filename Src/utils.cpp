@@ -649,6 +649,7 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
                 + "}"
                 + "QLineEdit:focus {"
                 + "     border: 1px solid rgb(85, 170, 255);"
+                + "     background-color: rgba(255, 255, 255, 200);"
                 + "}";
         break;
 
@@ -674,6 +675,7 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
                 + "}"
                 + "QComboBox:focus {"
                 + "     border: 1px solid rgb(85, 170, 255);"
+                + "     background-color: rgba(255, 255, 255, 200);"
                 + "}";
         break;
     }
