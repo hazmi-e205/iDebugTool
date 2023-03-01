@@ -31,10 +31,19 @@ Recodesigner::Recodesigner()
 void Recodesigner::Process(QString p12_file, QString p12_password, QString provision_file, QString build)
 {
     AsyncManager::Get()->StartAsyncRequest([&, p12_file, p12_password, provision_file, build](){
+        // chank paths
         string strPath = build.toStdString();
         if (!IsFileExists(strPath.c_str()))
         {
             emit SigningResult(SigningStatus::FAILED, "ERROR: Invalid file path: " + build + "!");
+            return;
+        }
+
+        emit SigningResult(SigningStatus::PROCESS, "Loading the certificate and provision...");
+        ZSignAsset zSignAsset;
+        if (!zSignAsset.Init("", p12_file.toStdString(), provision_file.toStdString(), "", p12_password.toStdString()))
+        {
+            emit SigningResult(SigningStatus::FAILED, "ERROR: load certificate and provision failed!");
             return;
         }
 
@@ -56,15 +65,6 @@ void Recodesigner::Process(QString p12_file, QString p12_password, QString provi
         }
 
         // Codesigning...
-        emit SigningResult(SigningStatus::PROCESS, "Loading the certificate and provision...");
-        ZSignAsset zSignAsset;
-        if (!zSignAsset.Init("", p12_file.toStdString(), provision_file.toStdString(), "", p12_password.toStdString()))
-        {
-            emit SigningResult(SigningStatus::FAILED, "ERROR: load certificate and provision failed!");
-            return;
-        }
-
-
         emit SigningResult(SigningStatus::PROCESS, "Re-codesign-ing...");
         ZAppBundle bundle;
         if(!bundle.SignFolder(&zSignAsset, strFolder, "", "", "", "", true, false, false))
