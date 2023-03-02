@@ -67,6 +67,23 @@ index 6e56ac0..384f809 100644
  #include "macho.h"
  
  ZMachO::ZMachO()
+diff --git a/openssl.cpp b/openssl.cpp
+index 2f7e86c..fe77759 100644
+--- a/openssl.cpp
++++ b/openssl.cpp
+@@ -695,6 +695,12 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
+ 			{
+ 				BIO_reset(bioPKey);
+ 				PKCS12 *p12 = d2i_PKCS12_bio(bioPKey, NULL);
++				if (!p12)
++				{
++					FILE *p12_file = fopen(strSignerPKeyFile.c_str(), "rb");
++					d2i_PKCS12_fp(p12_file, &p12);
++					fclose(p12_file);
++				}
+ 				if (NULL != p12)
+ 				{
+ 					if (0 == PKCS12_parse(p12, strPassword.c_str(), &evpPKey, &x509Cert, NULL))
 diff --git a/zsign.cpp b/zsign.cpp
 index 2698cf9..b39a9d3 100644
 --- a/zsign.cpp
