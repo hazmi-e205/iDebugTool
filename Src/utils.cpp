@@ -18,6 +18,10 @@
 #include <unistd.h>
 #include "simplerequest.h"
 #include "userconfigs.h"
+#include <iostream>
+#include <string>
+#include <zip.h>
+#include "unzipper.h"
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -452,89 +456,117 @@ QString GetDirectory(DIRECTORY_TYPE dirtype)
         return QCoreApplication::applicationDirPath() + "/LocalData/Symbolicated/";
     case DIRECTORY_TYPE::RECODESIGNED:
         return QCoreApplication::applicationDirPath() + "/LocalData/Recodesigned/";
+    case DIRECTORY_TYPE::ZSIGN_TEMP:
+        return QCoreApplication::applicationDirPath() + "/LocalData/ZSignTemp/";
     default:
         break;
     }
     return "";
 }
 
-bool zip_extract_all(struct zip *zf, QString dist)
+bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(int,int,QString)> callback)
 {
-    zip_int64_t n_entries = 0;          /* number of entries in archive */
-    struct zip_file* p_file = NULL;     /* state for a file within zip archive */
-    int file_fd = -1, bytes_read;       /* state used when extracting file */
-    char copy_buf[2048];                /* temporary buffer for file contents */
-
-    /* for each entry... */
-    n_entries = zip_get_num_entries(zf, 0);
-    for(zip_int64_t entry_idx=0; entry_idx < n_entries; entry_idx++) {
-        /* FIXME: we ignore mtime for this example. A stricter implementation may
-         * not do so. */
-        struct zip_stat file_stat;
-
-        /* get file information */
-        if(zip_stat_index(zf, entry_idx, 0, &file_stat)) {
-            fprintf(stderr, "error stat-ing file at index %i: %s\n", (int)(entry_idx), zip_strerror(zf));
-            return false;
-        }
-
-        /* check which fields are valid */
-        if(!(file_stat.valid & ZIP_STAT_NAME)) {
-            fprintf(stderr, "warning: skipping entry at index %i with invalid name.\n", (int)entry_idx);
-            continue;
-        }
-
-        /* show the user what we're doing */
-        printf("extracting: %s\n", file_stat.name);
-
-        /* is this a directory? */
-        if((file_stat.name[0] != '\0') && (file_stat.name[strlen(file_stat.name)-1] == '/')) {
-            /* yes, create it noting that it isn't an error if the directory already exists */
-            QDir().mkpath(dist + "/" + file_stat.name);
-
-            /* loop to the next file */
-            continue;
-        }
-
-        /* the file is not a directory if we get here */
-        QString file_path = dist + "/" + file_stat.name;
-
-        /* try to open the file in the filesystem for writing */
-        if((file_fd = open(file_path.toUtf8().data(), O_CREAT | O_TRUNC | O_WRONLY, 0666)) == -1) {
-            perror("cannot open file for writing");
-            return false;
-        }
-
-        /* open the file in the archive */
-        if((p_file = zip_fopen_index(zf, entry_idx, 0)) == NULL) {
-            fprintf(stderr, "error extracting file: %s\n", zip_strerror(zf));
-            return false;
-        }
-
-        /* extract file */
-        do {
-            /* read some bytes */
-            if((bytes_read = zip_fread(p_file, copy_buf, sizeof(copy_buf))) == -1) {
-                fprintf(stderr, "error extracting file: %s\n", zip_strerror(zf));
-                return false;
-            }
-
-            /* if some bytes were read... */
-            if(bytes_read > 0) {
-                write(file_fd, copy_buf, bytes_read);
-            }
-
-            /* loop until we read no more bytes */
-        } while(bytes_read > 0);
-
-        /* close file in archive */
-        zip_fclose(p_file);
-        p_file = NULL;
-
-        /* close file in filesystem */
-        close(file_fd);
-        file_fd = -1;
+    QDir().mkpath(output_dir);
+    QStringList list_dirs, list_files;
+    zipper::Unzipper unzipper(input_zip.toStdString());
+    std::vector<zipper::ZipEntry> entries = unzipper.entries();
+    foreach (zipper::ZipEntry entry, entries)
+    {
+        QString target = output_dir + "/" + QString(entry.name.c_str());
+        if (entry.uncompressedSize == 0)
+            list_dirs << QString(entry.name.c_str());
+        else
+            list_files << QString(entry.name.c_str());
     }
+
+    int idx = 0;
+    int total = list_dirs.count() + list_files.count();
+    foreach (QString dir_name, list_dirs)
+    {
+        idx++;
+        QString target = output_dir + "/" + dir_name;
+        callback(idx, total, QString::asprintf("Creating `%s'.../n", target.toUtf8().data()));
+        if (!QDir().mkpath(target))
+        {
+            unzipper.close();
+            callback(idx, total, QString::asprintf("Can't create `%s'!/n", target.toUtf8().data()));
+            return false;
+        }
+    }
+    foreach (QString file_name, list_files)
+    {
+        idx++;
+        QString target = output_dir + "/" + file_name;
+        callback(idx, total, QString::asprintf("Extracting `%s'.../n", target.toUtf8().data()));
+        if (!unzipper.extractEntry(file_name.toStdString(), output_dir.toStdString()))
+        {
+            unzipper.close();
+            callback(idx, total, QString::asprintf("Can't extract `%s'!/n", target.toUtf8().data()));
+            return false;
+        }
+    }
+    unzipper.close();
+    return true;
+}
+
+bool zip_directory(QString input_dir, QString output_filename, std::function<void(int,int,QString)> callback)
+{
+    QString output_dir = QFileInfo(output_filename).absolutePath();
+    QDir().mkpath(output_dir);
+    int errorp;
+    char buf[100];
+    zip *zipper = zip_open(output_filename.toUtf8().data(), ZIP_CREATE | ZIP_EXCL, &errorp);
+    if (zipper == nullptr) {
+        zip_error_to_str(buf, sizeof(buf), errorp, errno);
+        callback(0, 0, QString::asprintf("Can't create zip archive `%s': %s/n", output_filename.toUtf8().data(), buf));
+        return false;
+    }
+
+    QStringList list_dirs, list_files;
+    QDir dir(input_dir);
+    QDirIterator it_dir(input_dir, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_dir.hasNext())
+        list_dirs << it_dir.next();
+
+    QDirIterator it_file(input_dir, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_file.hasNext())
+        list_files << it_file.next();
+
+    int idx = 0;
+    int total = list_dirs.count() + list_files.count();
+    foreach (QString dir_name, list_dirs)
+    {
+        idx++;
+        QString relativepath = dir.relativeFilePath(dir_name);
+        callback(idx, total,QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+        if (zip_add_dir(zipper, relativepath.toUtf8().data()) < 0)
+        {
+            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s/n", relativepath.toUtf8().data(), zip_strerror(zipper)));
+            return false;
+        }
+    }
+    foreach (QString file_name, list_files)
+    {
+        idx++;
+        QString relativepath = dir.relativeFilePath(file_name);
+        callback(idx, total,QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+
+        zip_source *source = zip_source_file(zipper, file_name.toUtf8().data(), 0, 0);
+        if (source == nullptr)
+        {
+            zip_close(zipper);
+            callback(idx, total, QString::asprintf("Can't load `%s' : %s/n", file_name.toUtf8().data(), zip_strerror(zipper)));
+            return false;
+        }
+        if (zip_add(zipper, relativepath.toUtf8().data(), source) < 0)
+        {
+            zip_source_free(source);
+            zip_close(zipper);
+            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s/n", relativepath.toUtf8().data(), zip_strerror(zipper)));
+            return false;
+        }
+    }
+    zip_close(zipper);
     return true;
 }
 

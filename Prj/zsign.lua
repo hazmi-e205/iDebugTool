@@ -28,7 +28,3 @@ project "zsign"
             "../Externals/zsign/win32/**",
         }
     end
-
-    buildoptions
-    {
-    }

@@ -66,6 +66,7 @@ project "iDebugTool"
         "../Externals/MachOLib",
         "../Externals/qicstable/include",
         "../Externals/zsign",
+        "../Externals/zipper/zipper",
     }
 
     links
@@ -80,7 +81,8 @@ project "iDebugTool"
         "zip",
         "zlib",
         "MachOLib",
-        "unzip",
+        "minizip",
+        "zipper",
         "zsign",
         "qicstable_d",
     }

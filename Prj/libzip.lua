@@ -9,6 +9,46 @@ project "zlib"
         "../Externals/zlib/*.c",
     }
 
+project "minizip"
+    kind "StaticLib"
+
+    files
+    {
+        "../Externals/zipper/minizip/**.h",
+        "../Externals/zipper/minizip/**.c",
+    }
+
+    excludes
+    {
+        "../Externals/zipper/minizip/miniunz.**",
+        "../Externals/zipper/minizip/minizip.**",
+    }
+
+    includedirs
+    {
+        "../Externals/zipper/minizip",
+    }
+
+project "zipper"
+    kind "StaticLib"
+
+    files
+    {
+        "../Externals/zipper/zipper/*.h",
+        "../Externals/zipper/zipper/*.cpp",
+    }
+
+    includedirs
+    {
+        "../Externals/zsign/win32",
+        "../Externals/zipper/zipper",
+        "../Externals/zipper/minizip",
+    }
+
+    if IsWindows() then
+        defines {"USE_WINDOWS"}
+    end
+
 project "zip"
     kind "StaticLib"
 
@@ -52,3 +92,4 @@ project "zip"
             "../Externals/libzip/lib/zip_random_win32.c",
         }
     end
+

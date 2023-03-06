@@ -289,16 +289,13 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
             file.commit();
 
             ui->logField->append("Extract Image Package...");
-            struct zip *zf = NULL;
-            int errp = 0;
-            char errstr[256];
-            zf = zip_open(temp_zip.toUtf8().data(), 0, &errp);
-            if (!zf) {
-                zip_error_to_str(errstr, sizeof(errstr), errp, errno);
-                ui->logField->append("ERROR: zip_open: " + QString(errstr) + ": " + QString::number(errp));
-                break;
+            auto unpack_callback = [&](int progress, int total, QString messages){
+                ui->logField->append(QString::asprintf("(%d of %d) %s", progress, total, messages.toUtf8().data()));
+            };
+            if (!zip_extract_all(temp_zip, m_downloadout, unpack_callback))
+            {
+                ui->logField->append("Extract failed!");
             }
-            zip_extract_all(zf, m_downloadout);
             ChangeDownloadState(DOWNLOAD_STATE::DONE);
         }
         else if (m_downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
