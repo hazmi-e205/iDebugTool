@@ -538,7 +538,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     {
         idx++;
         QString relativepath = dir.relativeFilePath(dir_name);
-        callback(idx, total,QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
         if (zip_add_dir(zipper, relativepath.toUtf8().data()) < 0)
         {
             callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s/n", relativepath.toUtf8().data(), zip_strerror(zipper)));
@@ -549,7 +549,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     {
         idx++;
         QString relativepath = dir.relativeFilePath(file_name);
-        callback(idx, total,QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
 
         zip_source *source = zip_source_file(zipper, file_name.toUtf8().data(), 0, 0);
         if (source == nullptr)
@@ -566,6 +566,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
             return false;
         }
     }
+    callback(idx, total, QString::asprintf("Finalizing `%s'.../n", output_filename.toUtf8().data()));
     zip_close(zipper);
     return true;
 }

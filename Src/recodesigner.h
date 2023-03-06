@@ -24,6 +24,7 @@ public:
         SUCCESS,
         FAILED
     };
+    Q_ENUM(SigningStatus);
 
 signals:
     void SigningResult(Recodesigner::SigningStatus status, QString messages);
