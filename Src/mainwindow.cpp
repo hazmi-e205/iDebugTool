@@ -157,7 +157,11 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->symbolicateBtn
                    << ui->socketBtn
                    << ui->saveBtn
-                   << ui->clearBtn);
+                   << ui->clearBtn
+                   << ui->originalBuildBtn
+                   << ui->privateKeyBtn
+                   << ui->provisionBtn
+                   << ui->codesignBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
@@ -168,12 +172,16 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->crashlogEdit
                    << ui->dsymEdit
                    << ui->searchEdit
-                   << ui->excludeEdit);
+                   << ui->excludeEdit
+                   << ui->originalBuildEdit
+                   << ui->privateKeyPasswordEdit
+                   << ui->provisionEdit);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT, QList<QWidget*>()
                    << ui->bundleIds
                    << ui->socketBox
-                   << ui->pidEdit);
+                   << ui->pidEdit
+                   << ui->privateKeyEdit);
 }
 
 MainWindow::~MainWindow()
@@ -197,8 +205,6 @@ MainWindow::~MainWindow()
     delete ui;
 #if defined(DESTROY_DEVICE_BRIDGE)
     DeviceBridge::Destroy();
-#else
-    QApplication::quit();
 #endif
 }
 
@@ -785,7 +791,7 @@ void MainWindow::OnSyncCrashlogsClicked()
 
 void MainWindow::OnCrashlogsStatusChanged(QString text)
 {
-    ui->crashlogsOut->appendPlainText(text);
+    ui->outputEdit->appendPlainText(text);
 }
 
 void MainWindow::OnCrashlogClicked()
