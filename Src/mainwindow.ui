@@ -313,7 +313,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>896</width>
+                  <width>933</width>
                   <height>430</height>
                  </rect>
                 </property>
@@ -2015,9 +2015,9 @@ background-color: rgb(4, 111, 182);</string>
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="crashlogTab">
+           <widget class="QWidget" name="advanceTab">
             <attribute name="title">
-             <string>Crashlog</string>
+             <string>Advance</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_26">
              <item>
@@ -2739,7 +2739,7 @@ color: rgb(255, 255, 255);</string>
                           </widget>
                          </item>
                          <item>
-                          <widget class="QCheckBox" name="checkBox">
+                          <widget class="QCheckBox" name="UnpackCheck">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                              <horstretch>0</horstretch>
@@ -2755,7 +2755,7 @@ color: rgb(255, 255, 255);</string>
                           </widget>
                          </item>
                          <item>
-                          <widget class="QCheckBox" name="checkBox_2">
+                          <widget class="QCheckBox" name="CodesignCheck">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                              <horstretch>0</horstretch>
@@ -2771,9 +2771,9 @@ color: rgb(255, 255, 255);</string>
                           </widget>
                          </item>
                          <item>
-                          <widget class="QCheckBox" name="checkBox_3">
+                          <widget class="QCheckBox" name="RepackCheck">
                            <property name="text">
-                            <string>Repack the re-codesign-ed build</string>
+                            <string>Repack the re-codesign-ed</string>
                            </property>
                            <property name="checked">
                             <bool>true</bool>

@@ -11,7 +11,17 @@ public:
     static void Destroy();
 
     Recodesigner();
-    void Process(QString p12_file, QString p12_password, QString provision_file, QString build);
+    struct Params{
+    public:
+        QString OriginalBuild;
+        QString PrivateKey;
+        QString PrivateKeyPassword;
+        QString Provision;
+        bool DoUnpack;
+        bool DoRepack;
+        bool DoCodesign;
+    };
+    void Process(const Recodesigner::Params& params);
 
 private:
     static Recodesigner *m_instance;

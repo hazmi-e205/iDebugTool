@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QVariant>
 
 #define SYSTEM_LIST "lockdownd|crash_mover|securityd|trustd|remindd|CommCenter|kernel|locationd|mobile_storage_proxy|wifid|dasd|UserEventAgent|exchangesyncd|runningboardd|powerd|mDNSResponder|symptomsd|WirelessRadioManagerd|nsurlsessiond|searchpartyd|mediaserverd|homed|rapportd|powerlogHelperd|aggregated|cloudd|keybagd|sharingd|tccd|bluetoothd|identityservicesd|nearbyd|PowerUIAgent|maild|timed|syncdefaultsd|distnoted|accountsd|analyticsd|apsd|ProtectedCloudKeySyncing|testmanagerd|backboardd|SpringBoard|familycircled|useractivityd|contextstored|Preferences|passd|IDSRemoteURLConnectionAgent|nfcd|coreduetd|duetexpertd|navd|destinationd|com.apple.Safari.SafeBrowsing.Service|dataaccessd|HeuristicInterpreter|pasted|suggestd|appstored|rtcreportingd|awdd|parsec-fbf|lsd|chronod|com.apple.WebKit.Networking|callservicesd|druid|kbd|mediaremoted|watchdogd|MTLCompilerService|itunesstored|EnforcementService|gamed|adprivacyd|profiled|CAReportingService|assistantd|itunescloudd|parsecd|osanalyticshelper|triald|deleted|Spotlight|searchd|mobileassetd|contactsdonationagent|followupd|containermanagerd|ThreeBarsXPCService|routined|accessoryd|healthd|SafariBookmarksSyncAgent|ScreenTimeAgent|gpsd"
 
@@ -123,7 +124,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
     connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult(QString,bool)), this, SLOT(OnSymbolicateResult(QString,bool)));
+
+    connect(ui->originalBuildBtn, SIGNAL(pressed()), this, SLOT(OnOriginalBuildClicked()));
+    connect(ui->privateKeyBtn, SIGNAL(pressed()), this, SLOT(OnPrivateKeyClicked()));
+    connect(ui->privateKeyEdit, SIGNAL(currentTextChanged(QString)), this, SLOT(OnPrivateKeyChanged(QString)));
+    connect(ui->provisionBtn, SIGNAL(pressed()), this, SLOT(OnProvisionClicked()));
+    connect(ui->codesignBtn, SIGNAL(pressed()), this, SLOT(OnCodesignClicked()));
     connect(Recodesigner::Get(), SIGNAL(SigningResult(Recodesigner::SigningStatus,QString)), this, SLOT(OnSigningResult(Recodesigner::SigningStatus,QString)));
+    RefreshPrivateKeyList();
 
     m_appInfo->CheckUpdate([&](QString changelogs, QString url){
         if (changelogs.isEmpty() && url.isEmpty())
@@ -630,6 +638,17 @@ bool MainWindow::IsInstalledUpdated()
     return false;
 }
 
+void MainWindow::RefreshPrivateKeyList()
+{
+    ui->privateKeyEdit->clear();
+    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
+    QStringList privatekeyslist = privatekeys.split("|");
+    foreach (QString privatekey, privatekeyslist) {
+        QStringList keypass = privatekeys.split("*");
+        ui->privateKeyEdit->addItem(keypass.at(0));
+    }
+}
+
 void MainWindow::OnInstallClicked()
 {
     m_installerLogs.clear();
@@ -817,8 +836,6 @@ void MainWindow::OnSymbolicateClicked()
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
     CrashSymbolicator::Get()->Process(crashpath, dsympath);
-
-    //Recodesigner::Get()->Process("p12","xxxxxxx","mobileprovision","ipa");
 }
 
 void MainWindow::OnSymbolicateResult(QString messages, bool error)
@@ -916,5 +933,69 @@ void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
 
 void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)
 {
-    qDebug() << messages;
+    ui->outputEdit->appendPlainText(QVariant::fromValue(status).toString() + " | " + messages);
+}
+
+void MainWindow::OnOriginalBuildClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "OriginalBuild", this);
+    ui->originalBuildEdit->setText(filepath);
+}
+
+void MainWindow::OnPrivateKeyClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "PrivateKey", this);
+    ui->privateKeyEdit->setEditText(filepath);
+}
+
+void MainWindow::OnProvisionClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Provision", this);
+    ui->provisionEdit->setText(filepath);
+}
+
+void MainWindow::OnCodesignClicked()
+{
+    Recodesigner::Params params;
+    params.PrivateKey = ui->privateKeyEdit->currentText();
+    params.PrivateKeyPassword = ui->privateKeyPasswordEdit->text();
+    params.Provision = ui->provisionEdit->text();
+    params.OriginalBuild = ui->originalBuildEdit->text();
+    params.DoUnpack = ui->UnpackCheck->isChecked();
+    params.DoCodesign = ui->CodesignCheck->isChecked();
+    params.DoRepack = ui->RepackCheck->isChecked();
+    Recodesigner::Get()->Process(params);
+
+    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
+    if (privatekeys.toLower().contains(params.PrivateKey.toLower()))
+    {
+        QStringList privatekeylist = privatekeys.split("|");
+        privatekeys = "";
+        foreach (QString privatekey, privatekeylist) {
+            QStringList keypass = privatekey.split("*");
+            privatekeys = (privatekeys.isEmpty() ? "" : (privatekeys + "|"))
+                    + keypass.at(0) + "*"
+                    + (keypass.at(0).toLower() == params.PrivateKey.toLower() ? params.PrivateKeyPassword : keypass.at(1));
+        }
+        UserConfigs::Get()->SaveData("PrivateKeys", privatekeys);
+    }
+    else
+    {
+        UserConfigs::Get()->SaveData("PrivateKeys", (privatekeys.isEmpty() ? "" : (privatekeys + "|")) + params.PrivateKey + "*" + params.PrivateKeyPassword);
+    }
+    RefreshPrivateKeyList();
+}
+
+void MainWindow::OnPrivateKeyChanged(QString key)
+{
+    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
+    QStringList privatekeyslist = privatekeys.split("|");
+    foreach (QString privatekey, privatekeyslist) {
+        QStringList keypass = privatekeys.split("*");
+        if (keypass.at(0).toLower() == key.toLower())
+        {
+            ui->privateKeyPasswordEdit->setText(keypass.at(1));
+            break;
+        }
+    }
 }

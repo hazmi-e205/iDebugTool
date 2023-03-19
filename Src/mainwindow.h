@@ -46,6 +46,7 @@ private:
     void RefreshSocketList();
     void ExcludeSystemLogs();
     bool IsInstalledUpdated();
+    void RefreshPrivateKeyList();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
     AppInfo *m_appInfo;
@@ -117,5 +118,10 @@ private slots:
     void OnUpdateClicked();
     void OnMessagesReceived(MessagesType type, QString messages);
     void OnSigningResult(Recodesigner::SigningStatus status, QString messages);
+    void OnOriginalBuildClicked();
+    void OnPrivateKeyClicked();
+    void OnProvisionClicked();
+    void OnCodesignClicked();
+    void OnPrivateKeyChanged(QString key);
 };
 #endif // MAINWINDOW_H
