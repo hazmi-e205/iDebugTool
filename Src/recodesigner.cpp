@@ -29,6 +29,9 @@ void Recodesigner::Destroy()
 
 Recodesigner::Recodesigner()
 {
+    ZLog::g_callback = [&](std::string messages){
+        emit SigningResult(SigningStatus::PROCESS, QString::fromStdString(messages));
+    };
 }
 
 void Recodesigner::Process(const Recodesigner::Params& params)

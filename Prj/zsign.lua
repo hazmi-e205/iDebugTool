@@ -10,6 +10,11 @@ project "zsign"
         "../Externals/zsign/**.cpp",
     }
 
+    excludes
+    {
+        "../Externals/zsign/zsign.*",
+    }
+
     includedirs
     {
         "../Externals/zsign",

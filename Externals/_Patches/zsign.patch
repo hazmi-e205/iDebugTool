@@ -1,28 +1,113 @@
-diff --git a/archo.h b/archo.h
-index cee4de1..9a5b637 100644
---- a/archo.h
-+++ b/archo.h
-@@ -37,4 +37,4 @@ public:
- 	uint32_t m_uLoadCommandsFreeSpace;
- 	mach_header *m_pHeader;
- 	uint32_t m_uHeaderSize;
--};
-\ No newline at end of file
-+};
-diff --git a/bundle.cpp b/bundle.cpp
-index 337750b..6efc4e7 100644
---- a/bundle.cpp
-+++ b/bundle.cpp
-@@ -1,7 +1,6 @@
- #include "bundle.h"
- #include "macho.h"
- #include "sys/stat.h"
--#include "sys/types.h"
- #include "common/base64.h"
- #include "common/common.h"
+diff --git a/common/common.cpp b/common/common.cpp
+index b25dadc..645084c 100644
+--- a/common/common.cpp
++++ b/common/common.cpp
+@@ -694,6 +694,7 @@ uint64_t ZTimer::PrintResult(bool bSuccess, const char *szFormatArgs, ...)
+ }
+ 
+ int ZLog::g_nLogLevel = ZLog::E_INFO;
++function<void(string)> ZLog::g_callback = NULL;
+ 
+ void ZLog::SetLogLever(int nLogLevel)
+ {
+@@ -705,6 +706,7 @@ void ZLog::Print(int nLevel, const char *szLog)
+ 	if (g_nLogLevel >= nLevel)
+ 	{
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
+ 
+@@ -714,6 +716,7 @@ void ZLog::PrintV(int nLevel, const char *szFormatArgs, ...)
+ 	{
+ 		PARSEVALIST(szFormatArgs, szLog)
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
+ 
+@@ -722,6 +725,7 @@ bool ZLog::Error(const char *szLog)
+ 	write(STDOUT_FILENO, "\033[31m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return false;
+ }
+ 
+@@ -731,6 +735,7 @@ bool ZLog::ErrorV(const char *szFormatArgs, ...)
+ 	write(STDOUT_FILENO, "\033[31m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return false;
+ }
+ 
+@@ -739,6 +744,7 @@ bool ZLog::Success(const char *szLog)
+ 	write(STDOUT_FILENO, "\033[32m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return true;
+ }
+ 
+@@ -748,6 +754,7 @@ bool ZLog::SuccessV(const char *szFormatArgs, ...)
+ 	write(STDOUT_FILENO, "\033[32m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return true;
+ }
+ 
+@@ -767,6 +774,7 @@ bool ZLog::Warn(const char *szLog)
+ 	write(STDOUT_FILENO, "\033[33m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return false;
+ }
+ 
+@@ -776,6 +784,7 @@ bool ZLog::WarnV(const char *szFormatArgs, ...)
+ 	write(STDOUT_FILENO, "\033[33m", 5);
+ 	write(STDOUT_FILENO, szLog, strlen(szLog));
+ 	write(STDOUT_FILENO, "\033[0m", 4);
++    if (g_callback) g_callback(szLog);
+ 	return false;
+ }
+ 
+@@ -784,6 +793,7 @@ void ZLog::Print(const char *szLog)
+ 	if (g_nLogLevel >= E_INFO)
+ 	{
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
+ 
+@@ -793,6 +803,7 @@ void ZLog::PrintV(const char *szFormatArgs, ...)
+ 	{
+ 		PARSEVALIST(szFormatArgs, szLog)
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
+ 
+@@ -801,6 +812,7 @@ void ZLog::Debug(const char *szLog)
+ 	if (g_nLogLevel >= E_DEBUG)
+ 	{
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
+ 
+@@ -810,6 +822,7 @@ void ZLog::DebugV(const char *szFormatArgs, ...)
+ 	{
+ 		PARSEVALIST(szFormatArgs, szLog)
+ 		write(STDOUT_FILENO, szLog, strlen(szLog));
++        if (g_callback) g_callback(szLog);
+ 	}
+ }
  
 diff --git a/common/common.h b/common/common.h
-index 0e1592b..4592a83 100644
+index 0e1592b..fa41e6f 100644
 --- a/common/common.h
 +++ b/common/common.h
 @@ -4,7 +4,13 @@
@@ -48,25 +133,22 @@ index 0e1592b..4592a83 100644
  #include <sys/stat.h>
  #include <sys/time.h>
  #include <sys/types.h>
-@@ -157,4 +162,4 @@ public:
+@@ -24,6 +29,7 @@
+ #include <vector>
+ #include <string>
+ #include <iostream>
++#include <functional>
+ using namespace std;
  
- private:
-     static int g_nLogLevel;
--};
-\ No newline at end of file
-+};
-diff --git a/macho.cpp b/macho.cpp
-index 6e56ac0..384f809 100644
---- a/macho.cpp
-+++ b/macho.cpp
-@@ -2,7 +2,6 @@
- #include "common/json.h"
- #include "common/mach-o.h"
- #include "openssl.h"
--#include "signing.h"
- #include "macho.h"
+ #define LE(x) _Swap(x)
+@@ -138,6 +144,7 @@ public:
+     };
  
- ZMachO::ZMachO()
+ public:
++    static function<void(string)> g_callback;
+     static bool IsDebug();
+     static void Print(const char *szLog);
+     static void PrintV(const char *szFormatArgs, ...);
 diff --git a/openssl.cpp b/openssl.cpp
 index 2f7e86c..fe77759 100644
 --- a/openssl.cpp
@@ -84,18 +166,3 @@ index 2f7e86c..fe77759 100644
  				if (NULL != p12)
  				{
  					if (0 == PKCS12_parse(p12, strPassword.c_str(), &evpPKey, &x509Cert, NULL))
-diff --git a/zsign.cpp b/zsign.cpp
-index 2698cf9..b39a9d3 100644
---- a/zsign.cpp
-+++ b/zsign.cpp
-@@ -1,10 +1,8 @@
- #include "common/common.h"
--#include "common/json.h"
- #include "openssl.h"
- #include "macho.h"
- #include "bundle.h"
- #include <libgen.h>
--#include <dirent.h>
- #include <getopt.h>
- 
- const struct option options[] = {
