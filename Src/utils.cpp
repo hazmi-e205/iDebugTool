@@ -485,11 +485,11 @@ bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(i
     {
         idx++;
         QString target = output_dir + "/" + dir_name;
-        callback(idx, total, QString::asprintf("Creating `%s'.../n", target.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Creating `%s'...", target.toUtf8().data()));
         if (!QDir().mkpath(target))
         {
             unzipper.close();
-            callback(idx, total, QString::asprintf("Can't create `%s'!/n", target.toUtf8().data()));
+            callback(idx, total, QString::asprintf("Can't create `%s'!", target.toUtf8().data()));
             return false;
         }
     }
@@ -497,11 +497,11 @@ bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(i
     {
         idx++;
         QString target = output_dir + "/" + file_name;
-        callback(idx, total, QString::asprintf("Extracting `%s'.../n", target.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Extracting `%s'...", target.toUtf8().data()));
         if (!unzipper.extractEntry(file_name.toStdString(), output_dir.toStdString()))
         {
             unzipper.close();
-            callback(idx, total, QString::asprintf("Can't extract `%s'!/n", target.toUtf8().data()));
+            callback(idx, total, QString::asprintf("Can't extract `%s'!", target.toUtf8().data()));
             return false;
         }
     }
@@ -518,7 +518,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     zip *zipper = zip_open(output_filename.toUtf8().data(), ZIP_CREATE | ZIP_EXCL, &errorp);
     if (zipper == nullptr) {
         zip_error_to_str(buf, sizeof(buf), errorp, errno);
-        callback(0, 0, QString::asprintf("Can't create zip archive `%s': %s/n", output_filename.toUtf8().data(), buf));
+        callback(0, 0, QString::asprintf("Can't create zip archive `%s': %s", output_filename.toUtf8().data(), buf));
         return false;
     }
 
@@ -538,10 +538,10 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     {
         idx++;
         QString relativepath = dir.relativeFilePath(dir_name);
-        callback(idx, total, QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Adding `%s' to archive...", relativepath.toUtf8().data()));
         if (zip_add_dir(zipper, relativepath.toUtf8().data()) < 0)
         {
-            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s/n", relativepath.toUtf8().data(), zip_strerror(zipper)));
+            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s", relativepath.toUtf8().data(), zip_strerror(zipper)));
             return false;
         }
     }
@@ -549,24 +549,24 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     {
         idx++;
         QString relativepath = dir.relativeFilePath(file_name);
-        callback(idx, total, QString::asprintf("Adding `%s' to archive.../n", relativepath.toUtf8().data()));
+        callback(idx, total, QString::asprintf("Adding `%s' to archive...", relativepath.toUtf8().data()));
 
         zip_source *source = zip_source_file(zipper, file_name.toUtf8().data(), 0, 0);
         if (source == nullptr)
         {
             zip_close(zipper);
-            callback(idx, total, QString::asprintf("Can't load `%s' : %s/n", file_name.toUtf8().data(), zip_strerror(zipper)));
+            callback(idx, total, QString::asprintf("Can't load `%s' : %s", file_name.toUtf8().data(), zip_strerror(zipper)));
             return false;
         }
         if (zip_add(zipper, relativepath.toUtf8().data(), source) < 0)
         {
             zip_source_free(source);
             zip_close(zipper);
-            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s/n", relativepath.toUtf8().data(), zip_strerror(zipper)));
+            callback(idx, total, QString::asprintf("Can't add `%s' to archive : %s", relativepath.toUtf8().data(), zip_strerror(zipper)));
             return false;
         }
     }
-    callback(idx, total, QString::asprintf("Finalizing `%s'.../n", output_filename.toUtf8().data()));
+    callback(idx, total, QString::asprintf("Finalizing `%s'...", output_filename.toUtf8().data()));
     zip_close(zipper);
     return true;
 }

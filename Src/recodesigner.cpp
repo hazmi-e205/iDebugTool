@@ -30,7 +30,7 @@ void Recodesigner::Destroy()
 Recodesigner::Recodesigner()
 {
     ZLog::g_callback = [&](std::string messages){
-        emit SigningResult(SigningStatus::PROCESS, QString::fromStdString(messages));
+        emit SigningResult(SigningStatus::PROCESS, QString::fromStdString(messages).trimmed());
     };
 }
 
