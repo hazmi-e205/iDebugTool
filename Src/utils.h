@@ -4,6 +4,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QSplitter>
 #include <plist/plist.h>
 #include <libimobiledevice/afc.h>
 #include "logpacket.h"
@@ -55,6 +56,7 @@ enum STYLE_TYPE
     ROUNDED_COMBOBOX_LIGHT
 };
 void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
+void DecorateSplitter(QSplitter* splitter, int index);
 
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
 int zip_get_app_directory(struct zip* zf, QString &path);

@@ -11,6 +11,8 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QFileDialog>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <zip.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -716,5 +718,53 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
     foreach (auto widget, widgets)
     {
         widget->setStyleSheet(stylesheet);
+    }
+}
+
+void DecorateSplitter(QSplitter* splitter, int index)
+{
+    const int gripLength = 50;
+    const int gripWidth = 1;
+    const int grips = 4;
+
+    splitter->setOpaqueResize(false);
+    splitter->setChildrenCollapsible(false);
+
+    splitter->setHandleWidth(7);
+    QSplitterHandle* handle = splitter->handle(index);
+    Qt::Orientation orientation = splitter->orientation();
+    QHBoxLayout* layout = new QHBoxLayout(handle);
+    layout->setSpacing(0);
+    //layout->setMargin(0);
+
+    if (orientation == Qt::Horizontal)
+    {
+        for (int i=0;i<grips;++i)
+        {
+            QFrame* line = new QFrame(handle);
+            line->setMinimumSize(gripWidth, gripLength);
+            line->setMaximumSize(gripWidth, gripLength);
+            line->setFrameShape(QFrame::StyledPanel);
+            layout->addWidget(line);
+        }
+    }
+    else
+    {
+        //this will center the vertical grip
+        //add a horizontal spacer
+        layout->addStretch();
+        //create the vertical grip
+        QVBoxLayout* vbox = new QVBoxLayout;
+        for (int i=0;i<grips;++i)
+        {
+            QFrame* line = new QFrame(handle);
+            line->setMinimumSize(gripLength, gripWidth);
+            line->setMaximumSize(gripLength, gripWidth);
+            line->setFrameShape(QFrame::StyledPanel);
+            vbox->addWidget(line);
+        }
+        layout->addLayout(vbox);
+        //add another horizontal spacer
+        layout->addStretch();
     }
 }

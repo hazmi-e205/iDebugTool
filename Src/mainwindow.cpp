@@ -186,6 +186,9 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->socketBox
                    << ui->pidEdit
                    << ui->privateKeyEdit);
+
+    DecorateSplitter(ui->splitter, 1);
+    DecorateSplitter(ui->topSplitter, 1);
 }
 
 MainWindow::~MainWindow()
