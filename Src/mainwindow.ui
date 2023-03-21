@@ -85,17 +85,23 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <widget class="QWidget" name="widget" native="true">
+      <widget class="QWidget" name="topBlock" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
-         <verstretch>1</verstretch>
+         <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="minimumSize">
         <size>
          <width>0</width>
-         <height>480</height>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
         </size>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -319,7 +325,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>907</width>
+                  <width>893</width>
                   <height>430</height>
                  </rect>
                 </property>
@@ -2004,8 +2010,8 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>907</width>
-                  <height>430</height>
+                  <width>893</width>
+                  <height>376</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -2848,11 +2854,11 @@ color: rgb(255, 255, 255);</string>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="widget_2" native="true">
+      <widget class="QWidget" name="bottomBlock" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
-         <verstretch>4</verstretch>
+         <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
