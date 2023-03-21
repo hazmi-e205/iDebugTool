@@ -55,7 +55,7 @@ private:
     QString m_currentFilter;
     QString m_pidFilter;
     QString m_excludeFilter;
-    QString m_excludeSystemFilter;
+    QString m_userbinaries;
     QString m_choosenBundleId;
     QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
@@ -113,7 +113,6 @@ private slots:
     void OnSymbolicateClicked();
     void OnSymbolicateResult(QString messages, bool error);
     void OnScreenshotReceived(QString imagePath);
-    void OnExcludeSystemLogListClicked();
     void OnProcessStatusChanged(int percentage, QString message);
     void OnUpdateClicked();
     void OnMessagesReceived(MessagesType type, QString messages);

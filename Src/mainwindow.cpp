@@ -23,8 +23,6 @@
 #include <QDesktopServices>
 #include <QVariant>
 
-#define SYSTEM_LIST "lockdownd|crash_mover|securityd|trustd|remindd|CommCenter|kernel|locationd|mobile_storage_proxy|wifid|dasd|UserEventAgent|exchangesyncd|runningboardd|powerd|mDNSResponder|symptomsd|WirelessRadioManagerd|nsurlsessiond|searchpartyd|mediaserverd|homed|rapportd|powerlogHelperd|aggregated|cloudd|keybagd|sharingd|tccd|bluetoothd|identityservicesd|nearbyd|PowerUIAgent|maild|timed|syncdefaultsd|distnoted|accountsd|analyticsd|apsd|ProtectedCloudKeySyncing|testmanagerd|backboardd|SpringBoard|familycircled|useractivityd|contextstored|Preferences|passd|IDSRemoteURLConnectionAgent|nfcd|coreduetd|duetexpertd|navd|destinationd|com.apple.Safari.SafeBrowsing.Service|dataaccessd|HeuristicInterpreter|pasted|suggestd|appstored|rtcreportingd|awdd|parsec-fbf|lsd|chronod|com.apple.WebKit.Networking|callservicesd|druid|kbd|mediaremoted|watchdogd|MTLCompilerService|itunesstored|EnforcementService|gamed|adprivacyd|profiled|CAReportingService|assistantd|itunescloudd|parsecd|osanalyticshelper|triald|deleted|Spotlight|searchd|mobileassetd|contactsdonationagent|followupd|containermanagerd|ThreeBarsXPCService|routined|accessoryd|healthd|SafariBookmarksSyncAgent|ScreenTimeAgent|gpsd"
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -95,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
     connect(ui->proxyBtn, SIGNAL(pressed()), this, SLOT(OnProxyClicked()));
-    connect(ui->excludeSytemBtn, SIGNAL(pressed()), this, SLOT(OnExcludeSystemLogListClicked()));
     m_proxyDialog = new ProxyDialog(this);
     m_proxyDialog->UseExisting();
 
@@ -150,7 +147,6 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->aboutBtn
                    << ui->refreshBtn
                    << ui->sysInfoBtn
-                   << ui->excludeSytemBtn
                    << ui->proxyBtn
                    << ui->configureBtn
                    << ui->installBtn
@@ -289,7 +285,7 @@ void MainWindow::UpdateLogsFilter()
     QList<LogPacket> logs;
     for (LogPacket& m_Log : m_liveLogs)
     {
-        if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter)) {
+        if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries)) {
             logs << m_Log;
         }
     }
@@ -396,17 +392,22 @@ void MainWindow::RefreshSocketList()
 
 void MainWindow::ExcludeSystemLogs()
 {
-    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", SYSTEM_LIST);
+    IsInstalledUpdated();
     if (ui->excludeSystemCheck->isChecked())
     {
-        m_excludeSystemFilter = excludeData;
+        QString userBinaries = "";
+        foreach (auto appinfo, m_installedApps)
+        {
+            QString bin_name = appinfo["CFBundleExecutable"].toString();
+            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "|")) + bin_name;
+        }
+        m_userbinaries = userBinaries;
     }
     else
     {
-        m_excludeSystemFilter.clear();
+        m_userbinaries.clear();
     }
     UpdateLogsFilter();
-
 }
 
 void MainWindow::OnTopSplitterMoved(int pos, int index)
@@ -481,7 +482,7 @@ void MainWindow::OnSystemLogsReceived(LogPacket log)
         m_liveLogs.erase(m_liveLogs.begin());
     }
 
-    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_excludeSystemFilter))
+    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries))
     {
         AddLogToTable(log);
     }
@@ -603,7 +604,7 @@ void MainWindow::OnClickedEvent(QObject* object)
 
     if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName())
     {
-        if (IsInstalledUpdated())
+        if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || ui->pidEdit->count() != m_installedApps.size())
         {
             ui->bundleIds->clear();
             ui->bundleIds->addItems(m_installedApps.keys());
@@ -617,6 +618,11 @@ void MainWindow::OnClickedEvent(QObject* object)
             }
             ui->pidEdit->setEditText(old_string);
         }
+    }
+
+    if (object->objectName() == ui->excludeSystemCheck->objectName())
+    {
+        ExcludeSystemLogs();
     }
 }
 
@@ -882,18 +888,6 @@ void MainWindow::OnScreenshotReceived(QString imagePath)
     }
 }
 
-void MainWindow::OnExcludeSystemLogListClicked()
-{
-    QString excludeData = UserConfigs::Get()->GetData("SystemLogList", SYSTEM_LIST);
-    QStringList excludes = excludeData.split("|");
-
-    excludeData = excludes.join('\n');
-    m_textDialog->ShowText("System Logs Exclude List", excludeData, false, [](QString data){
-        QStringList excludes = data.split("\n");
-        UserConfigs::Get()->SaveData("SystemLogList", excludes.join('|'));
-    });
-}
-
 void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 {
     if (!m_loading->isActiveWindow())
@@ -901,6 +895,8 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 
     m_loading->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
+    if (percentage == 100)
+        ExcludeSystemLogs();
 }
 
 void MainWindow::OnUpdateClicked()
