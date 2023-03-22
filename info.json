@@ -7,7 +7,7 @@
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "c797c2af6f4e2e8ae93b68f1c41abab1579563db",
+            "revision": "cc540a20e64b469f7d9d4754610c0692436880d6",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -15,7 +15,7 @@
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
-            "revision": "2cebd288e73d85e0abc09155616315f952ba1f4c",
+            "revision": "4e14ae142f998bfdcad71f3099c0e4aa3628354c",
             "path": "Externals/libusbmuxd",
             "use_submodules": false
         },
