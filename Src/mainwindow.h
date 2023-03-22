@@ -44,7 +44,6 @@ private:
     void AddLogToTable(QList<LogPacket> logs);
     void UpdateInfoWidget();
     void RefreshSocketList();
-    void ExcludeSystemLogs();
     bool IsInstalledUpdated();
     void RefreshPrivateKeyList();
     Ui::MainWindow *ui;
@@ -86,7 +85,6 @@ private slots:
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
     void OnAutoScrollChecked(int state);
-    void OnExcludeSystemLogsChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);
@@ -122,5 +120,6 @@ private slots:
     void OnProvisionClicked();
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
+    void OnQuickFilterActive(int index);
 };
 #endif // MAINWINDOW_H

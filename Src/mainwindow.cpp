@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
+    connect(ui->quickFilter, SIGNAL(currentIndexChanged(int)), this, SLOT(OnQuickFilterActive(int)));
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
@@ -95,11 +96,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->proxyBtn, SIGNAL(pressed()), this, SLOT(OnProxyClicked()));
     m_proxyDialog = new ProxyDialog(this);
     m_proxyDialog->UseExisting();
-
-    connect(ui->excludeSystemCheck, SIGNAL(stateChanged(int)), this, SLOT(OnExcludeSystemLogsChecked(int)));
-    bool IsExcludeSystem = UserConfigs::Get()->GetBool("ExcludeSystemLogs", true);
-    ui->excludeSystemCheck->setCheckState(IsExcludeSystem ? Qt::Checked : Qt::Unchecked);
-    ExcludeSystemLogs();
 
     connect(ui->sleepBtn, SIGNAL(pressed()), this, SLOT(OnSleepClicked()));
     connect(ui->restartBtn, SIGNAL(pressed()), this, SLOT(OnRestartClicked()));
@@ -185,7 +181,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->bundleIds
                    << ui->socketBox
                    << ui->pidEdit
-                   << ui->privateKeyEdit);
+                   << ui->privateKeyEdit
+                   << ui->quickFilter);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
@@ -391,26 +388,6 @@ void MainWindow::RefreshSocketList()
     }
 }
 
-void MainWindow::ExcludeSystemLogs()
-{
-    IsInstalledUpdated();
-    if (ui->excludeSystemCheck->isChecked())
-    {
-        QString userBinaries = "";
-        foreach (auto appinfo, m_installedApps)
-        {
-            QString bin_name = appinfo["CFBundleExecutable"].toString();
-            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "|")) + bin_name;
-        }
-        m_userbinaries = userBinaries;
-    }
-    else
-    {
-        m_userbinaries.clear();
-    }
-    UpdateLogsFilter();
-}
-
 void MainWindow::OnTopSplitterMoved(int pos, int index)
 {
     m_ratioTopWidth = (float)ui->deviceWidget->width() / m_topWidth;
@@ -542,12 +519,6 @@ void MainWindow::OnAutoScrollChecked(int state)
     }
 }
 
-void MainWindow::OnExcludeSystemLogsChecked(int state)
-{
-    UserConfigs::Get()->SaveData("ExcludeSystemLogs", state == 0 ? false : true);
-    ExcludeSystemLogs();
-}
-
 void MainWindow::OnClearClicked()
 {
     bool turnBack = false;
@@ -619,11 +590,6 @@ void MainWindow::OnClickedEvent(QObject* object)
             }
             ui->pidEdit->setEditText(old_string);
         }
-    }
-
-    if (object->objectName() == ui->excludeSystemCheck->objectName())
-    {
-        ExcludeSystemLogs();
     }
 }
 
@@ -704,7 +670,6 @@ void MainWindow::OnConfigureClicked()
 
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
     UserConfigs::Get()->SaveData("ScrollInterval", ui->scrollInterval->text());
-    ExcludeSystemLogs();
 }
 
 void MainWindow::OnProxyClicked()
@@ -897,7 +862,7 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
     m_loading->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
     if (percentage == 100)
-        ExcludeSystemLogs();
+        OnQuickFilterActive(ui->quickFilter->currentIndex());
 }
 
 void MainWindow::OnUpdateClicked()
@@ -995,4 +960,39 @@ void MainWindow::OnPrivateKeyChanged(QString key)
             break;
         }
     }
+}
+
+void MainWindow::OnQuickFilterActive(int index)
+{
+    QString userBinaries = "";
+    switch (index)
+    {
+    case 0:
+        IsInstalledUpdated();
+        foreach (auto appinfo, m_installedApps)
+        {
+            QString bin_name = appinfo["CFBundleExecutable"].toString();
+            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "\\[|")) + bin_name;
+        }
+        m_userbinaries = userBinaries;
+        break;
+
+    case 1:
+        IsInstalledUpdated();
+        foreach (auto appinfo, m_installedApps)
+        {
+            QString bin_name = appinfo["CFBundleExecutable"].toString();
+            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "|")) + bin_name;
+        }
+        m_userbinaries = userBinaries;
+        break;
+
+    case 2:
+        m_userbinaries.clear();
+        break;
+
+    default:
+        break;
+    }
+    UpdateLogsFilter();
 }
