@@ -40,13 +40,13 @@ project "zipper"
 
     includedirs
     {
-        "../Externals/zsign/win32",
         "../Externals/zipper/zipper",
         "../Externals/zipper/minizip",
     }
 
     if IsWindows() then
         defines {"USE_WINDOWS"}
+        includedirs {"../Externals/mingw-patch"}
     end
 
 project "zip"

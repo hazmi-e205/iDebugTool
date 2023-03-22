@@ -107,33 +107,10 @@ index b25dadc..645084c 100644
  }
  
 diff --git a/common/common.h b/common/common.h
-index 0e1592b..fa41e6f 100644
+index 0e1592b..2f7572e 100644
 --- a/common/common.h
 +++ b/common/common.h
-@@ -4,7 +4,13 @@
- #include <stdio.h>
- #include <stdint.h>
- #include <stdarg.h>
--#include <sys/mman.h>
-+#ifdef WIN32
-+    #include "win32/mman.h"
-+    #include "win32/dirent.h"
-+#else
-+    #include <sys/mman.h>
-+    #include <dirent.h>
-+#endif
- #include <errno.h>
- #include <unistd.h>
- #include <fcntl.h>
-@@ -14,7 +20,6 @@
- #include <ftw.h>
- #include <math.h>
- #include <assert.h>
--#include <dirent.h>
- #include <sys/stat.h>
- #include <sys/time.h>
- #include <sys/types.h>
-@@ -24,6 +29,7 @@
+@@ -24,6 +24,7 @@
  #include <vector>
  #include <string>
  #include <iostream>
@@ -141,7 +118,7 @@ index 0e1592b..fa41e6f 100644
  using namespace std;
  
  #define LE(x) _Swap(x)
-@@ -138,6 +144,7 @@ public:
+@@ -138,6 +139,7 @@ public:
      };
  
  public:
@@ -149,6 +126,13 @@ index 0e1592b..fa41e6f 100644
      static bool IsDebug();
      static void Print(const char *szLog);
      static void PrintV(const char *szFormatArgs, ...);
+@@ -157,4 +159,4 @@ public:
+ 
+ private:
+     static int g_nLogLevel;
+-};
+\ No newline at end of file
++};
 diff --git a/openssl.cpp b/openssl.cpp
 index 2f7e86c..fe77759 100644
 --- a/openssl.cpp

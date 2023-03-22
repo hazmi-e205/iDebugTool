@@ -23,13 +23,20 @@ project "zsign"
 
     if IsWindows() then
         defines {"WINDOWS"}
-        excludes
-        {
-            "../Externals/zsign/win32/test.c",
-        }
-    else
-        excludes
-        {
-            "../Externals/zsign/win32/**",
-        }
+        includedirs {"../Externals/mingw-patch"}
     end
+
+if IsWindows() then
+    project "mingw-patch"
+        kind "StaticLib"
+        files
+        {
+            "../Externals/mingw-patch/**.h",
+            "../Externals/mingw-patch/**.c",
+        }
+
+        includedirs
+        {
+            "../Externals/mingw-patch",
+        }
+end

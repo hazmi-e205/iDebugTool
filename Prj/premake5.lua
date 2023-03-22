@@ -67,6 +67,7 @@ project "iDebugTool"
         "../Externals/qicstable/include",
         "../Externals/zsign",
         "../Externals/zipper/zipper",
+        "../Externals/mingw-patch",
     }
 
     links
@@ -84,6 +85,7 @@ project "iDebugTool"
         "minizip",
         "zipper",
         "zsign",
+        "mingw-patch",
         "qicstable_d",
     }
 
