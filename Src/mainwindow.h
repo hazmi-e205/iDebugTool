@@ -90,7 +90,6 @@ private slots:
     void OnClickedEvent(QObject* object);
     void OnInstallClicked();
     void OnUninstallClicked();
-    void OnInstallLogsClicked();
     void OnScrollTimerTick();
     void OnConfigureClicked();
     void OnProxyClicked();
@@ -121,5 +120,6 @@ private slots:
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
     void OnQuickFilterActive(int index);
+    void OnBottomTabChanged(int index);
 };
 #endif // MAINWINDOW_H

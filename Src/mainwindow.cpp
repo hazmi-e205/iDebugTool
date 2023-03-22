@@ -64,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
     connect(ui->quickFilter, SIGNAL(currentIndexChanged(int)), this, SLOT(OnQuickFilterActive(int)));
+    connect(ui->bottomWidget, SIGNAL(currentChanged(int)), this, SLOT(OnBottomTabChanged(int)));
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
@@ -87,7 +88,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
-    connect(ui->installLogs, SIGNAL(pressed()), this, SLOT(OnInstallLogsClicked()));
     connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
@@ -146,7 +146,6 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->proxyBtn
                    << ui->configureBtn
                    << ui->installBtn
-                   << ui->installLogs
                    << ui->appInfoBtn
                    << ui->UninstallBtn
                    << ui->syncCrashlogsBtn
@@ -192,6 +191,7 @@ MainWindow::~MainWindow()
 {
     DeviceBridge::Destroy();
     CrashSymbolicator::Destroy();
+    Recodesigner::Destroy();
     m_devicesModel->clear();
     delete m_devicesModel;
     delete m_table;
@@ -476,8 +476,9 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
             m_installerLogs += m_installerLogs.isEmpty() ? messages : ("\n" + messages);
             ui->installBar->setFormat("%p% " + (message.contains('\n') ? message.split('\n').at(0) : message));
             ui->installBar->setValue(percentage);
-            if (m_textDialog->isActiveWindow() && m_textDialog->windowTitle().contains("Installer"))
-                m_textDialog->AppendText(messages);
+            ui->outputEdit->appendPlainText(messages);
+            if (percentage == 100)
+                ui->installBtn->setEnabled(true);
         }
         break;
 
@@ -626,6 +627,8 @@ void MainWindow::OnInstallClicked()
 {
     m_installerLogs.clear();
     DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallerMode::CMD_UPGRADE : InstallerMode::CMD_INSTALL, ui->installPath->text());
+    ui->installBtn->setEnabled(false);
+    ui->bottomWidget->setCurrentIndex(1);
 }
 
 void MainWindow::OnUninstallClicked()
@@ -634,12 +637,6 @@ void MainWindow::OnUninstallClicked()
     {
         DeviceBridge::Get()->UninstallApp(m_choosenBundleId);
     }
-}
-
-void MainWindow::OnInstallLogsClicked()
-{
-    if(!m_installerLogs.isEmpty())
-        m_textDialog->ShowText("Installer Logs", m_installerLogs);
 }
 
 void MainWindow::OnScrollTimerTick()
@@ -895,7 +892,12 @@ void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
 
 void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)
 {
-    ui->outputEdit->appendPlainText(QVariant::fromValue(status).toString() + " | " + messages);
+    ui->outputEdit->appendPlainText(messages);
+    if (status == Recodesigner::SigningStatus::FAILED || status == Recodesigner::SigningStatus::SUCCESS)
+    {
+        ui->outputEdit->appendPlainText(QVariant::fromValue(status).toString() + " | " + messages);
+        ui->codesignBtn->setEnabled(true);
+    }
 }
 
 void MainWindow::OnOriginalBuildClicked()
@@ -946,6 +948,8 @@ void MainWindow::OnCodesignClicked()
         UserConfigs::Get()->SaveData("PrivateKeys", (privatekeys.isEmpty() ? "" : (privatekeys + "|")) + params.PrivateKey + "*" + params.PrivateKeyPassword);
     }
     RefreshPrivateKeyList();
+    ui->codesignBtn->setEnabled(false);
+    ui->bottomWidget->setCurrentIndex(1);
 }
 
 void MainWindow::OnPrivateKeyChanged(QString key)
@@ -953,7 +957,7 @@ void MainWindow::OnPrivateKeyChanged(QString key)
     QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
     QStringList privatekeyslist = privatekeys.split("|");
     foreach (QString privatekey, privatekeyslist) {
-        QStringList keypass = privatekeys.split("*");
+        QStringList keypass = privatekey.split("*");
         if (keypass.at(0).toLower() == key.toLower())
         {
             ui->privateKeyPasswordEdit->setText(keypass.at(1));
@@ -995,4 +999,19 @@ void MainWindow::OnQuickFilterActive(int index)
         break;
     }
     UpdateLogsFilter();
+}
+
+void MainWindow::OnBottomTabChanged(int index)
+{
+    static bool last_autoscroll = false;
+    switch (index)
+    {
+    case 0:
+        ui->scrollCheck->setCheckState(last_autoscroll ? Qt::Checked : Qt::Unchecked);
+        break;
+    default:
+        last_autoscroll = ui->scrollCheck->isChecked();
+        ui->scrollCheck->setCheckState(Qt::Unchecked);
+        break;
+    }
 }

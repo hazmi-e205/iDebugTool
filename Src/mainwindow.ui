@@ -914,21 +914,14 @@ color: rgb(255, 255, 255);</string>
                                     <verstretch>0</verstretch>
                                    </sizepolicy>
                                   </property>
+                                  <property name="maximumSize">
+                                   <size>
+                                    <width>72</width>
+                                    <height>16777215</height>
+                                   </size>
+                                  </property>
                                   <property name="text">
                                    <string>Upgrade</string>
-                                  </property>
-                                 </widget>
-                                </item>
-                                <item>
-                                 <widget class="QPushButton" name="installBtn">
-                                  <property name="sizePolicy">
-                                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                    <horstretch>0</horstretch>
-                                    <verstretch>0</verstretch>
-                                   </sizepolicy>
-                                  </property>
-                                  <property name="text">
-                                   <string>Install</string>
                                   </property>
                                  </widget>
                                 </item>
@@ -976,15 +969,21 @@ color: rgb(255, 255, 255);</string>
                                  </widget>
                                 </item>
                                 <item>
-                                 <widget class="QPushButton" name="installLogs">
+                                 <widget class="QPushButton" name="installBtn">
                                   <property name="sizePolicy">
                                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                     <horstretch>0</horstretch>
                                     <verstretch>0</verstretch>
                                    </sizepolicy>
                                   </property>
+                                  <property name="maximumSize">
+                                   <size>
+                                    <width>72</width>
+                                    <height>16777215</height>
+                                   </size>
+                                  </property>
                                   <property name="text">
-                                   <string>Logs</string>
+                                   <string>Install</string>
                                   </property>
                                  </widget>
                                 </item>
@@ -2577,8 +2576,8 @@ color: rgb(255, 255, 255);</string>
                                  <verstretch>0</verstretch>
                                 </sizepolicy>
                                </property>
-                               <property name="text">
-                                <string/>
+                               <property name="echoMode">
+                                <enum>QLineEdit::Password</enum>
                                </property>
                               </widget>
                              </item>
