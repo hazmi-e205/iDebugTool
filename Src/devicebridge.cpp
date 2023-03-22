@@ -69,7 +69,8 @@ void DeviceBridge::ResetConnection()
 
     if(m_client)
     {
-        is_exist ? (void)lockdownd_client_free(m_client) : free(m_client);
+        //Quick fix: stuck while reseting connection at exit, switch, reconnect
+        //is_exist ? (void)lockdownd_client_free(m_client) : free(m_client);
         m_client = nullptr;
     }
 

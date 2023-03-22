@@ -193,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    DeviceBridge::Destroy();
     CrashSymbolicator::Destroy();
     m_devicesModel->clear();
     delete m_devicesModel;
@@ -210,9 +211,6 @@ MainWindow::~MainWindow()
     delete m_loading;
     AsyncManager::Destroy();
     delete ui;
-#if defined(DESTROY_DEVICE_BRIDGE)
-    DeviceBridge::Destroy();
-#endif
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
