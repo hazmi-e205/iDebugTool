@@ -119,7 +119,6 @@ private slots:
     void OnProvisionClicked();
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
-    void OnQuickFilterActive(int index);
     void OnBottomTabChanged(int index);
 };
 #endif // MAINWINDOW_H

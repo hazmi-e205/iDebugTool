@@ -2900,38 +2900,6 @@ color: rgb(255, 255, 255);</string>
                 <number>3</number>
                </property>
                <item>
-                <widget class="QLabel" name="label_25">
-                 <property name="text">
-                  <string>Quick Filter</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="quickFilter">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>By user apps only</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Related to user apps</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
-                   <string>Without quick filters</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-               <item>
                 <widget class="QLabel" name="label_2">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -2964,7 +2932,7 @@ color: rgb(255, 255, 255);</string>
                 <widget class="QComboBox" name="pidEdit">
                  <property name="minimumSize">
                   <size>
-                   <width>130</width>
+                   <width>200</width>
                    <height>0</height>
                   </size>
                  </property>

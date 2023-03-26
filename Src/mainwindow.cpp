@@ -63,7 +63,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
-    connect(ui->quickFilter, SIGNAL(currentIndexChanged(int)), this, SLOT(OnQuickFilterActive(int)));
     connect(ui->bottomWidget, SIGNAL(currentChanged(int)), this, SLOT(OnBottomTabChanged(int)));
 
     m_scrollTimer = new QTimer(this);
@@ -85,6 +84,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
     ui->pidEdit->installEventFilter(m_eventFilter);
+    ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
+    ui->pidEdit->setCurrentIndex(0);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
@@ -181,7 +182,6 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->socketBox
                    << ui->pidEdit
                    << ui->privateKeyEdit
-                   << ui->quickFilter
                    << ui->provisionEdit);
 
     DecorateSplitter(ui->splitter, 1);
@@ -501,7 +501,25 @@ void MainWindow::OnTextFilterChanged(QString text)
 
 void MainWindow::OnPidFilterChanged(QString text)
 {
-    m_pidFilter = text;
+    QStringList userBinaries;
+    if (text.trimmed().toLower().contains("by user apps only") || text.trimmed().toLower().contains("related to user apps"))
+    {
+        IsInstalledUpdated();
+        bool isUserAppsOnly = text.trimmed().toLower().contains("by user apps only");
+        QString op1 = isUserAppsOnly ? "\\[|" : "|";
+        QString op2 = isUserAppsOnly ? "\\[" : "";
+        foreach (auto appinfo, m_installedApps)
+        {
+            QString bin_name = appinfo["CFBundleExecutable"].toString();
+            userBinaries << bin_name;
+        }
+        m_userbinaries = userBinaries.join(op1) + op2;
+    }
+    else
+    {
+        m_userbinaries.clear();
+        m_pidFilter = text;
+    }
     UpdateLogsFilter();
 }
 
@@ -578,17 +596,19 @@ void MainWindow::OnClickedEvent(QObject* object)
 
     if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName())
     {
-        if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || ui->pidEdit->count() != m_installedApps.size())
+        if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || (ui->pidEdit->count() - 2) != (m_installedApps.size() * 2))
         {
             ui->bundleIds->clear();
             ui->bundleIds->addItems(m_installedApps.keys());
 
             QString old_string = ui->pidEdit->currentText();
             ui->pidEdit->clear();
+            ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
             foreach (auto appinfo, m_installedApps)
             {
                 QString bundle_id = appinfo["CFBundleExecutable"].toString();
                 ui->pidEdit->addItem(bundle_id);
+                ui->pidEdit->addItem(bundle_id + "\\[\\d+\\]");
             }
             ui->pidEdit->setEditText(old_string);
         }
@@ -865,7 +885,7 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
     m_loading->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
     if (percentage == 100)
-        OnQuickFilterActive(ui->quickFilter->currentIndex());
+        OnPidFilterChanged(ui->pidEdit->currentText());
 }
 
 void MainWindow::OnUpdateClicked()
@@ -991,41 +1011,6 @@ void MainWindow::OnPrivateKeyChanged(QString key)
             break;
         }
     }
-}
-
-void MainWindow::OnQuickFilterActive(int index)
-{
-    QString userBinaries = "";
-    switch (index)
-    {
-    case 0:
-        IsInstalledUpdated();
-        foreach (auto appinfo, m_installedApps)
-        {
-            QString bin_name = appinfo["CFBundleExecutable"].toString();
-            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "\\[|")) + bin_name;
-        }
-        m_userbinaries = userBinaries;
-        break;
-
-    case 1:
-        IsInstalledUpdated();
-        foreach (auto appinfo, m_installedApps)
-        {
-            QString bin_name = appinfo["CFBundleExecutable"].toString();
-            userBinaries = (userBinaries.isEmpty() ? "" : (userBinaries + "|")) + bin_name;
-        }
-        m_userbinaries = userBinaries;
-        break;
-
-    case 2:
-        m_userbinaries.clear();
-        break;
-
-    default:
-        break;
-    }
-    UpdateLogsFilter();
 }
 
 void MainWindow::OnBottomTabChanged(int index)
