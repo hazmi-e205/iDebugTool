@@ -45,7 +45,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 {
     AsyncManager::Get()->StartAsyncRequest([this, cmd, path]() {
         if (!m_installer) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_client_private is null!");
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: instproxy_client_private is null!\nPlease connect your device to this PC!");
             return;
         }
         char *bundleidentifier = NULL;
@@ -58,7 +58,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         char **strs = NULL;
         if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
             if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
-                emit MessagesReceived(MessagesType::MSG_WARN, "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!");
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 0, "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!");
             }
         }
         if (strs) {
