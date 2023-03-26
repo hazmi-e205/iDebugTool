@@ -98,6 +98,10 @@ void Recodesigner::Process(const Recodesigner::Params& params)
                 return;
             }
         }
-        emit SigningResult(SigningStatus::SUCCESS, "Done!");
+
+        if (params.DoInstall)
+            emit SigningResult(SigningStatus::INSTALL, "Done and continue to install!");
+        else
+            emit SigningResult(SigningStatus::SUCCESS, "Done!");
     });
 }

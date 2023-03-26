@@ -97,8 +97,10 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
         QString targetpath = afcpath + "/" + dirpath.relativeFilePath(file_name);
         auto afc_callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
         {
-            QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
-            if (callback) callback(idx, total, QString::asprintf("(%s of %s) Sending `%s' to device...", BytesToString(uploaded_bytes).toUtf8().data(), BytesToString(total_bytes).toUtf8().data(), targetpath.toUtf8().data()));
+            if (callback) callback(idx, total, QString::asprintf("(%s of %s) Sending `%s' to device...",
+                                                                 BytesToString(uploaded_bytes).toUtf8().data(),
+                                                                 BytesToString(total_bytes).toUtf8().data(),
+                                                                 targetpath.toUtf8().data()));
         };
         int result = afc_upload_file(afc, file_name, targetpath, afc_callback);
         if (result != 0)

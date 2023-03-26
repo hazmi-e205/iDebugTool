@@ -576,10 +576,19 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
 QStringList FindFiles(QString dir, QStringList criteria)
 {
     QStringList files;
-    QDirIterator it(dir, criteria, QDir::Files, QDirIterator::Subdirectories);
+    QDirIterator it(dir, criteria, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext())
         files << it.next();
     return files;
+}
+
+QStringList FindDirs(QString dir, QStringList criteria)
+{
+    QStringList dirs;
+    QDirIterator it(dir, criteria, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it.hasNext())
+        dirs << it.next();
+    return dirs;
 }
 
 bool FilterVersion(QStringList &versions, QString version)

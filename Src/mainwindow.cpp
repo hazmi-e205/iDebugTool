@@ -181,7 +181,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->socketBox
                    << ui->pidEdit
                    << ui->privateKeyEdit
-                   << ui->quickFilter);
+                   << ui->quickFilter
+                   << ui->provisionEdit);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
@@ -893,10 +894,22 @@ void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
 void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)
 {
     ui->outputEdit->appendPlainText(messages);
-    if (status == Recodesigner::SigningStatus::FAILED || status == Recodesigner::SigningStatus::SUCCESS)
+    if (status == Recodesigner::SigningStatus::FAILED || status == Recodesigner::SigningStatus::SUCCESS || status == Recodesigner::SigningStatus::INSTALL)
     {
-        ui->outputEdit->appendPlainText(QVariant::fromValue(status).toString() + " | " + messages);
         ui->codesignBtn->setEnabled(true);
+        if (status == Recodesigner::SigningStatus::INSTALL)
+        {
+            QStringList buildFound = FindDirs(GetDirectory(DIRECTORY_TYPE::ZSIGN_TEMP), QStringList() << "*.app");
+            if (buildFound.count() == 0)
+                FindFiles(GetDirectory(DIRECTORY_TYPE::RECODESIGNED), QStringList() << "*.ipa");
+
+            if (buildFound.count() > 0)
+            {
+                ui->featureWidget->setCurrentIndex(0);
+                ui->installPath->setText(buildFound.at(0));
+                ui->installBtn->click();
+            }
+        }
     }
 }
 
@@ -915,7 +928,7 @@ void MainWindow::OnPrivateKeyClicked()
 void MainWindow::OnProvisionClicked()
 {
     QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Provision", this);
-    ui->provisionEdit->setText(filepath);
+    ui->provisionEdit->setEditText(filepath);
 }
 
 void MainWindow::OnCodesignClicked()
@@ -923,11 +936,12 @@ void MainWindow::OnCodesignClicked()
     Recodesigner::Params params;
     params.PrivateKey = ui->privateKeyEdit->currentText();
     params.PrivateKeyPassword = ui->privateKeyPasswordEdit->text();
-    params.Provision = ui->provisionEdit->text();
+    params.Provision = ui->provisionEdit->currentText();
     params.OriginalBuild = ui->originalBuildEdit->text();
     params.DoUnpack = ui->UnpackCheck->isChecked();
     params.DoCodesign = ui->CodesignCheck->isChecked();
     params.DoRepack = ui->RepackCheck->isChecked();
+    params.DoInstall = ui->InstallCheck->isChecked();
     Recodesigner::Get()->Process(params);
 
     QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");

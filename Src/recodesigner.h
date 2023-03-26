@@ -20,6 +20,7 @@ public:
         bool DoUnpack;
         bool DoRepack;
         bool DoCodesign;
+        bool DoInstall;
     };
     void Process(const Recodesigner::Params& params);
 
@@ -32,6 +33,7 @@ public:
         IDLE,
         PROCESS,
         SUCCESS,
+        INSTALL,
         FAILED
     };
     Q_ENUM(SigningStatus);

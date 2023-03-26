@@ -2647,15 +2647,9 @@ color: rgb(255, 255, 255);</string>
                               </widget>
                              </item>
                              <item>
-                              <widget class="QLineEdit" name="provisionEdit">
-                               <property name="sizePolicy">
-                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                 <horstretch>0</horstretch>
-                                 <verstretch>0</verstretch>
-                                </sizepolicy>
-                               </property>
-                               <property name="text">
-                                <string/>
+                              <widget class="QComboBox" name="provisionEdit">
+                               <property name="editable">
+                                <bool>true</bool>
                                </property>
                               </widget>
                              </item>
@@ -2753,7 +2747,7 @@ color: rgb(255, 255, 255);</string>
                                 </sizepolicy>
                                </property>
                                <property name="text">
-                                <string>Unpack the original build</string>
+                                <string>Unpack</string>
                                </property>
                                <property name="checked">
                                 <bool>true</bool>
@@ -2769,7 +2763,7 @@ color: rgb(255, 255, 255);</string>
                                 </sizepolicy>
                                </property>
                                <property name="text">
-                                <string>Re-codesign-ing</string>
+                                <string>Codesign</string>
                                </property>
                                <property name="checked">
                                 <bool>true</bool>
@@ -2779,10 +2773,17 @@ color: rgb(255, 255, 255);</string>
                              <item>
                               <widget class="QCheckBox" name="RepackCheck">
                                <property name="text">
-                                <string>Repack the re-codesign-ed</string>
+                                <string>Repack</string>
                                </property>
                                <property name="checked">
                                 <bool>true</bool>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QCheckBox" name="InstallCheck">
+                               <property name="text">
+                                <string>Install</string>
                                </property>
                               </widget>
                              </item>
