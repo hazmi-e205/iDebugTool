@@ -84,7 +84,7 @@ private:
     void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
 
     int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
-    void afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath);
+    bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
     int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);

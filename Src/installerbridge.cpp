@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "utils.h"
 #include "asyncmanager.h"
+#include "common/json.h"
 
 QJsonDocument DeviceBridge::GetInstalledApps()
 {
@@ -51,7 +52,6 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         plist_t sinf = NULL;
         plist_t meta = NULL;
         QString pkgname = "";
-        struct stat fst;
         uint64_t af = 0;
         char buf[8192];
 
@@ -158,60 +158,34 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             printf("DONE.\n");
 
             instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
-        } else if (S_ISDIR(fst.st_mode)) {
-            /* upload developer app directory */
-            instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
-
-            pkgname = QString(PKG_PATH) + "/" + basename(path.toUtf8().data());
-
-            printf("Uploading %s package contents... ", basename(path.toUtf8().data()));
-            afc_upload_dir(m_afc, path, pkgname);
-            printf("DONE.\n");
-
+        } else if (QFileInfo(path).isDir()) {
             /* extract the CFBundleIdentifier from the package */
-
             /* construct full filename to Info.plist */
             QString filename = path + "/Info.plist";
-
-            struct stat st;
-            FILE *fp = NULL;
-
-            if (stat(filename.toUtf8().data(), &st) == -1 || (fp = fopen(filename.toUtf8().data(), "r")) == NULL) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not locate " + filename + " in app!");
+            JValue jvInfo;
+            if (!jvInfo.readPListFile(filename.toUtf8().data()))
+            {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not read " + filename);
                 return;
             }
-            size_t filesize = st.st_size;
-            char *ibuf = (char*)malloc(filesize * sizeof(char));
-            size_t amount = fread(ibuf, 1, filesize, fp);
-            if (amount != filesize) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not read " + QString::number(filesize) + " bytes from " + filename);
+            bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
+
+            /* upload developer app directory */
+            pkgname = QString(PKG_PATH) + "/" + basename(path.toUtf8().data());
+            auto afc_callback = [&](int progress, int total, QString messages){
+                int percentage = int((float(progress) / (float(total) * 2.f)) * 100.f);
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, QString::asprintf("(%d/%d) ", progress, total) + messages);
+            };
+            if (!afc_upload_dir(m_afc, path, pkgname, afc_callback))
+            {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not send " + path);
                 return;
             }
-            fclose(fp);
-
-            plist_t info = NULL;
-            if (memcmp(ibuf, "bplist00", 8) == 0) {
-                plist_from_bin(ibuf, filesize, &info);
-            } else {
-                plist_from_xml(ibuf, filesize, &info);
-            }
-            free(ibuf);
-
-            if (!info) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not parse Info.plist!");
-                return;
-            }
-
-            plist_t bname = plist_dict_get_item(info, "CFBundleIdentifier");
-            if (bname) {
-                plist_get_string_val(bname, &bundleidentifier);
-            }
-            plist_free(info);
-            info = NULL;
+            instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
         } else {
             zf = zip_open(path.toUtf8().data(), 0, &errp);
             if (!zf) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: zip_open: " + path + ": " + QString::number(errp));
                 return;
             }
 
@@ -239,7 +213,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             QString app_directory_name;
 
             if (zip_get_app_directory(zf, app_directory_name)) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to locate app directory in archive!");
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Unable to locate app directory in archive!");
                 return;
             }
 
@@ -247,7 +221,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             filename = app_directory_name + "Info.plist";
 
             if (zip_get_contents(zf, filename.toUtf8().data(), 0, &zbuf, &len) < 0) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not locate " + filename + " in archive!");
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not locate " + filename + " in archive!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;
@@ -261,7 +235,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             free(zbuf);
 
             if (!info) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not parse Info.plist!");
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not parse Info.plist!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;
@@ -282,7 +256,7 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             info = NULL;
 
             if (!bundleexecutable) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not determine value for CFBundleExecutable!");
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not determine value for CFBundleExecutable!");
                 zip_unchange_all(zf);
                 zip_close(zf);
                 return;
@@ -311,7 +285,9 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
                 QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
                 emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, message);
             };
-            if (afc_upload_file(m_afc, path, pkgname, callback) < 0) {
+            int result = afc_upload_file(m_afc, path, pkgname, callback);
+            if (result != 0) {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, QString::asprintf("ERROR: Failed to send %s : afc error code %d", path.toUtf8().data(), result));
                 return;
             }
 

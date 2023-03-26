@@ -1,5 +1,7 @@
 #include "devicebridge.h"
 
+#include <QDir>
+#include <QDirIterator>
 #include <QFileInfo>
 #include <libimobiledevice-glue/utils.h>
 #include <dirent.h>
@@ -10,6 +12,7 @@
 #define S_IFSOCK S_IFREG
 #endif
 #include <string.h>
+#include "utils.h"
 
 int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
 {
@@ -22,13 +25,13 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
     f = fopen(filename.toUtf8().data(), "rb");
     if (!f) {
         fprintf(stderr, "fopen: %s\n", strerror(errno));
-        return -1;
+        return -2;
     }
 
     if ((afc_file_open(afc, dstfn.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) || !af) {
         fclose(f);
         fprintf(stderr, "afc_file_open on '%s' failed!\n", dstfn.toUtf8().data());
-        return -1;
+        return -2;
     }
 
     size_t amount = 0;
@@ -36,57 +39,75 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
         amount = fread(buf, 1, sizeof(buf), f);
         if (amount > 0) {
             uint32_t written, total = 0;
+            afc_error_t aerr = AFC_E_SUCCESS;
             while (total < amount) {
                 written = 0;
-                afc_error_t aerr = afc_file_write(afc, af, buf, amount, &written);
+                aerr = afc_file_write(afc, af, buf, amount, &written);
                 if (aerr != AFC_E_SUCCESS) {
-                    fprintf(stderr, "AFC Write error: %d\n", aerr);
                     break;
                 }
                 total += written;
                 uploaded_bytes += written;
-                if (callback)
-                    callback(uploaded_bytes, total_bytes);
+                if (callback) callback(uploaded_bytes, total_bytes);
             }
             if (total != amount) {
                 fprintf(stderr, "Error: wrote only %u of %u\n", total, (uint32_t)amount);
                 afc_file_close(afc, af);
                 fclose(f);
-                return -1;
+                return aerr;
             }
         }
     } while (amount > 0);
 
     afc_file_close(afc, af);
     fclose(f);
-
-    return 0;
+    return AFC_E_SUCCESS;
 }
 
-void DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath)
+bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback)
 {
-    afc_make_directory(afc, afcpath.toUtf8().data());
+    QStringList list_dirs, list_files;
+    QDir dirpath(path);
+    QDirIterator it_dir(path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    list_dirs << path;
+    while (it_dir.hasNext())
+        list_dirs << it_dir.next();
 
-    DIR *dir = opendir(path.toUtf8().data());
-    if (dir) {
-        struct dirent* ep;
-        while ((ep = readdir(dir))) {
-            if ((strcmp(ep->d_name, ".") == 0) || (strcmp(ep->d_name, "..") == 0)) {
-                continue;
-            }
-            QString fpath = path + "/" + ep->d_name;
-            QString apath = afcpath + "/" + ep->d_name;
+    QDirIterator it_file(path, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_file.hasNext())
+        list_files << it_file.next();
 
-            struct stat st;
-
-            if ((stat(fpath.toUtf8().data(), &st) == 0) && S_ISDIR(st.st_mode)) {
-                afc_upload_dir(afc, fpath, apath);
-            } else {
-                afc_upload_file(afc, fpath, apath);
-            }
+    int idx = 0;
+    int total = list_dirs.count() + list_files.count();
+    foreach (QString dir_name, list_dirs)
+    {
+        idx++;
+        QString targetpath = afcpath + "/" + dirpath.relativeFilePath(dir_name);
+        if (callback) callback(idx, total, QString::asprintf("Adding `%s' to device...", targetpath.toUtf8().data()));
+        afc_error_t result = afc_make_directory(afc, targetpath.toUtf8().data());
+        if (result != AFC_E_SUCCESS)
+        {
+            if (callback) callback(idx, total, QString::asprintf("Can't add `%s' to device : afc error code %d", targetpath.toUtf8().data(), result));
+            return false;
         }
-        closedir(dir);
     }
+    foreach (QString file_name, list_files)
+    {
+        idx++;
+        QString targetpath = afcpath + "/" + dirpath.relativeFilePath(file_name);
+        auto afc_callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
+        {
+            QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
+            if (callback) callback(idx, total, QString::asprintf("(%s of %s) Sending `%s' to device...", BytesToString(uploaded_bytes).toUtf8().data(), BytesToString(total_bytes).toUtf8().data(), targetpath.toUtf8().data()));
+        };
+        int result = afc_upload_file(afc, file_name, targetpath, afc_callback);
+        if (result != 0)
+        {
+            if (callback) callback(idx, total, QString::asprintf("Can't send `%s' to device : afc error code %d", targetpath.toUtf8().data(), result));
+            return false;
+        }
+    }
+    return true;
 }
 
 int file_exists(const char* path)
