@@ -596,22 +596,7 @@ void MainWindow::OnClickedEvent(QObject* object)
 
     if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName())
     {
-        if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || (ui->pidEdit->count() - 2) != (m_installedApps.size() * 2))
-        {
-            ui->bundleIds->clear();
-            ui->bundleIds->addItems(m_installedApps.keys());
-
-            QString old_string = ui->pidEdit->currentText();
-            ui->pidEdit->clear();
-            ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
-            foreach (auto appinfo, m_installedApps)
-            {
-                QString bundle_id = appinfo["CFBundleExecutable"].toString();
-                ui->pidEdit->addItem(bundle_id);
-                ui->pidEdit->addItem(bundle_id + "\\[\\d+\\]");
-            }
-            ui->pidEdit->setEditText(old_string);
-        }
+        RefreshPIDandBundleID();
     }
 }
 
@@ -631,6 +616,26 @@ bool MainWindow::IsInstalledUpdated()
         return true;
     }
     return false;
+}
+
+void MainWindow::RefreshPIDandBundleID()
+{
+    if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || (ui->pidEdit->count() - 2) != (m_installedApps.size() * 2))
+    {
+        ui->bundleIds->clear();
+        ui->bundleIds->addItems(m_installedApps.keys());
+
+        QString old_string = ui->pidEdit->currentText();
+        ui->pidEdit->clear();
+        ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
+        foreach (auto appinfo, m_installedApps)
+        {
+            QString bundle_id = appinfo["CFBundleExecutable"].toString();
+            ui->pidEdit->addItem(bundle_id + "\\[\\d+\\]");
+            ui->pidEdit->addItem(bundle_id);
+        }
+        ui->pidEdit->setEditText(old_string);
+    }
 }
 
 void MainWindow::RefreshPrivateKeyList()
@@ -884,8 +889,10 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 
     m_loading->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
-    if (percentage == 100)
+    if (percentage == 100) {
+        RefreshPIDandBundleID();
         OnPidFilterChanged(ui->pidEdit->currentText());
+    }
 }
 
 void MainWindow::OnUpdateClicked()

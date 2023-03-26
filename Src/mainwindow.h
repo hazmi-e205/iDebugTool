@@ -45,6 +45,7 @@ private:
     void UpdateInfoWidget();
     void RefreshSocketList();
     bool IsInstalledUpdated();
+    void RefreshPIDandBundleID();
     void RefreshPrivateKeyList();
     Ui::MainWindow *ui;
     QStandardItemModel *m_devicesModel;
