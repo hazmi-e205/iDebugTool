@@ -622,6 +622,11 @@ void MainWindow::RefreshPrivateKeyList()
         QStringList keypass = privatekeys.split("*");
         ui->privateKeyEdit->addItem(keypass.at(0));
     }
+
+    QString provisionsData = UserConfigs::Get()->GetData("Provisions", "");
+    QStringList provisions = provisionsData.split("|");
+    if (ui->provisionEdit->count() == 0 && provisions.count() > 0)
+        ui->provisionEdit->addItems(provisions);
 }
 
 void MainWindow::OnInstallClicked()
@@ -960,6 +965,14 @@ void MainWindow::OnCodesignClicked()
     else
     {
         UserConfigs::Get()->SaveData("PrivateKeys", (privatekeys.isEmpty() ? "" : (privatekeys + "|")) + params.PrivateKey + "*" + params.PrivateKeyPassword);
+    }
+
+    QString provisionsData = UserConfigs::Get()->GetData("Provisions", "");
+    QStringList provisions = provisionsData.split("|");
+    if (!provisions.contains(params.Provision) && !params.Provision.isEmpty())
+    {
+        UserConfigs::Get()->SaveData("Provisions", (provisionsData.isEmpty() ? "" : (provisionsData + "|")) + params.Provision);
+        ui->provisionEdit->addItem(params.Provision);
     }
     RefreshPrivateKeyList();
     ui->codesignBtn->setEnabled(false);
