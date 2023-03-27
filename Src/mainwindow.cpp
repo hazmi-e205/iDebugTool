@@ -66,6 +66,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_scrollTimer = new QTimer(this);
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
+    if (ui->scrollCheck->isChecked())
+        m_scrollTimer->start(m_scrollInterval);
 
     m_aboutDialog = new AboutDialog(&m_appInfo, this);
     connect(ui->aboutBtn, SIGNAL(pressed()), m_aboutDialog, SLOT(show()));
