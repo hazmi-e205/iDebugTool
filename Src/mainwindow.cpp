@@ -392,8 +392,7 @@ void MainWindow::AddLogToTable(QList<LogPacket> logs)
         m_dataModel->deleteRows(deleteCount, 0);
     }
 #else
-    foreach (auto log, logs)
-        m_dataModel->addItem(log);
+    m_dataModel->addItems(logs);
 #endif
 }
 

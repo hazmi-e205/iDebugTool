@@ -17,6 +17,7 @@ public:
 
     void setMaxData(quint64 max_count);
     void addItem(const LogPacket& packet);
+    void addItems(const QList<LogPacket>& packets);
     void clear();
     void removeOldData();
 

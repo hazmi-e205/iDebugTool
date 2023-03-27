@@ -79,6 +79,16 @@ void CustomModel::addItem(const LogPacket &packet)
     removeOldData();
 }
 
+void CustomModel::addItems(const QList<LogPacket> &packets)
+{
+    int first_idx = m_datalist.count();
+    int last_idx = m_datalist.count() + packets.count() - 1;
+    beginInsertRows(QModelIndex(), first_idx, last_idx);
+    m_datalist.append(packets);
+    endInsertRows();
+    removeOldData();
+}
+
 void CustomModel::clear()
 {
     beginResetModel();
