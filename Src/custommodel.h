@@ -17,6 +17,7 @@ public:
 
     void setMaxData(quint64 max_count);
     void addItem(const LogPacket& packet);
+    void clear();
     void removeOldData();
 
 private:

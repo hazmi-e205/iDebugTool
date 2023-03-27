@@ -7,7 +7,7 @@ CustomModel::CustomModel(QObject *parent)
 
 int CustomModel::rowCount(const QModelIndex &parent) const
 {
-    return m_datalist.size();
+    return m_datalist.count();
 }
 
 int CustomModel::columnCount(const QModelIndex &parent) const
@@ -66,6 +66,11 @@ void CustomModel::addItem(const LogPacket &packet)
 {
     m_datalist.append(packet);
     removeOldData();
+}
+
+void CustomModel::clear()
+{
+    m_datalist.clear();
 }
 
 void CustomModel::removeOldData()

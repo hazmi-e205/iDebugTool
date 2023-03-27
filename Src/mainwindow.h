@@ -7,8 +7,16 @@
 #include <QTimer>
 #include <QSplashScreen>
 #include <QMutex>
+
+#define USE_QICSTABLE
+#if defined(USE_QICSTABLE)
 #include <QicsDataModelDefault.h>
 #include <QicsTable.h>
+#else
+#include <QTableView>
+#include "custommodel.h"
+#endif
+
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
@@ -68,8 +76,13 @@ private:
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
     LoadingDialog *m_loading;
+#if defined(USE_QICSTABLE)
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
+#else
+    CustomModel *m_dataModel;
+    QTableView *m_table;
+#endif
     QMutex m_mutex;
     bool m_lastAutoScroll;
     int m_lastMaxScroll;

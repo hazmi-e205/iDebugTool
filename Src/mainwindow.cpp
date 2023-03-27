@@ -257,6 +257,7 @@ void MainWindow::SetupDevicesTable()
 
 void MainWindow::SetupLogsTable()
 {
+#if defined(USE_QICSTABLE)
     if (!m_table)
     {
         m_dataModel = new QicsDataModelDefault(0, 0);
@@ -273,12 +274,27 @@ void MainWindow::SetupLogsTable()
     m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
     //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
     m_table->setReadOnly(true);
+#else
+    if (!m_table)
+    {
+        m_dataModel = new CustomModel();
+        m_dataModel->setMaxData(m_maxShownLogs);
+
+        m_table = new QTableView();
+        m_table->setModel(m_dataModel);
+        ui->logLayout->addWidget(m_table);
+    }
+#endif
 }
 
 void MainWindow::UpdateLogsFilter()
 {
     m_mutex.lock();
+#if defined(USE_QICSTABLE)
     m_table->clearTable();
+#else
+    m_dataModel->clear();
+#endif
     SetupLogsTable();
 
     QList<LogPacket> logs;
@@ -294,6 +310,7 @@ void MainWindow::UpdateLogsFilter()
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
+#if defined(USE_QICSTABLE)
     if (!m_dataModel->isRowEmpty(0))
         m_dataModel->addRows(1);
 
@@ -325,6 +342,9 @@ void MainWindow::AddLogToTable(LogPacket log)
         quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
         m_dataModel->deleteRows(deleteCount, 0);
     }
+#else
+    m_dataModel->addItem(log);
+#endif
 }
 
 void MainWindow::AddLogToTable(QList<LogPacket> logs)
@@ -332,6 +352,7 @@ void MainWindow::AddLogToTable(QList<LogPacket> logs)
     if (logs.count() == 0)
         return;
 
+#if defined(USE_QICSTABLE)
     m_dataModel->addRows(m_dataModel->isRowEmpty(0) ? logs.count()-1 : logs.count());
     auto first_idx = m_dataModel->numRows() - logs.count() - 1;
     for (int idx = 0; idx <logs.count(); idx++)
@@ -364,6 +385,10 @@ void MainWindow::AddLogToTable(QList<LogPacket> logs)
         quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
         m_dataModel->deleteRows(deleteCount, 0);
     }
+#else
+    foreach (auto log, logs)
+        m_dataModel->addItem(log);
+#endif
 }
 
 void MainWindow::UpdateInfoWidget()
@@ -548,7 +573,11 @@ void MainWindow::OnClearClicked()
         ui->stopCheck->click();
     }
 
+#if defined(USE_QICSTABLE)
     m_table->clearTable();
+#else
+    m_dataModel->clear();
+#endif
     m_liveLogs.clear();
     SetupLogsTable();
 
@@ -565,6 +594,7 @@ void MainWindow::OnSaveClicked()
         ui->stopCheck->click();
     }
 
+#if defined(USE_QICSTABLE)
     int rowCount = m_table->selectionList(true)->rows().count();
     int columnCount = m_table->selectionList(true)->columns().count();
     if (rowCount <= 1 && columnCount <= 1)
@@ -580,10 +610,11 @@ void MainWindow::OnSaveClicked()
         stream << clipboard->text();
         f.close();
     }
+    m_table->clearSelectionList();
+#endif
 
     if (turnBack)
         ui->stopCheck->click();
-    m_table->clearSelectionList();
 }
 
 void MainWindow::OnClickedEvent(QObject* object)
@@ -672,6 +703,7 @@ void MainWindow::OnUninstallClicked()
 
 void MainWindow::OnScrollTimerTick()
 {
+#if defined(USE_QICSTABLE)
     int max_value = m_table->verticalScrollBar()->maximum();
     int value = m_table->verticalScrollBar()->value();
     if (max_value != value)
@@ -689,11 +721,15 @@ void MainWindow::OnScrollTimerTick()
         }
     }
     m_lastMaxScroll = max_value;
+#endif
 }
 
 void MainWindow::OnConfigureClicked()
 {
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
+#if !defined(USE_QICSTABLE)
+    m_dataModel->setMaxData(m_maxShownLogs);
+#endif
     m_scrollInterval = ui->scrollInterval->text().toUInt();
 
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
