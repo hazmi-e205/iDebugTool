@@ -8,10 +8,11 @@
 #include <QSplashScreen>
 #include <QMutex>
 
-#define USE_QICSTABLE
+//#define USE_QICSTABLE
 #if defined(USE_QICSTABLE)
 #include <QicsDataModelDefault.h>
 #include <QicsTable.h>
+#include "customgrid.h"
 #else
 #include <QTableView>
 #include "custommodel.h"

@@ -9,9 +9,8 @@
 #include "crashsymbolicator.h"
 #include "recodesigner.h"
 #include "asyncmanager.h"
-#include "customgrid.h"
 #include <QSplitter>
-#include <QTableView>
+#include <QScrollBar>
 #include <QAbstractItemView>
 #include <QMimeData>
 #include <QFileDialog>
@@ -710,7 +709,6 @@ void MainWindow::OnUninstallClicked()
 
 void MainWindow::OnScrollTimerTick()
 {
-#if defined(USE_QICSTABLE)
     int max_value = m_table->verticalScrollBar()->maximum();
     int value = m_table->verticalScrollBar()->value();
     if (max_value != value)
@@ -728,7 +726,6 @@ void MainWindow::OnScrollTimerTick()
         }
     }
     m_lastMaxScroll = max_value;
-#endif
 }
 
 void MainWindow::OnConfigureClicked()
