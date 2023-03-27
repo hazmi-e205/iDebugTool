@@ -282,6 +282,13 @@ void MainWindow::SetupLogsTable()
 
         m_table = new QTableView();
         m_table->setModel(m_dataModel);
+        m_table->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeMode::ResizeToContents);
+        m_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+        m_table->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+        m_table->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+        m_table->setWordWrap(false);
+        m_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+        m_table->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
         ui->logLayout->addWidget(m_table);
     }
 #endif
