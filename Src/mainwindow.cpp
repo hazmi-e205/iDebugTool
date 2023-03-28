@@ -618,6 +618,30 @@ void MainWindow::OnSaveClicked()
         f.close();
     }
     m_table->clearSelectionList();
+#else
+    QModelIndexList indexes = m_table->selectionModel()->selectedRows();
+    QString data_str = "";
+    if (indexes.count() <= 1)
+    {
+        for (qsizetype idx = 0; idx < m_dataModel->rowCount(); idx++)
+            data_str.append(m_dataModel->getLogPacket(idx).GetRawData() + "\n");
+    }
+    else
+    {
+        foreach (auto item, indexes)
+            data_str.append(m_dataModel->getLogPacket(item.row()).GetRawData() + "\n");
+    }
+    m_table->clearSelection();
+
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+    if (!filepath.isEmpty()) {
+        QFile f(filepath);
+        if (f.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&f);
+            stream << data_str;
+            f.close();
+        }
+    }
 #endif
 
     if (turnBack)

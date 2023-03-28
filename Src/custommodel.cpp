@@ -64,7 +64,7 @@ QVariant CustomModel::headerData(int section, Qt::Orientation orientation, int r
     return QVariant();
 }
 
-void CustomModel::setMaxData(quint64 max_count)
+void CustomModel::setMaxData(qsizetype max_count)
 {
     m_maxdata = max_count;
     removeOldData();
@@ -105,4 +105,11 @@ void CustomModel::removeOldData()
         m_datalist.remove(0, deleteCount);
         endRemoveRows();
     }
+}
+
+LogPacket CustomModel::getLogPacket(qsizetype index)
+{
+    if (index < m_datalist.count())
+        return m_datalist.at(index);
+    return LogPacket();
 }

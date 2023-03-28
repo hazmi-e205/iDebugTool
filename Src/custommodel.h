@@ -15,11 +15,12 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
-    void setMaxData(quint64 max_count);
+    void setMaxData(qsizetype max_count);
     void addItem(const LogPacket& packet);
     void addItems(const QList<LogPacket>& packets);
     void clear();
     void removeOldData();
+    LogPacket getLogPacket(qsizetype index);
 
 private:
     QList<LogPacket> m_datalist;
