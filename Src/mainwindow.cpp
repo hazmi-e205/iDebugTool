@@ -21,6 +21,8 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QVariant>
+#include <QMenu>
+#include <QAction>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -197,6 +199,8 @@ MainWindow::~MainWindow()
     m_devicesModel->clear();
     delete m_devicesModel;
     delete m_table;
+    m_tableContextMenu->clear();
+    delete m_tableContextMenu;
     delete m_dataModel;
     ui->deviceTable->setModel(nullptr);
     delete m_eventFilter;
@@ -290,7 +294,16 @@ void MainWindow::SetupLogsTable()
         m_table->setWordWrap(false);
         m_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
         m_table->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
+        m_table->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_table, SIGNAL(customContextMenuRequested(QPoint)), SLOT(OnContextMenuRequested(QPoint)));
         ui->logLayout->addWidget(m_table);
+
+        m_tableContextMenu = new QMenu(this);
+        m_tableContextMenu->addAction(new QAction("Resume", this));
+        m_tableContextMenu->addSeparator();
+        m_tableContextMenu->addAction(new QAction("Copy", this));
+        m_tableContextMenu->addAction(new QAction("Select All", this));
+        connect(m_tableContextMenu, SIGNAL(triggered(QAction*)), this, SLOT(OnContextMenuTriggered(QAction*)));
     }
 #endif
 }
@@ -573,12 +586,8 @@ void MainWindow::OnAutoScrollChecked(int state)
 
 void MainWindow::OnClearClicked()
 {
-    bool turnBack = false;
-    if (!ui->stopCheck->isChecked())
-    {
-        turnBack = true;
-        ui->stopCheck->click();
-    }
+    bool is_stop = ui->stopCheck->isChecked();
+    ui->stopCheck->setChecked(true);
 
 #if defined(USE_QICSTABLE)
     m_table->clearTable();
@@ -588,18 +597,13 @@ void MainWindow::OnClearClicked()
     m_liveLogs.clear();
     SetupLogsTable();
 
-    if (turnBack)
-        ui->stopCheck->click();
+    ui->stopCheck->setChecked(is_stop);
 }
 
 void MainWindow::OnSaveClicked()
 {
-    bool turnBack = false;
-    if (!ui->stopCheck->isChecked())
-    {
-        turnBack = true;
-        ui->stopCheck->click();
-    }
+    bool is_stop = ui->stopCheck->isChecked();
+    ui->stopCheck->setChecked(true);
 
 #if defined(USE_QICSTABLE)
     int rowCount = m_table->selectionList(true)->rows().count();
@@ -643,9 +647,7 @@ void MainWindow::OnSaveClicked()
         }
     }
 #endif
-
-    if (turnBack)
-        ui->stopCheck->click();
+    ui->stopCheck->setChecked(is_stop);
 }
 
 void MainWindow::OnClickedEvent(QObject* object)
@@ -1098,4 +1100,34 @@ void MainWindow::OnBottomTabChanged(int index)
         ui->scrollCheck->setCheckState(Qt::Unchecked);
         break;
     }
+}
+
+void MainWindow::OnContextMenuRequested(QPoint pos)
+{
+    m_lastStopChecked = ui->stopCheck->isChecked();
+    ui->stopCheck->setChecked(true);
+    m_tableContextMenu->popup(m_table->viewport()->mapToGlobal(pos));
+}
+
+void MainWindow::OnContextMenuTriggered(QAction *action)
+{
+    if (action->text().toLower().contains("copy"))
+    {
+        QModelIndexList indexes = m_table->selectionModel()->selectedRows();
+        QString data_str = "";
+        foreach (auto item, indexes)
+            data_str.append(m_dataModel->getLogPacket(item.row()).GetRawData() + "\n");
+        m_table->clearSelection();
+        QApplication::clipboard()->setText(data_str);
+    }
+    else if (action->text().toLower().contains("select all"))
+    {
+        m_table->selectAll();
+    }
+    else if (action->text().toLower().contains("resume"))
+    {
+        ui->stopCheck->setChecked(false);
+    }
+
+    //ui->stopCheck->setChecked(m_tableContextMenu);
 }

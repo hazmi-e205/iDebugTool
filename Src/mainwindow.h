@@ -87,6 +87,8 @@ private:
     QMutex m_mutex;
     bool m_lastAutoScroll;
     int m_lastMaxScroll;
+    bool m_lastStopChecked;
+    QMenu *m_tableContextMenu;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
@@ -135,5 +137,7 @@ private slots:
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
     void OnBottomTabChanged(int index);
+    void OnContextMenuRequested(QPoint pos);
+    void OnContextMenuTriggered(QAction* action);
 };
 #endif // MAINWINDOW_H
