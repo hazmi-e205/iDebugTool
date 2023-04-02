@@ -48,7 +48,7 @@ void LogPacket::Parse(QString rawString)
 
 QString LogPacket::GetRawData()
 {
-    return m_DateTime + " " + m_ProcessID + " " + m_LogType + ": " + m_LogMessage;
+    return m_DateTime + "\t" + m_ProcessID + "\t" + m_LogType + "\t" + m_LogMessage;
 }
 
 bool LogPacket::Filter(QString text_or_regex, QString pid_name, QString exclude_text, QString user_binaries)

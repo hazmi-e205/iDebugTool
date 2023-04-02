@@ -8,14 +8,16 @@
 #include <QSplashScreen>
 #include <QMutex>
 
-//#define USE_QICSTABLE
-#if defined(USE_QICSTABLE)
+#define LOGVIEW_MODE 0 //0:QPlainTextEdit 1:QIcsTable 2:QTableView
+#if LOGVIEW_MODE == 1
 #include <QicsDataModelDefault.h>
 #include <QicsTable.h>
 #include "customgrid.h"
-#else
+#elif LOGVIEW_MODE == 2
 #include <QTableView>
 #include "custommodel.h"
+#else
+#include <QPlainTextEdit>
 #endif
 
 #include "devicebridge.h"
@@ -77,12 +79,14 @@ private:
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
     LoadingDialog *m_loading;
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     QicsDataModelDefault *m_dataModel;
     QicsTable *m_table;
-#else
+#elif LOGVIEW_MODE == 2
     CustomModel *m_dataModel;
     QTableView *m_table;
+#else
+    QPlainTextEdit *m_table;
 #endif
     QMutex m_mutex;
     bool m_lastAutoScroll;

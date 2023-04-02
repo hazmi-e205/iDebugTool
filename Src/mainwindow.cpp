@@ -23,6 +23,7 @@
 #include <QVariant>
 #include <QMenu>
 #include <QAction>
+#include <QFontMetricsF>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -199,9 +200,13 @@ MainWindow::~MainWindow()
     m_devicesModel->clear();
     delete m_devicesModel;
     delete m_table;
+#if LOGVIEW_MODE == 2
     m_tableContextMenu->clear();
     delete m_tableContextMenu;
+#endif
+#if LOGVIEW_MODE == 1 || LOGVIEW_MODE == 2
     delete m_dataModel;
+#endif
     ui->deviceTable->setModel(nullptr);
     delete m_eventFilter;
     m_scrollTimer->stop();
@@ -262,7 +267,7 @@ void MainWindow::SetupDevicesTable()
 
 void MainWindow::SetupLogsTable()
 {
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     if (!m_table)
     {
         m_dataModel = new QicsDataModelDefault(0, 0);
@@ -279,7 +284,7 @@ void MainWindow::SetupLogsTable()
     m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
     //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
     m_table->setReadOnly(true);
-#else
+#elif  LOGVIEW_MODE == 2
     if (!m_table)
     {
         m_dataModel = new CustomModel();
@@ -305,16 +310,32 @@ void MainWindow::SetupLogsTable()
         m_tableContextMenu->addAction(new QAction("Select All", this));
         connect(m_tableContextMenu, SIGNAL(triggered(QAction*)), this, SLOT(OnContextMenuTriggered(QAction*)));
     }
+#else
+    if (!m_table)
+    {
+        m_table = new QPlainTextEdit();
+        m_table->setReadOnly(true);
+        m_table->setWordWrapMode(QTextOption::NoWrap);
+
+        QFont font;
+        font.setFamily("monospace [Courier New]");
+        font.setFixedPitch(true);
+        font.setStyleHint(QFont::Monospace);
+        m_table->setFont(font);
+        ui->logLayout->addWidget(m_table);
+    }
 #endif
 }
 
 void MainWindow::UpdateLogsFilter()
 {
     m_mutex.lock();
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     m_table->clearTable();
-#else
+#elif LOGVIEW_MODE == 2
     m_dataModel->clear();
+#else
+    m_table->clear();
 #endif
     SetupLogsTable();
 
@@ -331,7 +352,7 @@ void MainWindow::UpdateLogsFilter()
 
 void MainWindow::AddLogToTable(LogPacket log)
 {
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     if (!m_dataModel->isRowEmpty(0))
         m_dataModel->addRows(1);
 
@@ -363,8 +384,34 @@ void MainWindow::AddLogToTable(LogPacket log)
         quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
         m_dataModel->deleteRows(deleteCount, 0);
     }
-#else
+#elif LOGVIEW_MODE == 2
     m_dataModel->addItem(log);
+#else
+    auto lines = log.getLogMessage().split('\n');
+    if (lines.count() > 0)
+    {
+        for (qsizetype line_idx = 0; line_idx < lines.count(); line_idx++)
+        {
+            if (line_idx > 0)
+                m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
+                                         .arg("", log.getDateTime().size())
+                                         .arg("",  log.getDeviceName().size())
+                                         .arg("", log.getProcessID().size())
+                                         .arg("", log.getLogType().size())
+                                         .arg(lines[line_idx]));
+            else
+                m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
+                                         .arg(log.getDateTime())
+                                         .arg(log.getDeviceName())
+                                         .arg(log.getProcessID())
+                                         .arg(log.getLogType())
+                                         .arg(lines[line_idx]));
+        }
+    }
+    else
+    {
+        m_table->appendPlainText(log.GetRawData());
+    }
 #endif
 }
 
@@ -373,7 +420,7 @@ void MainWindow::AddLogToTable(QList<LogPacket> logs)
     if (logs.count() == 0)
         return;
 
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     m_dataModel->addRows(m_dataModel->isRowEmpty(0) ? logs.count()-1 : logs.count());
     auto first_idx = m_dataModel->numRows() - logs.count() - 1;
     for (int idx = 0; idx <logs.count(); idx++)
@@ -406,8 +453,12 @@ void MainWindow::AddLogToTable(QList<LogPacket> logs)
         quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
         m_dataModel->deleteRows(deleteCount, 0);
     }
-#else
+#elif LOGVIEW_MODE == 2
     m_dataModel->addItems(logs);
+#else
+    foreach (auto log, logs) {
+        AddLogToTable(log);
+    }
 #endif
 }
 
@@ -589,10 +640,12 @@ void MainWindow::OnClearClicked()
     bool is_stop = ui->stopCheck->isChecked();
     ui->stopCheck->setChecked(true);
 
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     m_table->clearTable();
-#else
+#elif LOGVIEW_MODE == 2
     m_dataModel->clear();
+#else
+    m_table->clear();
 #endif
     m_liveLogs.clear();
     SetupLogsTable();
@@ -605,7 +658,7 @@ void MainWindow::OnSaveClicked()
     bool is_stop = ui->stopCheck->isChecked();
     ui->stopCheck->setChecked(true);
 
-#if defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 1
     int rowCount = m_table->selectionList(true)->rows().count();
     int columnCount = m_table->selectionList(true)->columns().count();
     if (rowCount <= 1 && columnCount <= 1)
@@ -622,7 +675,7 @@ void MainWindow::OnSaveClicked()
         f.close();
     }
     m_table->clearSelectionList();
-#else
+#elif LOGVIEW_MODE == 2
     QModelIndexList indexes = m_table->selectionModel()->selectedRows();
     QString data_str = "";
     if (indexes.count() <= 1)
@@ -643,6 +696,16 @@ void MainWindow::OnSaveClicked()
         if (f.open(QIODevice::WriteOnly)) {
             QTextStream stream(&f);
             stream << data_str;
+            f.close();
+        }
+    }
+#else
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+    if (!filepath.isEmpty()) {
+        QFile f(filepath);
+        if (f.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&f);
+            stream << m_table->toPlainText();
             f.close();
         }
     }
@@ -758,7 +821,7 @@ void MainWindow::OnScrollTimerTick()
 void MainWindow::OnConfigureClicked()
 {
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
-#if !defined(USE_QICSTABLE)
+#if LOGVIEW_MODE == 2
     m_dataModel->setMaxData(m_maxShownLogs);
 #endif
     m_scrollInterval = ui->scrollInterval->text().toUInt();
@@ -1104,13 +1167,16 @@ void MainWindow::OnBottomTabChanged(int index)
 
 void MainWindow::OnContextMenuRequested(QPoint pos)
 {
+#if LOGVIEW_MODE == 2
     m_lastStopChecked = ui->stopCheck->isChecked();
     ui->stopCheck->setChecked(true);
     m_tableContextMenu->popup(m_table->viewport()->mapToGlobal(pos));
+#endif
 }
 
 void MainWindow::OnContextMenuTriggered(QAction *action)
 {
+#if LOGVIEW_MODE == 2
     if (action->text().toLower().contains("copy"))
     {
         QModelIndexList indexes = m_table->selectionModel()->selectedRows();
@@ -1130,4 +1196,5 @@ void MainWindow::OnContextMenuTriggered(QAction *action)
     }
 
     //ui->stopCheck->setChecked(m_tableContextMenu);
+#endif
 }
