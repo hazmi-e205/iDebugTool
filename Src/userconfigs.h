@@ -17,6 +17,7 @@ public:
     void SaveData(QString key, QJsonValue value);
     QString GetData(QString key, QString defaultvalue);
     bool GetBool(QString key, bool defaultvalue);
+    int GetInt(QString key, int defaultvalue);
     void SaveToFile();
     void ReadFromFile();
 };

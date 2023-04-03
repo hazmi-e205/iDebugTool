@@ -46,6 +46,12 @@ bool UserConfigs::GetBool(QString key, bool defaultvalue)
     return m_json[key].toBool(defaultvalue);
 }
 
+int UserConfigs::GetInt(QString key, int defaultvalue)
+{
+    ReadFromFile();
+    return m_json[key].toInt(defaultvalue);
+}
+
 void UserConfigs::SaveToFile()
 {
     QByteArray bytes = m_json.toJson(QJsonDocument::Indented);
