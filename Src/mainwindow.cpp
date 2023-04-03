@@ -552,11 +552,12 @@ void MainWindow::OnSystemLogsReceived(LogPacket log)
         return;
 
     m_liveLogs.push_back(log);
+#if LOGVIEW_MODE == 1 || LOGVIEW_MODE == 2
     while ((unsigned int)m_liveLogs.size() > m_maxShownLogs)
     {
         m_liveLogs.erase(m_liveLogs.begin());
     }
-
+#endif
     if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries))
     {
         AddLogToTable(log);
