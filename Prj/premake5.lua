@@ -1,11 +1,14 @@
 include "common.lua"
 
+local use_qicstable = false
+
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
-    external "qicstable"
-        location  ("../Externals")
-		kind "None"
-    
+    if use_qicstable then
+        external "qicstable"
+            location  ("../Externals")
+            kind "None"
+    end
     include "openssl.lua"
     include "libzip.lua"
     include "libplist.lua"
@@ -27,15 +30,9 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
-    QtIncludes
-    {
-        "../Externals/qicstable/qicstable_config.pri",
-    }
-
     QtModules
     {
         "network",
-        "xml",
     }
 
     QtResources
@@ -64,7 +61,6 @@ project "iDebugTool"
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
-        "../Externals/qicstable/include",
         "../Externals/zsign",
         "../Externals/zipper/zipper",
         "../Externals/mingw-patch",
@@ -86,13 +82,11 @@ project "iDebugTool"
         "zipper",
         "zsign",
         "mingw-patch",
-        "qicstable_d",
     }
 
     libdirs
     {
         "../Build/" .. GetPathFromPlatform() .. "/libs",
-        "../Externals/qicstable/lib",
     }
 
     if IsWindows() then
@@ -106,5 +100,20 @@ project "iDebugTool"
         links
         {
             "dl",
+        }
+    end
+
+    -- Integrate QicsTable
+    if use_qicstable then
+        QtIncludes {"../Externals/qicstable/qicstable_config.pri"}
+        QtModules {"xml"}
+        includedirs {"../Externals/qicstable/include"}
+        links {"qicstable_d"}
+        libdirs {"../Externals/qicstable/lib"}
+    else
+        excludes
+        {
+            "../Src/customgrid.h",
+            "../Src/customgrid.cpp",
         }
     end
