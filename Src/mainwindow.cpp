@@ -986,6 +986,7 @@ void MainWindow::OnSocketClicked()
 void MainWindow::OnSyncCrashlogsClicked()
 {
     DeviceBridge::Get()->SyncCrashlogs(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
+    ui->bottomWidget->setCurrentIndex(1);
 }
 
 void MainWindow::OnCrashlogsStatusChanged(QString text)

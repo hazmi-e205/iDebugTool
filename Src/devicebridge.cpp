@@ -550,7 +550,8 @@ void DeviceBridge::SyncCrashlogs(QString path)
 {
     AsyncManager::Get()->StartAsyncRequest([this, path]() {
         QDir().mkpath(path);
-        qDebug() << __FUNCTION__ << "::" << afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data());
+        int result = afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data());
+        emit CrashlogsStatusChanged(QString::asprintf("Done, error code: %d", result));
     });
 }
 
