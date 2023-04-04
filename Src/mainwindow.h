@@ -145,5 +145,7 @@ private slots:
     void OnBottomTabChanged(int index);
     void OnContextMenuRequested(QPoint pos);
     void OnContextMenuTriggered(QAction* action);
+    void OnClearOutputClicked();
+    void OnSaveOutputClicked();
 };
 #endif // MAINWINDOW_H

@@ -65,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
+    connect(ui->saveOutputBtn, SIGNAL(pressed()), this, SLOT(OnSaveOutputClicked()));
+    connect(ui->clearOutputBtn, SIGNAL(pressed()), this, SLOT(OnClearOutputClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
     connect(ui->bottomWidget, SIGNAL(currentChanged(int)), this, SLOT(OnBottomTabChanged(int)));
 
@@ -166,7 +168,9 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->originalBuildBtn
                    << ui->privateKeyBtn
                    << ui->provisionBtn
-                   << ui->codesignBtn);
+                   << ui->codesignBtn
+                   << ui->clearOutputBtn
+                   << ui->saveOutputBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
@@ -1243,4 +1247,22 @@ void MainWindow::OnContextMenuTriggered(QAction *action)
 
     //ui->stopCheck->setChecked(m_tableContextMenu);
 #endif
+}
+
+void MainWindow::OnClearOutputClicked()
+{
+    ui->outputEdit->clear();
+}
+
+void MainWindow::OnSaveOutputClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "LogOutput", this, "Text File (*.txt)");
+    if (!filepath.isEmpty()) {
+        QFile f(filepath);
+        if (f.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&f);
+            stream << ui->outputEdit->toPlainText();
+            f.close();
+        }
+    }
 }
