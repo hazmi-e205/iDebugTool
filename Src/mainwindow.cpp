@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_aboutDialog(nullptr)
     , m_loading(nullptr)
     , m_table(nullptr)
+    , m_paddinglogs("0|0|0|0")
 {
     ui->setupUi(this);
 
@@ -336,6 +337,7 @@ void MainWindow::UpdateLogsFilter()
     m_dataModel->clear();
 #else
     m_table->clear();
+    m_paddinglogs = "0|0|0|0";
 #endif
     SetupLogsTable();
 
@@ -348,6 +350,47 @@ void MainWindow::UpdateLogsFilter()
     }
     AddLogToTable(logs);
     m_mutex.unlock();
+}
+
+QList<int> MainWindow::GetPaddingLog(LogPacket log)
+{
+    QList<int> lengths;
+    QStringList len_split = m_paddinglogs.split('|');
+    for (int idx = 0; idx < len_split.size(); idx++) {
+        switch (idx) {
+        case 0:
+            if (len_split[idx].toInt() < log.getDateTime().size())
+                lengths << log.getDateTime().size();
+            else
+                lengths << len_split[idx].toInt();
+            break;
+        case 1:
+            if (len_split[idx].toInt() < log.getDeviceName().size())
+                lengths << log.getDeviceName().size();
+            else
+                lengths << len_split[idx].toInt();
+            break;
+        case 2:
+            if (len_split[idx].toInt() < log.getProcessID().size())
+                lengths << log.getProcessID().size();
+            else
+                lengths << len_split[idx].toInt();
+            break;
+        case 3:
+            if (len_split[idx].toInt() < log.getLogType().size())
+                lengths << log.getLogType().size();
+            else
+                lengths << len_split[idx].toInt();
+            break;
+        default:
+            break;
+        }
+    }
+    QString new_length = QString::asprintf("%d|%d|%d|%d", lengths[0], lengths[1], lengths[2], lengths[3]);
+    if (!m_paddinglogs.contains(new_length)){
+        m_paddinglogs = new_length;
+    }
+    return lengths;
 }
 
 void MainWindow::AddLogToTable(LogPacket log)
@@ -387,6 +430,7 @@ void MainWindow::AddLogToTable(LogPacket log)
 #elif LOGVIEW_MODE == 2
     m_dataModel->addItem(log);
 #else
+    QList<int> lengths = GetPaddingLog(log);
     auto lines = log.getLogMessage().split('\n');
     if (lines.count() > 0)
     {
@@ -394,17 +438,17 @@ void MainWindow::AddLogToTable(LogPacket log)
         {
             if (line_idx > 0)
                 m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
-                                         .arg("", log.getDateTime().size())
-                                         .arg("",  log.getDeviceName().size())
-                                         .arg("", log.getProcessID().size())
-                                         .arg("", log.getLogType().size())
+                                         .arg("", -lengths[0])
+                                         .arg("", -lengths[1])
+                                         .arg("", -lengths[2])
+                                         .arg("", -lengths[3])
                                          .arg(lines[line_idx]));
             else
                 m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
-                                         .arg(log.getDateTime())
-                                         .arg(log.getDeviceName())
-                                         .arg(log.getProcessID())
-                                         .arg(log.getLogType())
+                                         .arg(log.getDateTime(), -lengths[0])
+                                         .arg(log.getDeviceName(), -lengths[1])
+                                         .arg(log.getProcessID(), -lengths[2])
+                                         .arg(log.getLogType(), -lengths[3])
                                          .arg(lines[line_idx]));
         }
     }
@@ -647,6 +691,7 @@ void MainWindow::OnClearClicked()
     m_dataModel->clear();
 #else
     m_table->clear();
+    m_paddinglogs = "0|0|0|0";
 #endif
     m_liveLogs.clear();
     SetupLogsTable();

@@ -51,6 +51,7 @@ private:
     void SetupDevicesTable();
     void SetupLogsTable();
     void UpdateLogsFilter();
+    QList<int> GetPaddingLog(LogPacket log);
     void AddLogToTable(LogPacket log);
     void AddLogToTable(QList<LogPacket> logs);
     void UpdateInfoWidget();
@@ -88,6 +89,7 @@ private:
 #else
     QPlainTextEdit *m_table;
 #endif
+    QString m_paddinglogs;
     QMutex m_mutex;
     bool m_lastAutoScroll;
     int m_lastMaxScroll;
