@@ -33,6 +33,7 @@ prj_name         = "iDebugTool"
 
 #flags
 is_checkout     = False
+is_deprecated   = False
 is_reset        = False
 is_premake      = False
 is_apply_patch  = False
@@ -138,6 +139,9 @@ def Reset():
 def Checkout():
     cprint("Update Externals", 'cyan', attrs=['reverse', 'blink'])
     repo_list = project_info["dependencies"]
+    if is_deprecated:
+        for x in project_info["deprecated"]:
+            repo_list.append(x)
     if is_debug:
         for repo_item in repo_list:
             UpdateExternal(repo_item)
@@ -249,6 +253,8 @@ if __name__ == "__main__":
             is_debug = True
         if "--checkout" in arg:
             is_checkout = True
+        if "--deprecated" in arg:
+            is_deprecated = True
         if "--reset" in arg:
             is_reset = True
         if "--patch" in arg:

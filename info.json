@@ -36,14 +36,6 @@
             "use_submodules": false
         },
         {
-            "project": "qicstable",
-            "url": "https://gitlab.com/ics-qicstable/qicstable",
-            "branch": "master",
-            "revision": "918a272baa8e49106aa0c6bbc3f3711d12402485",
-            "path": "Externals/qicstable",
-            "use_submodules": false
-        },
-        {
             "project": "MachOLib",
             "url": "https://github.com/hazmi-e205/MachOLib",
             "branch": "main",
@@ -93,6 +85,16 @@
             "url": "https://github.com/madler/zlib",
             "branch": "v1.2.11",
             "path": "Externals/zlib",
+            "use_submodules": false
+        }
+    ],
+    "deprecated": [
+        {
+            "project": "qicstable",
+            "url": "https://gitlab.com/ics-qicstable/qicstable",
+            "branch": "master",
+            "revision": "918a272baa8e49106aa0c6bbc3f3711d12402485",
+            "path": "Externals/qicstable",
             "use_submodules": false
         }
     ]
