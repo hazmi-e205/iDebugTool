@@ -22,7 +22,7 @@ env:
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
   PLATFORM_NAME: win64
-  ARCHIVE_NAME: ${{ PROJECT_NAME }}-nightly-qt${{ QT_VERSION }}-${{ COMPILER_NAME }}-${{ PLATFORM_NAME }}.zip
+  APP_VERSION: nightly
 
 jobs:
   build:
@@ -83,13 +83,13 @@ jobs:
     - name: Archive Build
       working-directory: ${{ env.SOURCE_DIR }}
       run: |
-        7z a ${{ env.ARCHIVE_NAME }} ${{ env.BUILD_DIR }}\* -r
+        7z a ${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip ${{ env.BUILD_DIR }}\* -r
               
     - name: Save Artifact
       uses: actions/upload-artifact@master
       with:
-        name: ${{ env.ARCHIVE_NAME }}
-        path: ${{ env.SOURCE_DIR }}\${{ env.ARCHIVE_NAME }}
+        name: ${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
+        path: ${{ env.SOURCE_DIR }}\${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
         
 
 
