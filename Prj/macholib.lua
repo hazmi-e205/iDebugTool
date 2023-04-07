@@ -16,6 +16,6 @@ project "MachOLib"
         "../Externals/MachOLib",
         "../Externals/MachOLib/libiberty",
         "../Externals/zlib",
-        "../Externals/zipper/minizip",
+        "../Externals/zlib/contrib/minizip",
         -- "../Externals/rapidjson/include",
     }

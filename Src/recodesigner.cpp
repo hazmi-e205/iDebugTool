@@ -4,7 +4,6 @@
 #include "openssl.h"
 #include "common/common.h"
 #include "bundle.h"
-#include "unzipper.h"
 #include <iostream>
 #include <fstream>
 #include <QDir>

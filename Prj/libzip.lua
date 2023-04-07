@@ -9,6 +9,26 @@ project "zlib"
         "../Externals/zlib/*.c",
     }
 
+project "minizip"
+    kind "StaticLib"
+
+    files
+    {
+        "../Externals/zlib/contrib/minizip/**.h",
+        "../Externals/zlib/contrib/minizip/**.c",
+    }
+
+    excludes
+    {
+        "../Externals/zlib/contrib/minizip/miniunz.**",
+        "../Externals/zlib/contrib/minizip/minizip.**",
+    }
+
+    includedirs
+    {
+        "../Externals/zlib/contrib/minizip",
+    }
+
 project "libzip"
     kind "StaticLib"
 
