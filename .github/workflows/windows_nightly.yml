@@ -1,4 +1,4 @@
-name: CI
+name: Windows Nightly CI
 on:
   push:
     branches: [ "main" ]
@@ -17,6 +17,12 @@ env:
   SOURCE_DIR: ${{ github.workspace }}
   MAKE_DIR: ${{ github.workspace }}\Prj\Qt-windows_Release
   PROJECT_PATH: ${{ github.workspace }}\Prj\Qt-windows\iDebugTool.pro
+  BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
+  BUILD_NAME: iDebugTool.exe
+  PROJECT_NAME: iDebugTool
+  COMPILER_NAME: mingw11.2.0
+  PLATFORM_NAME: win64
+  ARCHIVE_NAME: ${{ env.PROJECT_NAME }}-nightly-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
 
 jobs:
   build:
@@ -53,20 +59,38 @@ jobs:
         python ${{ env.SOURCE_DIR }}\Scripts\make.py --premake
         
     - name: Generate makefile by qmake
+      working-directory: ${{ env.SOURCE_DIR }}
       run: |
         mkdir ${{ env.MAKE_DIR }}
         cd ${{ env.MAKE_DIR }}
         qmake ${{ env.PROJECT_PATH }} -spec win32-g++ "CONFIG+=qtquickcompiler"
         
     - name: Build qmake
+      working-directory: ${{ env.MAKE_DIR }}
       run: |
-        cd ${{ env.MAKE_DIR }}
         make -f ${{ env.MAKE_DIR }}\Makefile qmake_all
         
-    - name: Build qmake
+    - name: Build Application
+      working-directory: ${{ env.MAKE_DIR }}
       run: |
-        cd ${{ env.MAKE_DIR }}
         make -j8
+        
+    - name: Deploy Application
+      working-directory: ${{ env.BUILD_DIR }}
+      run: |
+        windeployqt ${{ env.BUILD_NAME }} --no-opengl-sw --no-translations --no-system-d3d-compiler
+        
+    - name: Archive Build
+      working-directory: ${{ env.SOURCE_DIR }}
+      run: |
+        7z a ${{ env.ARCHIVE_NAME }} ${{ env.BUILD_DIR }}\* -r
+              
+    - name: Save Artifact
+      uses: actions/upload-artifact@master
+      with:
+        name: ${{ env.ARCHIVE_NAME }}
+        path: ${{ env.SOURCE_DIR }}\${{ env.ARCHIVE_NAME }}
+        
 
 
 

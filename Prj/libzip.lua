@@ -27,6 +27,7 @@ project "minizip"
     includedirs
     {
         "../Externals/zlib/contrib/minizip",
+        "../Externals/zlib",
     }
 
 project "libzip"
