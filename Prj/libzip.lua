@@ -9,46 +9,6 @@ project "zlib"
         "../Externals/zlib/*.c",
     }
 
-project "minizip"
-    kind "StaticLib"
-
-    files
-    {
-        "../Externals/zipper/minizip/**.h",
-        "../Externals/zipper/minizip/**.c",
-    }
-
-    excludes
-    {
-        "../Externals/zipper/minizip/miniunz.**",
-        "../Externals/zipper/minizip/minizip.**",
-    }
-
-    includedirs
-    {
-        "../Externals/zipper/minizip",
-    }
-
-project "zipper"
-    kind "StaticLib"
-
-    files
-    {
-        "../Externals/zipper/zipper/*.h",
-        "../Externals/zipper/zipper/*.cpp",
-    }
-
-    includedirs
-    {
-        "../Externals/zipper/zipper",
-        "../Externals/zipper/minizip",
-    }
-
-    if IsWindows() then
-        defines {"USE_WINDOWS"}
-        includedirs {"../Externals/mingw-patch"}
-    end
-
 project "libzip"
     kind "StaticLib"
 

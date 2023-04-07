@@ -23,7 +23,6 @@
 #include <iostream>
 #include <string>
 #include <zip.h>
-#include "unzipper.h"
 
 QJsonObject PlistToJsonObject(plist_t node)
 {
@@ -469,45 +468,77 @@ QString GetDirectory(DIRECTORY_TYPE dirtype)
 bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(int,int,QString)> callback)
 {
     QDir().mkpath(output_dir);
-    QStringList list_dirs, list_files;
-    zipper::Unzipper unzipper(input_zip.toStdString());
-    std::vector<zipper::ZipEntry> entries = unzipper.entries();
-    foreach (zipper::ZipEntry entry, entries)
-    {
-        QString target = output_dir + "/" + QString(entry.name.c_str());
-        if (entry.uncompressedSize == 0)
-            list_dirs << QString(entry.name.c_str());
-        else
-            list_files << QString(entry.name.c_str());
+    int err;
+    char buf[100];
+    zip *za = zip_open(input_zip.toUtf8().data(), 0, &err);
+    if (za == nullptr) {
+        zip_error_to_str(buf, sizeof(buf), err, errno);
+        callback(0, 0, QString::asprintf("Can't open zip archive `%s': %s", input_zip.toUtf8().data(), buf));
+        return false;
     }
 
-    int idx = 0;
-    int total = list_dirs.count() + list_files.count();
-    foreach (QString dir_name, list_dirs)
-    {
-        idx++;
-        QString target = output_dir + "/" + dir_name;
-        callback(idx, total, QString::asprintf("Creating `%s'...", target.toUtf8().data()));
-        if (!QDir().mkpath(target))
-        {
-            unzipper.close();
-            callback(idx, total, QString::asprintf("Can't create `%s'!", target.toUtf8().data()));
-            return false;
+    struct FileItem {
+        QString filepath;
+        quint64 size;
+        bool isdir;
+    };
+
+    QMap<int, FileItem> list_items;
+    for (int idx = 0; idx < zip_get_num_entries(za, 0); idx++) {
+        struct zip_stat sb;
+        if (zip_stat_index(za, idx, 0, &sb) == 0) {
+            size_t len = strlen(sb.name);
+            FileItem item;
+            item.filepath = QString(sb.name);
+            item.size = sb.size;
+            item.isdir = (sb.name[len - 1] == '/') ? true : false;
+            list_items[idx] = item;
         }
     }
-    foreach (QString file_name, list_files)
-    {
-        idx++;
-        QString target = output_dir + "/" + file_name;
-        callback(idx, total, QString::asprintf("Extracting `%s'...", target.toUtf8().data()));
-        if (!unzipper.extractEntry(file_name.toStdString(), output_dir.toStdString()))
+
+    for (int idx = 0; idx < list_items.count(); idx++) {
+        FileItem item = list_items[idx];
+        QString target = output_dir + "/" + QString(item.filepath);
+        if (item.isdir) {
+            callback(idx + 1, list_items.count(), QString("Creating `%1'...").arg(target));
+            QDir().mkpath(target);
+        }
+        else
         {
-            unzipper.close();
-            callback(idx, total, QString::asprintf("Can't extract `%s'!", target.toUtf8().data()));
-            return false;
+            callback(idx + 1, list_items.count(), QString("Extracting `%1'...").arg(target));
+            zip_file *zf = zip_fopen_index(za, idx, 0);
+            if (!zf) {
+                callback(idx + 1, list_items.count(), QString("Failed to load `%1' from zip!").arg(item.filepath));
+                return false;
+            }
+
+            QFile file(target);
+            if (!file.open(QIODevice::WriteOnly)) {
+                callback(idx + 1, list_items.count(), "Error creating decrypted file!");
+                return false;
+            }
+            else
+            {
+                char buff[1024];
+                zip_uint64_t sum = 0;
+                while (sum != item.size) {
+                    zip_int64_t len = zip_fread(zf, static_cast<void*>(buff), 1024);
+                    if (len > 0) {
+                        file.write(buff, len);
+                        sum += static_cast<zip_uint64_t>(len);
+                    }
+                    else
+                    {
+                        callback(idx + 1, list_items.count(), "Error creating decrypted file (2)!");
+                        break;
+                    }
+                }
+                file.close();
+            }
+            zip_fclose(zf);
         }
     }
-    unzipper.close();
+    zip_close(za);
     return true;
 }
 

@@ -60,13 +60,6 @@
             "use_submodules": false
         },
         {
-            "project": "zipper",
-            "url": "https://github.com/sebastiandev/zipper",
-            "branch": "v1.0.3",
-            "path": "Externals/zipper",
-            "use_submodules": true
-        },
-        {
             "project": "openssl",
             "url": "https://github.com/openssl/openssl",
             "branch": "OpenSSL_1_1_1m",

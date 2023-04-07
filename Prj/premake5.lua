@@ -1,6 +1,7 @@
 include "common.lua"
 
 local use_qicstable = false
+local use_zipper = true
 
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
@@ -62,7 +63,6 @@ project "iDebugTool"
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
         "../Externals/zsign",
-        "../Externals/zipper/zipper",
         "../Externals/mingw-patch",
     }
 
@@ -79,7 +79,6 @@ project "iDebugTool"
         "zlib",
         "MachOLib",
         "minizip",
-        "zipper",
         "zsign",
         "mingw-patch",
     }
@@ -116,4 +115,10 @@ project "iDebugTool"
             "../Src/customgrid.h",
             "../Src/customgrid.cpp",
         }
+    end
+
+    if use_zipper then
+        includedirs {"../Externals/zipper/zipper"}
+        links {"zipper"}
+        defines {"USE_ZIPPER"}
     end
