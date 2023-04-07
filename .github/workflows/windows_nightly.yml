@@ -1,4 +1,4 @@
-name: CI
+name: Windows Nightly CI
 on:
   push:
     branches: [ "main" ]
@@ -22,7 +22,7 @@ env:
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
   PLATFORM_NAME: win64
-  ARCHIVE_NAME: ${{ env.PROJECT_NAME }}-nightly-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
+  ARCHIVE_NAME: ${{ PROJECT_NAME }}-nightly-qt${{ QT_VERSION }}-${{ COMPILER_NAME }}-${{ PLATFORM_NAME }}.zip
 
 jobs:
   build:
