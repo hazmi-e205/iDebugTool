@@ -3021,6 +3021,9 @@ color: rgb(255, 255, 255);</string>
            <layout class="QVBoxLayout" name="verticalLayout_24">
             <item>
              <widget class="QPlainTextEdit" name="outputEdit">
+              <property name="lineWrapMode">
+               <enum>QPlainTextEdit::NoWrap</enum>
+              </property>
               <property name="readOnly">
                <bool>true</bool>
               </property>
