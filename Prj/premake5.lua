@@ -75,7 +75,7 @@ project "iDebugTool"
         "imobiledevice-glue",
         "usbmuxd",
         "imobiledevice",
-        "zip",
+        "libzip",
         "zlib",
         "MachOLib",
         "minizip",

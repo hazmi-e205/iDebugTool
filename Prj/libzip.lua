@@ -49,7 +49,7 @@ project "zipper"
         includedirs {"../Externals/mingw-patch"}
     end
 
-project "zip"
+project "libzip"
     kind "StaticLib"
 
     files
