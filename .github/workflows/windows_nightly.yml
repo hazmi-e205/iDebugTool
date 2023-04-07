@@ -1,0 +1,74 @@
+name: CI
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: cmd
+
+env:
+  QT_VERSION: 6.5.0
+  SOURCE_DIR: ${{ github.workspace }}
+  MAKE_DIR: ${{ github.workspace }}\Prj\Qt-windows_Release
+  PROJECT_PATH: ${{ github.workspace }}\Prj\Qt-windows\iDebugTool.pro
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Python check
+      run: python -V
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        aqtversion: '==3.1.*'
+        py7zrversion: '>=0.20.2'
+        version: ${{ env.QT_VERSION }}
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_mingw'
+        tools: 'tools_mingw90'
+        dir: ${{ runner.temp }}
+        
+    - name: Checkout Project
+      uses: actions/checkout@v3
+        
+    - name: Checkout Dependencies
+      run: |
+        python ${{ env.SOURCE_DIR }}\Scripts\make.py --checkout
+        
+    - name: Apply Patches
+      run: |
+        python ${{ env.SOURCE_DIR }}\Scripts\make.py --patch
+        
+    - name: Generate Project by Premake
+      run: |
+        python ${{ env.SOURCE_DIR }}\Scripts\make.py --premake
+        
+    - name: Generate makefile by qmake
+      run: |
+        mkdir ${{ env.MAKE_DIR }}
+        cd ${{ env.MAKE_DIR }}
+        qmake ${{ env.PROJECT_PATH }} -spec win32-g++ "CONFIG+=qtquickcompiler"
+        
+    - name: Build qmake
+      run: |
+        cd ${{ env.MAKE_DIR }}
+        make -f ${{ env.MAKE_DIR }}\Makefile qmake_all
+        
+    - name: Build qmake
+      run: |
+        cd ${{ env.MAKE_DIR }}
+        make -j8
+
+
+
+
+
