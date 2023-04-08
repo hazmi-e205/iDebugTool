@@ -14,11 +14,11 @@ Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that wr
 - Save logcat to file
 - Install and Uninstall apps
 - Show system and apps information
-- Developer Disk Image mounter with 2 repositories options or offline mode uses local files.
+- Developer Disk Image mounter with 2 repositories options or offline mode using local files.
 - Screenshot (required Developer Disk Image mounted)
 - Restart, Shutdown, and Sleep the device
-- Symbolicate Crashlogs using DWARF file of dSYM directory
-- Re-codesign apps
+- Symbolicate Crashlogs using DWARF file or dSYM directory
+- Re-codesign apps using P12 / PEM Private Key and Provision Profile
 
 ## Build Steps
 ### Prerequisite
