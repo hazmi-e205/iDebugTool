@@ -18,6 +18,7 @@ env:
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
   COMPILER_DIRNAME: mingw1120_64
+  MAKE_FILENAME: mingw32-make
   PLATFORM_NAME: win64
   APP_VERSION: nightly
 
@@ -66,12 +67,12 @@ jobs:
     - name: Build qmake
       working-directory: ${{ env.MAKE_DIR }}
       run: |
-        make -f ${{ env.MAKE_DIR }}/Makefile qmake_all
+        ${{ env.MAKE_FILENAME }} -f ${{ env.MAKE_DIR }}/Makefile qmake_all
         
     - name: Build Application
       working-directory: ${{ env.MAKE_DIR }}
       run: |
-        make -j8
+        ${{ env.MAKE_FILENAME }} -j8
         
     - name: Deploy Application
       working-directory: ${{ env.BUILD_DIR }}
