@@ -11,6 +11,7 @@ on:
 env:
   QT_VERSION: 6.5.0
   QT_DIR: ${{ github.workspace }}/Qt
+  QMAKE_DIR: ${{ github.workspace }}\Qt\6.5.0\mingw_64\bin
   MAKE_DIR: ${{ github.workspace }}\Qt\Tools\mingw1120_64\bin
   MAKE_FILENAME: \mingw32-make.exe
   SOURCE_DIR: ${{ github.workspace }}
@@ -63,6 +64,7 @@ jobs:
     - name: Generate makefile by qmake
       working-directory: ${{ env.SOURCE_DIR }}
       run: |
+        echo "${{ env.QMAKE_DIR }}" >> $GITHUB_PATH
         echo "${{ env.MAKE_DIR }}" >> $GITHUB_PATH
         mkdir ${{ env.MAKEFILE_DIR }}
         cd ${{ env.MAKEFILE_DIR }}
