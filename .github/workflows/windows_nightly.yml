@@ -11,6 +11,7 @@ on:
 env:
   QT_VERSION: 6.5.0
   SOURCE_DIR: ${{ github.workspace }}
+  BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
   APP_VERSION: nightly
 
 jobs:
@@ -53,7 +54,7 @@ jobs:
     - name: Save Artifact
       uses: actions/upload-artifact@v3
       with:
-        path: ${{ env.SOURCE_DIR }}/*.zip
+        path: ${{ env.BUILD_DIR }}/**
         
 
 
