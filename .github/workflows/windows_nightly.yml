@@ -8,19 +8,16 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-defaults:
-  run:
-    shell: cmd
-
 env:
   QT_VERSION: 6.5.0
   SOURCE_DIR: ${{ github.workspace }}
-  MAKE_DIR: ${{ github.workspace }}\Prj\Qt-windows_Release
-  PROJECT_PATH: ${{ github.workspace }}\Prj\Qt-windows\iDebugTool.pro
-  BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
+  MAKE_DIR: ${{ github.workspace }}/Prj/Qt-windows_Release
+  PROJECT_PATH: ${{ github.workspace }}/Prj/Qt-windows/iDebugTool.pro
+  BUILD_DIR: ${{ github.workspace }}/Build/Qt-windows/bin
   BUILD_NAME: iDebugTool.exe
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
+  COMPILER_DIRNAME: mingw1120_64
   PLATFORM_NAME: win64
   APP_VERSION: nightly
 
@@ -48,19 +45,20 @@ jobs:
         
     - name: Checkout Dependencies
       run: |
-        python ${{ env.SOURCE_DIR }}\Scripts\make.py --checkout
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --checkout
         
     - name: Apply Patches
       run: |
-        python ${{ env.SOURCE_DIR }}\Scripts\make.py --patch
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --patch
         
     - name: Generate Project by Premake
       run: |
-        python ${{ env.SOURCE_DIR }}\Scripts\make.py --premake
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --premake
         
     - name: Generate makefile by qmake
       working-directory: ${{ env.SOURCE_DIR }}
       run: |
+        echo "${{ runner.temp }}/Tools/${{ env.COMPILER_DIRNAME }}/bin" >> $GITHUB_PATH
         mkdir ${{ env.MAKE_DIR }}
         cd ${{ env.MAKE_DIR }}
         qmake ${{ env.PROJECT_PATH }} -spec win32-g++ "CONFIG+=qtquickcompiler"
@@ -68,7 +66,7 @@ jobs:
     - name: Build qmake
       working-directory: ${{ env.MAKE_DIR }}
       run: |
-        make -f ${{ env.MAKE_DIR }}\Makefile qmake_all
+        make -f ${{ env.MAKE_DIR }}/Makefile qmake_all
         
     - name: Build Application
       working-directory: ${{ env.MAKE_DIR }}
@@ -83,13 +81,13 @@ jobs:
     - name: Archive Build
       working-directory: ${{ env.SOURCE_DIR }}
       run: |
-        7z a ${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip ${{ env.BUILD_DIR }}\* -r
+        7z a ${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip ${{ env.BUILD_DIR }}/* -r
               
     - name: Save Artifact
       uses: actions/upload-artifact@master
       with:
         name: ${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
-        path: ${{ env.SOURCE_DIR }}\${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
+        path: ${{ env.SOURCE_DIR }}/${{ env.PROJECT_NAME }}-${{ env.APP_VERSION }}-qt${{ env.QT_VERSION }}-${{ env.COMPILER_NAME }}-${{ env.PLATFORM_NAME }}.zip
         
 
 
