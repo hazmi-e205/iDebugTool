@@ -10,15 +10,15 @@ on:
 
 env:
   QT_VERSION: 6.5.0
-  QT_DIR: ${{ github.workspace }}\Qt
-  QMAKE_DIR: ${{ github.workspace }}\Qt\6.5.0\mingw_64\bin
+  QT_DIR: $GITHUB_WORKSPACE\Qt
+  QMAKE_DIR: $GITHUB_WORKSPACE\Qt\6.5.0\mingw_64\bin
   QMAKE_FILENAME: \qmake.exe
-  MAKE_DIR: ${{ github.workspace }}\Qt\Tools\mingw1120_64\bin
+  MAKE_DIR: $GITHUB_WORKSPACE\Qt\Tools\mingw1120_64\bin
   MAKE_FILENAME: \mingw32-make.exe
-  SOURCE_DIR: ${{ github.workspace }}
-  MAKEFILE_DIR: ${{ github.workspace }}\Prj\Qt-windows_Release
-  PROJECT_PATH: ${{ github.workspace }}\Prj\Qt-windows\iDebugTool.pro
-  BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
+  SOURCE_DIR: $GITHUB_WORKSPACE
+  MAKEFILE_DIR: $GITHUB_WORKSPACE\Prj\Qt-windows_Release
+  PROJECT_PATH: $GITHUB_WORKSPACE\Prj\Qt-windows\iDebugTool.pro
+  BUILD_DIR: $GITHUB_WORKSPACE\Build\Qt-windows\bin
   BUILD_NAME: iDebugTool.exe
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
