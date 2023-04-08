@@ -1,3 +1,4 @@
+from importlib.metadata import version
 import sys
 import os
 import json
@@ -5,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
 import tarfile, zipfile
 from io import BytesIO
+import datetime
 
 import utils
 import colorama
@@ -27,7 +29,7 @@ qt_dir           = "C:/Qt"
 qt_version       = "6.4.1"
 aqt_compiler     = "tools_mingw90"
 compiler_name    = "mingw"
-compiler_version = "1120"
+compiler_version = "11.2.0"
 compiler_arch    = "64"
 platform_var     = "win"
 prj_name         = "iDebugTool"
@@ -42,6 +44,8 @@ is_create_patch = False
 is_build        = False
 is_debug        = False
 is_aqtinstaller = False
+is_archive      = False
+is_nightly      = True
 
 
 def DownloadPremake():
@@ -202,7 +206,8 @@ def InstallAQT():
         utils.call([sys.executable, "-m", "aqt", "install-qt", "windows", "desktop", qt_version, platform_var + compiler_arch + "_" + compiler_name, "--archives", "qtbase", "MinGW", "--outputdir", qt_dir], base_dir)
     
     qt_list = os.listdir(qt_dir + "/Tools/") if os.path.exists(qt_dir + "/Tools/") else {}
-    if (compiler_name + compiler_version + "_" + compiler_arch) not in qt_list:
+    nodotversion = compiler_version
+    if (compiler_name + nodotversion.replace(".","") + "_" + compiler_arch) not in qt_list:
         utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
 
 def Build():
@@ -218,7 +223,8 @@ def Build():
     makefile_path = build_cache + "/Makefile"
     qmake_path    = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/qmake" + exe_ext
     deploy_path   = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/windeployqt" + exe_ext
-    compiler_dir  = qt_dir + "/Tools/" + compiler_name + compiler_version + "_" + compiler_arch + "/bin/"
+    nodotversion  = compiler_version
+    compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
     make_path     = compiler_dir + "mingw32-make" + exe_ext
     build_final   = build_dir + "/" + prj_type + "/bin/"
     
@@ -244,6 +250,27 @@ def Build():
     cprint("Build success!", 'yellow', attrs=['reverse', 'blink'])
 
 
+def Archive():
+    filename = "{appname}-{version}-{subver}-qt{qtver}-{compiler}{compver}-{platform}"
+    platform_str   = platform_var + compiler_arch
+    version_str    = "v" + project_info["version"]
+    subversion_str = project_info["status"]
+    prj_type       = "Qt-windows"
+    if is_nightly:
+        version_str = "nightly"
+        now = datetime.datetime.now()
+        subversion_str = now.strftime('%Y%m%d%H%M%S')
+    filename = filename.format(appname=prj_name, version=version_str, subver=subversion_str, qtver=qt_version, compiler=compiler_name, compver=compiler_version, platform=platform_str)
+    input_dir = os.path.abspath(build_dir + "/" + prj_type + "/bin")
+    build_zip = os.path.abspath(base_dir + "/" + filename + ".zip")
+
+    list_dir = os.listdir(base_dir)
+    for x in list_dir:
+        if x.endswith(".zip"):
+            os.remove(os.path.join(base_dir, x))
+    utils.ArchiveZip(input_dir, build_zip, [".pdb", ".xml"])
+
+
 def Execute():
     LoadInfo()
     if is_reset is True:
@@ -260,6 +287,8 @@ def Execute():
         InstallAQT()
     if is_build is True:
         Build()
+    if is_archive is True:
+        Archive()
 
 
 if __name__ == "__main__":
@@ -295,4 +324,9 @@ if __name__ == "__main__":
             if len(libname_split) > 1:
                 libname_patch = libname_split[1].strip()
                 is_create_patch = True
+        if "--archive" in arg:
+            is_archive = True
+            archive_split = arg.split('=')
+            if len(archive_split) > 1:
+                is_nightly = False if "release" in archive_split[1].strip() else True
     Execute()

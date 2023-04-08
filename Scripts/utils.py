@@ -4,6 +4,7 @@ import sys
 import subprocess
 import shutil
 import stat
+import zipfile
 
 def shellout(command, work_dir, **kwargs):
     process = subprocess.Popen(command, cwd=work_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -94,6 +95,24 @@ def copy_folder(source, destination, force=True):
         for f in os.listdir(source):
             copy_folder(os.path.join(source, f), os.path.join(destination, f))
 
+def ArchiveZip(dirPath, archPath, excludes=[]):
+    print("Create an .zip file...")
+    os.chdir(os.path.dirname(archPath))
+    arcZip = zipfile.ZipFile(archPath, "w")
+    for root, dirs, files in os.walk(dirPath):
+        for file in files:
+            filepath = os.path.join(root, file)
+
+            isIncluded = True
+            for exclude in excludes:
+                if exclude in filepath:
+                    isIncluded = False
+                    
+            if isIncluded is True:
+                arcFilepath = os.path.relpath(filepath, dirPath)
+                arcZip.write(filepath, arcFilepath, zipfile.ZIP_DEFLATED)
+    print(os.path.abspath(archPath) + " created!")
+    print("Done!\n")
 
 #Git stuff...
 class Git:
