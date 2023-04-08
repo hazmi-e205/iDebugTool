@@ -43,6 +43,9 @@ jobs:
         
     - name: Checkout Project
       uses: actions/checkout@v3
+      with:
+        lfs: 'true'
+        submodules: 'recursive'
         
     - name: Checkout Dependencies
       run: |
@@ -67,12 +70,12 @@ jobs:
     - name: Build qmake
       working-directory: ${{ env.MAKE_DIR }}
       run: |
-        ${{ env.MAKE_FILENAME }} -f ${{ env.MAKE_DIR }}/Makefile qmake_all
+        ${{ runner.temp }}/Tools/${{ env.COMPILER_DIRNAME }}/bin/${{ env.MAKE_FILENAME }} -f ${{ env.MAKE_DIR }}/Makefile qmake_all
         
     - name: Build Application
       working-directory: ${{ env.MAKE_DIR }}
       run: |
-        ${{ env.MAKE_FILENAME }} -j8
+        ${{ runner.temp }}/Tools/${{ env.COMPILER_DIRNAME }}/bin/${{ env.MAKE_FILENAME }} -j8
         
     - name: Deploy Application
       working-directory: ${{ env.BUILD_DIR }}
