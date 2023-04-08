@@ -11,8 +11,8 @@ on:
 env:
   QT_VERSION: 6.5.0
   QT_DIR: ${{ github.workspace }}/Qt
-  MAKE_DIR: ${{ github.workspace }}/Qt/Tools/mingw1120_64/bin/
-  MAKE_FILENAME: mingw32-make.exe
+  MAKE_DIR: ${{ github.workspace }}\Qt\Tools\mingw1120_64\bin
+  MAKE_FILENAME: \mingw32-make.exe
   SOURCE_DIR: ${{ github.workspace }}
   MAKEFILE_DIR: ${{ github.workspace }}/Prj/Qt-windows_Release
   PROJECT_PATH: ${{ github.workspace }}/Prj/Qt-windows/iDebugTool.pro
