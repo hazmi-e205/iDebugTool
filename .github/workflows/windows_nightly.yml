@@ -10,6 +10,9 @@ on:
 
 env:
   QT_VERSION: 6.5.0
+  QT_DIR: ${{ github.workspace }}/Qt
+  MAKE_DIR: ${{ github.workspace }}/Qt/Tools/mingw1120_64/bin/
+  MAKE_FILENAME: mingw32-make.exe
   SOURCE_DIR: ${{ github.workspace }}
   MAKEFILE_DIR: ${{ github.workspace }}/Prj/Qt-windows_Release
   PROJECT_PATH: ${{ github.workspace }}/Prj/Qt-windows/iDebugTool.pro
@@ -17,8 +20,6 @@ env:
   BUILD_NAME: iDebugTool.exe
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
-  MAKE_DIR: ${{ runner.temp }}/Tools/mingw1120_64/bin
-  MAKE_FILENAME: /mingw32-make.exe
   PLATFORM_NAME: win64
   APP_VERSION: nightly
 
@@ -39,7 +40,7 @@ jobs:
         target: 'desktop'
         arch: 'win64_mingw'
         tools: 'tools_mingw90'
-        dir: ${{ runner.temp }}
+        dir: ${{ env.QT_DIR }}
         
     - name: Checkout Project
       uses: actions/checkout@v3
