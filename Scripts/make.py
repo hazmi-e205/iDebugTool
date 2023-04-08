@@ -25,6 +25,7 @@ if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"
 #compiler
 qt_dir           = "C:/Qt"
 qt_version       = "6.4.1"
+aqt_compiler     = "tools_mingw90"
 compiler_name    = "mingw"
 compiler_version = "1120"
 compiler_arch    = "64"
@@ -40,6 +41,7 @@ is_apply_patch  = False
 is_create_patch = False
 is_build        = False
 is_debug        = False
+is_aqtinstaller = False
 
 
 def DownloadPremake():
@@ -191,6 +193,18 @@ def Premake():
     cprint("Projects generated !", 'magenta', attrs=['reverse', 'blink'])
 
 
+def InstallAQT():
+    global qt_dir
+    qt_dir = os.path.abspath(base_dir + "/Qt/")
+    qt_list = os.listdir(qt_dir) if os.path.exists(qt_dir) else {}
+    if qt_version not in qt_list:
+        utils.call([sys.executable, "-m", "pip", "install", "aqtinstall"], base_dir)
+        utils.call([sys.executable, "-m", "aqt", "install-qt", "windows", "desktop", qt_version, platform_var + compiler_arch + "_" + compiler_name, "--archives", "qtbase", "MinGW", "--outputdir", qt_dir], base_dir)
+    
+    qt_list = os.listdir(qt_dir + "/Tools/") if os.path.exists(qt_dir + "/Tools/") else {}
+    if (compiler_name + compiler_version + "_" + compiler_arch) not in qt_list:
+        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
+
 def Build():
     prj_type      = "Qt-windows"
     exe_ext       = ".exe"
@@ -242,6 +256,8 @@ def Execute():
         CreatePatch()
     if is_premake is True:
         Premake()
+    if is_aqtinstaller is True:
+        InstallAQT()
     if is_build is True:
         Build()
 
@@ -259,6 +275,11 @@ if __name__ == "__main__":
             is_reset = True
         if "--patch" in arg:
             is_apply_patch = True
+        if "--aqt" in arg:
+            is_aqtinstaller = True
+            aqt_split = arg.split('=')
+            if len(aqt_split) > 1:
+                qt_version = aqt_split[1].strip()
         if "--build" in arg:
             is_build = True
             platform_split = arg.split('=')

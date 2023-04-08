@@ -10,14 +10,7 @@ on:
 
 env:
   QT_VERSION: 6.5.0
-  QT_DIR: ${{ github.workspace }}
-  QMAKE_DIR: ${{ github.workspace }}\Qt\6.5.0\mingw_64\bin
-  QMAKE_FILENAME: \qmake.exe
-  MAKE_DIR: ${{ github.workspace }}\Qt\Tools\mingw1120_64\bin
-  MAKE_FILENAME: \mingw32-make.exe
   SOURCE_DIR: ${{ github.workspace }}
-  MAKEFILE_DIR: ${{ github.workspace }}\Prj\Qt-windows_Release
-  PROJECT_PATH: ${{ github.workspace }}\Prj\Qt-windows\iDebugTool.pro
   BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
   BUILD_NAME: iDebugTool.exe
   PROJECT_NAME: iDebugTool
@@ -31,18 +24,6 @@ jobs:
     steps:
     - name: Python check
       run: python -V
-
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        aqtversion: '==3.1.*'
-        py7zrversion: '>=0.20.2'
-        version: ${{ env.QT_VERSION }}
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_mingw'
-        tools: 'tools_mingw90'
-        dir: ${{ env.QT_DIR }}
         
     - name: Checkout Project
       uses: actions/checkout@v3
@@ -62,28 +43,13 @@ jobs:
       run: |
         python ${{ env.SOURCE_DIR }}/Scripts/make.py --premake
         
-    - name: Generate makefile by qmake
-      working-directory: ${{ env.SOURCE_DIR }}
+    - name: Install Qt
       run: |
-        echo "${{ env.MAKE_DIR }}" >> $GITHUB_PATH
-        mkdir ${{ env.MAKEFILE_DIR }}
-        cd ${{ env.MAKEFILE_DIR }}
-        ${{ env.QMAKE_DIR }}${{ env.QMAKE_FILENAME }} ${{ env.PROJECT_PATH }} -spec win32-g++ "CONFIG+=qtquickcompiler"
-        
-    - name: Build qmake
-      working-directory: ${{ env.MAKEFILE_DIR }}
-      run: |
-        ${{ env.MAKE_DIR }}${{ env.MAKE_FILENAME }} -f ${{ env.MAKEFILE_DIR }}/Makefile qmake_all
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --aqt=${{ env.QT_VERSION }}
         
     - name: Build Application
-      working-directory: ${{ env.MAKEFILE_DIR }}
       run: |
-        ${{ env.MAKE_DIR }}${{ env.MAKE_FILENAME }} -j8
-        
-    - name: Deploy Application
-      working-directory: ${{ env.BUILD_DIR }}
-      run: |
-        windeployqt ${{ env.BUILD_NAME }} --no-opengl-sw --no-translations --no-system-d3d-compiler
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --build
         
     - name: Archive Build
       working-directory: ${{ env.SOURCE_DIR }}
