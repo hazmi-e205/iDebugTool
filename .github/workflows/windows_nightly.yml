@@ -17,8 +17,8 @@ env:
   BUILD_NAME: iDebugTool.exe
   PROJECT_NAME: iDebugTool
   COMPILER_NAME: mingw11.2.0
-  MAKE_DIR: ${{ runner.temp }}/Tools/mingw1120_64/bin/
-  MAKE_FILENAME: mingw32-make.exe
+  MAKE_DIR: ${{ runner.temp }}/Tools/mingw1120_64/bin
+  MAKE_FILENAME: /mingw32-make.exe
   PLATFORM_NAME: win64
   APP_VERSION: nightly
 
