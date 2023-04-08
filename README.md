@@ -7,6 +7,19 @@ Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that wr
 ## Runtime Requirements
 - iTunes (For Windows only)
 
+## Features
+- Connect iPhone via USB and socket (such as STF / Device farmer use case)
+- Filter and Exclude logcat by text and regex
+- Filter logcat by process id (it also text and regex support)
+- Save logcat to file
+- Install and Uninstall apps
+- Show system and apps information
+- Developer Disk Image mounter with 2 repositories options or offline mode uses local files.
+- Screenshot (required Developer Disk Image mounted)
+- Restart, Shutdown, and Sleep the device
+- Symbolicate Crashlogs using DWARF file of dSYM directory
+- Re-codesign apps
+
 ## Build Steps
 ### Prerequisite
 - Qt >= 5 with MinGW Compiler
