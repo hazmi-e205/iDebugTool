@@ -28,9 +28,9 @@
 #define HAVE_FTELLO
 /* #undef HAVE_GETPROGNAME */
 /* #undef HAVE_GNUTLS */
-#define HAVE_LIBBZ2
-#define HAVE_LIBLZMA
-#define HAVE_LIBZSTD
+/* #undef HAVE_LIBBZ2 */
+/* #undef HAVE_LIBLZMA */
+/* #undef HAVE_LIBZSTD */
 /* #undef HAVE_LOCALTIME_R */
 /* #undef HAVE_MBEDTLS */
 /* #undef HAVE_MKSTEMP */
