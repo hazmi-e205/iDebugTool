@@ -49,7 +49,7 @@ jobs:
         
     - name: Build Application
       run: |
-        python ${{ env.SOURCE_DIR }}/Scripts/make.py --build
+        python ${{ env.SOURCE_DIR }}/Scripts/make.py --build --aqt=${{ env.QT_VERSION }}
         
     - name: Archive Build
       working-directory: ${{ env.SOURCE_DIR }}
