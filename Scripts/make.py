@@ -28,6 +28,7 @@ if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"
 qt_dir           = "C:/Qt"
 qt_version       = "6.4.1"
 aqt_compiler     = "tools_mingw90"
+aqt_creator      = "qtcreator_gui"
 compiler_name    = "mingw"
 compiler_version = "11.2.0"
 compiler_arch    = "64"
@@ -44,6 +45,7 @@ is_create_patch = False
 is_build        = False
 is_debug        = False
 is_aqtinstaller = False
+is_aqtcreator   = False
 is_archive      = False
 is_nightly      = True
 
@@ -209,6 +211,10 @@ def InstallAQT():
     nodotversion = compiler_version
     if (compiler_name + nodotversion.replace(".","") + "_" + compiler_arch) not in qt_list:
         utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
+    if is_aqtcreator and "QtCreator" not in qt_list:
+        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir], base_dir)
+        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
+
 
 def Build():
     prj_type      = "Qt-windows"
@@ -271,6 +277,23 @@ def Archive():
     utils.ArchiveZip(input_dir, build_zip, [".pdb", ".xml"])
 
 
+def OpenCreator():
+    cprint("Open the project to QtCreator...", 'yellow', attrs=['reverse', 'blink'])
+    prj_type      = "Qt-windows"
+    exe_ext       = ".exe"
+    prj_path      = prj_dir + "/" + prj_type + "/" + prj_name + ".pro"
+    CreatorPath   = qt_dir + "/Tools/QtCreator/bin/qtcreator" + exe_ext
+
+    mingw_dir    = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin"
+    os.environ["PATH"] += os.pathsep + os.pathsep.join([mingw_dir])
+
+    nodotversion  = compiler_version
+    mingw_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin"
+    os.environ["PATH"] += os.pathsep + os.pathsep.join([mingw_dir])
+    
+    utils.call([CreatorPath, prj_path], base_dir)
+
+
 def Execute():
     LoadInfo()
     if is_reset is True:
@@ -283,12 +306,14 @@ def Execute():
         CreatePatch()
     if is_premake is True:
         Premake()
-    if is_aqtinstaller is True:
+    if is_aqtinstaller is True or is_aqtcreator is True:
         InstallAQT()
     if is_build is True:
         Build()
     if is_archive is True:
         Archive()
+    if is_aqtcreator is True:
+        OpenCreator()
 
 
 if __name__ == "__main__":
@@ -309,6 +334,9 @@ if __name__ == "__main__":
             aqt_split = arg.split('=')
             if len(aqt_split) > 1:
                 qt_version = aqt_split[1].strip()
+                if qt_version.endswith("ide"):
+                    is_aqtcreator = True
+                    qt_version = qt_version.removesuffix("ide")
         if "--build" in arg:
             is_build = True
             platform_split = arg.split('=')
