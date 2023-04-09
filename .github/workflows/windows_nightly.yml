@@ -12,7 +12,7 @@ env:
   QT_VERSION: 6.5.0
   SOURCE_DIR: ${{ github.workspace }}
   BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
-  APP_VERSION: nightly
+  ARCHIVE_NAME: nightly-build
 
 jobs:
   build:
@@ -46,14 +46,11 @@ jobs:
     - name: Build Application
       run: |
         python ${{ env.SOURCE_DIR }}/Scripts/make.py --build --aqt=${{ env.QT_VERSION }}
-        
-    - name: Archive Build
-      run: |
-        python ${{ env.SOURCE_DIR }}/Scripts/make.py --archive=${{ env.APP_VERSION }}
               
-    - name: Save Artifact
+    - name: Artifact
       uses: actions/upload-artifact@v3
       with:
+        name: ${{ env.ARCHIVE_NAME }}
         path: ${{ env.BUILD_DIR }}/**
         
 
