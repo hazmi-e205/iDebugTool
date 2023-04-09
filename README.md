@@ -41,5 +41,28 @@ Project will be generated in `Prj` folder. There is 2 projects for each platform
 
 You can build using Qt Creator or command line.
 
+### Alternative
+If you don't have Qt, I already add aqtinstaller command to `make.py` script but make sure your Python 3 have pip.
+```
+python3 .\Scripts\make.py --build --aqt=6.5.0
+```
+You can change `6.5.0` to Qt version that you need. This script will be do several tasks.
+- Install Qt with mingw (very minimal modules)
+- Build the project using Qt which installed by this script
+- Deploy it, so it will be distributable
+
+### Archive the build
+This script will be archive the build to local repository directory.
+
+- Nightly, file name example `iDebugTool-nightly-20230409144928-qt6.5.0-mingw11.2.0-win64.zip`
+```
+python3 .\Scripts\make.py --archive
+```
+- Release, file name example `iDebugTool-v2.0.0-alpha6-qt6.5.0-mingw11.2.0-win64.zip`
+```
+python3 .\Scripts\make.py --archive=release
+```
+
+
 ## Download
 Latest release available on [Release Page](https://github.com/hazmi-e205/iDebugTool/releases).
