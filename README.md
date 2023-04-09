@@ -1,5 +1,6 @@
 # iDebugTool (IOS Debugging Tool Cross-platform)
 > **Supported OS:** Windows and Linux (64 bit)
+![Nightly Workflow](https://github.com/hazmi-e205/iDebugTool/actions/workflows/windows_nightly.yml/badge.svg)
 
 ## Short Description
 Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that written in C++ with Qt Framework. This tool is wrapper of iMobileDevice and maybe we'll be add more useful IOS development tool that can work cross platform here. Inspired from Console app on MacOS for debugging Apple Development, why don't we bring them to "isekai" since more of app developer out there working remotely (using MacOS device just for build machine).
@@ -62,7 +63,6 @@ python3 .\Scripts\make.py --archive
 ```
 python3 .\Scripts\make.py --archive=release
 ```
-
 
 ## Download
 Latest release available on [Release Page](https://github.com/hazmi-e205/iDebugTool/releases).
