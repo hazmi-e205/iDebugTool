@@ -29,7 +29,7 @@ qt_dir           = "C:/Qt"
 qt_version       = "6.4.1"
 aqt_compiler     = "tools_mingw90"
 aqt_creator      = "qtcreator_gui"
-compiler_name    = "mingw"
+compiler_name    = "gcc" if "linux" in sys.platform else "mingw"
 compiler_version = "11.2.0"
 compiler_arch    = "64"
 platform_var     = "win"
@@ -201,25 +201,29 @@ def Premake():
 
 def InstallAQT():
     global qt_dir
+    qt_platform = "linux" if "linux" in sys.platform else "windows"
     qt_dir = os.path.abspath(base_dir + "/Qt/")
     qt_list = os.listdir(qt_dir) if os.path.exists(qt_dir) else {}
     if qt_version not in qt_list:
         utils.call([sys.executable, "-m", "pip", "install", "aqtinstall"], base_dir)
-        utils.call([sys.executable, "-m", "aqt", "install-qt", "windows", "desktop", qt_version, platform_var + compiler_arch + "_" + compiler_name, "--archives", "qtbase", "MinGW", "--outputdir", qt_dir], base_dir)
+        if "linux" in sys.platform:
+            utils.call([sys.executable, "-m", "aqt", "install-qt", qt_platform, "desktop", qt_version, compiler_name + "_" + compiler_arch, "--archives", "qtbase", "icu", "--outputdir", qt_dir], base_dir)    
+        else:
+            utils.call([sys.executable, "-m", "aqt", "install-qt", qt_platform, "desktop", qt_version, platform_var + compiler_arch + "_" + compiler_name, "--archives", "qtbase", "MinGW", "--outputdir", qt_dir], base_dir)
     
     qt_list = os.listdir(qt_dir + "/Tools/") if os.path.exists(qt_dir + "/Tools/") else {}
     nodotversion = compiler_version
-    if (compiler_name + nodotversion.replace(".","") + "_" + compiler_arch) not in qt_list:
-        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
+    if (compiler_name + nodotversion.replace(".","") + "_" + compiler_arch) not in qt_list and "linux" not in sys.platform:
+        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
     if is_aqtcreator and "QtCreator" not in qt_list:
-        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir], base_dir)
-        utils.call([sys.executable, "-m", "aqt", "install-tool", "windows", "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
+        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir], base_dir)
+        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
 
 
 def Build():
     prj_type      = "Qt-windows"
     exe_ext       = ".exe"
-    if "lin" in platform_var:
+    if "linux" in sys.platform:
         prj_type  = "Qt-linux"
         exe_ext   = ""
     
@@ -231,14 +235,14 @@ def Build():
     deploy_path   = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/windeployqt" + exe_ext
     nodotversion  = compiler_version
     compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
-    make_path     = compiler_dir + "mingw32-make" + exe_ext
+    make_path     = ("make" if "linux" in sys.platform else (compiler_dir + "mingw32-make")) + exe_ext
     build_final   = build_dir + "/" + prj_type + "/bin/"
     
     cprint("Generate makefile from qmake...", 'yellow', attrs=['reverse', 'blink'])
     os.environ["PATH"] += os.pathsep + os.pathsep.join([compiler_dir])
     if not os.path.exists(build_cache):
         os.makedirs(build_cache)
-    utils.call([qmake_path, prj_path, "-spec", "win32-g++", "\"CONFIG+=qtquickcompiler\""], build_cache)
+    utils.call([qmake_path, prj_path, "-spec", "linux-g++" if "linux" in sys.platform else "win32-g++", "\"CONFIG+=qtquickcompiler\""], build_cache)
 
     cprint("Build qmake...", 'yellow', attrs=['reverse', 'blink'])
     utils.call([make_path, "-f", makefile_path, "qmake_all"], build_cache)

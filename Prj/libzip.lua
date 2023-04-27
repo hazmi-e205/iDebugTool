@@ -30,6 +30,13 @@ project "minizip"
         "../Externals/zlib",
     }
 
+    if IsWindows() == false then
+        excludes
+        {
+            "../Externals/zlib/contrib/minizip/iowin32.**",
+        }
+    end
+
 project "libzip"
     kind "StaticLib"
 
