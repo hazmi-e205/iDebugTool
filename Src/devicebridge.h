@@ -76,15 +76,12 @@ private:
     void StartServices();
     void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
     void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
-    void TriggerSystemLogsReceived(LogPacket log);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
-    static void SystemLogsCallback(char c, void *user_data);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
 
     idevice_t m_device;
     lockdownd_client_t m_client;
-    syslog_relay_client_t m_syslog;
     diagnostics_relay_client_t m_diagnostics;
     mobile_image_mounter_client_t m_imageMounter;
     screenshotr_client_t m_screenshot;
@@ -97,7 +94,6 @@ private:
 signals:
      void UpdateDevices(QMap<QString, idevice_connection_type> devices);
      void DeviceConnected();
-     void SystemLogsReceived(LogPacket log);
      void ProcessStatusChanged(int percentage, QString message);
      void MounterStatusChanged(QString messages);
      void ScreenshotReceived(QString imagepath);
@@ -127,6 +123,15 @@ signals:
      instproxy_client_t m_installer;
  signals:
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
+
+     //SyslogBridge
+ public:
+ private:
+     static void SystemLogsCallback(char c, void *user_data);
+     void TriggerSystemLogsReceived(LogPacket log);
+     syslog_relay_client_t m_syslog;
+ signals:
+     void SystemLogsReceived(LogPacket log);
 };
 
 #endif // DEVICEBRIDGE_H

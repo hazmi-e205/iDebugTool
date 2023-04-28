@@ -209,37 +209,6 @@ QJsonValue PlistArrayToJsonValue(plist_t node)
     return jsonValue;
 }
 
-bool ParseSystemLogs(char &in, LogPacket &out)
-{
-    static QString m_logTemp = "";
-    static bool m_newLine = false;
-    switch(in){
-    case '\0':
-    {
-        out = LogPacket(m_logTemp);
-        m_logTemp = "";
-        m_newLine = false;
-        return true;
-    }
-    case '\n':
-    {
-        if (m_newLine) {
-            m_logTemp += in;
-        }
-        m_newLine = true;
-        break;
-    }
-    default:
-        if (m_newLine) {
-            m_logTemp += '\n';
-            m_newLine = false;
-        }
-        m_logTemp += in;
-        break;
-    }
-    return false;
-}
-
 int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len)
 {
     struct zip_stat zs;
