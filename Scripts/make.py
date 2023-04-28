@@ -217,7 +217,8 @@ def InstallAQT():
         utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
     if is_aqtcreator and "QtCreator" not in qt_list:
         utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir], base_dir)
-        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
+        if "linux" not in sys.platform:
+            utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
 
 
 def Build():
@@ -283,8 +284,8 @@ def Archive():
 
 def OpenCreator():
     cprint("Open the project to QtCreator...", 'yellow', attrs=['reverse', 'blink'])
-    prj_type      = "Qt-windows"
-    exe_ext       = ".exe"
+    prj_type      = "Qt-linux" if "linux" in sys.platform else "Qt-windows"
+    exe_ext       = "" if "linux" in sys.platform else ".exe"
     prj_path      = prj_dir + "/" + prj_type + "/" + prj_name + ".pro"
     CreatorPath   = qt_dir + "/Tools/QtCreator/bin/qtcreator" + exe_ext
 
