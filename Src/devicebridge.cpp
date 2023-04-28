@@ -576,23 +576,9 @@ void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_co
     emit UpdateDevices(m_deviceList);
 }
 
-void DeviceBridge::TriggerSystemLogsReceived(LogPacket log)
-{
-    emit SystemLogsReceived(log);
-}
-
 void DeviceBridge::DeviceEventCallback(const idevice_event_t *event, void *userdata)
 {
     DeviceBridge::Get()->TriggerUpdateDevices(event->event, event->conn_type, event->udid);
-}
-
-void DeviceBridge::SystemLogsCallback(char c, void *user_data)
-{
-    LogPacket packet;
-    if(ParseSystemLogs(c, packet))
-    {
-        DeviceBridge::Get()->TriggerSystemLogsReceived(packet);
-    }
 }
 
 ssize_t DeviceBridge::ImageMounterCallback(void *buf, size_t size, void *userdata)

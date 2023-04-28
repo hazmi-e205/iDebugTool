@@ -57,6 +57,11 @@ AsyncManager::AsyncManager()
 {
 }
 
+AsyncManager::AsyncManager(size_t numberOfThreads)
+{
+    Init(numberOfThreads);
+}
+
 AsyncManager::~AsyncManager()
 {
     StopThreads();

@@ -131,8 +131,8 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
     uint64_t handle;
     char source_filename[512];
     char target_filename[512];
-    m_crashtargetdir = (target_dir == nullptr ? m_crashtargetdir : target_dir);
-    const char* target_directory = (target_dir == nullptr ? m_crashtargetdir.toUtf8().data() : target_dir);
+    m_crashlogTargetDir = (target_dir == nullptr ? m_crashlogTargetDir : target_dir);
+    const char* target_directory = (target_dir == nullptr ? m_crashlogTargetDir.toUtf8().data() : target_dir);
 
     if (!afc)
         return res;

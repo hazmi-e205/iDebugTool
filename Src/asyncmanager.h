@@ -9,6 +9,7 @@ class AsyncManager
 
 public:
     AsyncManager();
+    AsyncManager(size_t numberOfThreads);
     ~AsyncManager();
 
     void Init(size_t numberOfThreads);
