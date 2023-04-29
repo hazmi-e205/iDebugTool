@@ -115,12 +115,14 @@ signals:
      //InstallerBridge
  public:
      QJsonDocument GetInstalledApps();
+     QMap<QString, QJsonDocument> GetInstalledApps(bool doAsync);
      void UninstallApp(QString bundleId);
      void InstallApp(InstallerMode cmd, QString path);
  private:
      static void InstallerCallback(plist_t command, plist_t status, void *unused);
      void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
      instproxy_client_t m_installer;
+     QMap<QString, QJsonDocument> m_installedApps;
  signals:
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
 
