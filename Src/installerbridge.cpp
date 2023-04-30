@@ -34,13 +34,15 @@ QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
 {
     auto apps_update = [this](){
         QJsonDocument jsonArray = GetInstalledApps();
+        QMap<QString, QJsonDocument> newAppList;
         for (int idx = 0; idx < jsonArray.array().count(); idx++)
         {
             QString bundle_id = jsonArray[idx]["CFBundleIdentifier"].toString();
             QJsonDocument app_info;
             app_info.setObject(jsonArray[idx].toObject());
-            m_installedApps[bundle_id] = app_info;
+            newAppList[bundle_id] = app_info;
         }
+        m_installedApps = newAppList;
     };
 
     if (doAsync)
