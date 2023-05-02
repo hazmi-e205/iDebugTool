@@ -1,5 +1,6 @@
 # iDebugTool (IOS Debugging Tool Cross-platform)
 > **Supported OS:** Windows and Linux (64 bit)
+
 ![Nightly Workflow](https://github.com/hazmi-e205/iDebugTool/actions/workflows/windows_nightly.yml/badge.svg)
 
 ## Short Description
@@ -51,6 +52,12 @@ You can change `6.5.0` to Qt version that you need. This script will be do sever
 - Install Qt with mingw (very minimal modules)
 - Build the project using Qt which installed by this script
 - Deploy it, so it will be distributable
+
+Or you can install and open the project using Qt Creator by call this command.
+```
+python3 .\Scripts\make.py --aqt=6.5.0ide
+```
+For Ubuntu user, you will required to install `sudo apt install python3-pip`. In the time I wrote this, `build-essential` will be installed when install pip, if it didn't installed yet please install it first before compiling the project.
 
 ### Archive the build
 This script will be archive the build to local repository directory.
