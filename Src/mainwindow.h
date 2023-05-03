@@ -103,6 +103,7 @@ private slots:
     void OnUpdateDevices(QMap<QString, idevice_connection_type> devices);
     void OnDeviceConnected();
     void OnSystemLogsReceived(LogPacket log);
+    void OnSystemLogsReceived2(QString logs);
     void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
     void OnTextFilterChanged(QString text);
     void OnPidFilterChanged(QString text);

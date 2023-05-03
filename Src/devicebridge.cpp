@@ -1,6 +1,5 @@
 #include "devicebridge.h"
 #include "utils.h"
-#include "asyncmanager.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileInfo>
@@ -24,18 +23,24 @@ void DeviceBridge::Destroy()
 DeviceBridge::DeviceBridge() :
     m_device(nullptr),
     m_client(nullptr),
-    m_syslog(nullptr),
-    m_installer(nullptr),
-    m_afc(nullptr),
-    m_crashlog(nullptr),
     m_diagnostics(nullptr),
     m_imageMounter(nullptr),
-    m_screenshot(nullptr)
+    m_screenshot(nullptr),
+    m_afc(nullptr),
+    m_crashlog(nullptr),
+    m_installer(nullptr),
+    m_syslog(nullptr),
+    m_filterThread(new AsyncManager(1)),
+    m_maxCachedLogs(0),
+    m_paddings({0,0,0,0})
 {
 }
 
 DeviceBridge::~DeviceBridge()
 {
+    m_filterThread->StopThreads();
+    delete m_filterThread;
+
     idevice_event_unsubscribe();
     ResetConnection();
 }
@@ -181,40 +186,18 @@ QJsonDocument DeviceBridge::GetDeviceInfo()
 
 void DeviceBridge::StartServices()
 {
-    emit ProcessStatusChanged(30, "Starting syslog relay service...");
-    QStringList serviceIds;
-    serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
-    StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        /* connect to syslog_relay service */
-        syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
-        err = syslog_relay_client_new(m_device, service, &m_syslog);
-        if (err != SYSLOG_RELAY_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-            return;
-        }
-
-        /* start capturing syslog */
-        err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
-        if (err != SYSLOG_RELAY_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to start capturing syslog.");
-            syslog_relay_client_free(m_syslog);
-            m_syslog = nullptr;
-            return;
-        }
-    });
-
-    emit ProcessStatusChanged(40, "Starting installation proxy service...");
-    serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
+    emit ProcessStatusChanged(30, "Starting installation proxy service...");
+    QStringList serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
     StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
         if (err != INSTPROXY_E_SUCCESS)
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
-    emit ProcessStatusChanged(45, "Getting installed apps info...");
+    emit ProcessStatusChanged(35, "Getting installed apps info...");
     m_installedApps = GetInstalledApps(false);
 
-    emit ProcessStatusChanged(50, "Starting crash report mover service...");
+    emit ProcessStatusChanged(40, "Starting crash report mover service...");
     serviceIds = QStringList() << "com.apple.crashreportmover";
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         service_client_t svcmove = NULL;
@@ -248,7 +231,7 @@ void DeviceBridge::StartServices()
         }
     });
 
-    emit ProcessStatusChanged(60, "Starting crash report copy service...");
+    emit ProcessStatusChanged(50, "Starting crash report copy service...");
     serviceIds = QStringList() << "com.apple.crashreportcopymobile";
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_crashlog);
@@ -256,7 +239,7 @@ void DeviceBridge::StartServices()
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
-    emit ProcessStatusChanged(70, "Starting afc service...");
+    emit ProcessStatusChanged(60, "Starting afc service...");
     serviceIds = QStringList() << "com.apple.afc";
     StartLockdown(!m_afc, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         afc_error_t err = afc_client_new(m_device, service, &m_afc);
@@ -264,12 +247,34 @@ void DeviceBridge::StartServices()
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
-    emit ProcessStatusChanged(80, "Starting image mounter service...");
+    emit ProcessStatusChanged(70, "Starting image mounter service...");
     serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
     StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
         mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
         if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+    });
+
+
+    emit ProcessStatusChanged(80, "Starting syslog relay service...");
+    serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
+    StartLockdown(!m_syslog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        /* connect to syslog_relay service */
+        syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
+        err = syslog_relay_client_new(m_device, service, &m_syslog);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+            return;
+        }
+
+        /* start capturing syslog */
+        err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to start capturing syslog.");
+            syslog_relay_client_free(m_syslog);
+            m_syslog = nullptr;
+            return;
+        }
     });
 }
 

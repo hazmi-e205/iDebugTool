@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(QMap<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(QMap<QString,idevice_connection_type>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
+    //connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived2(QString)), this, SLOT(OnSystemLogsReceived2(QString)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(MessagesReceived(MessagesType,QString)), this, SLOT(OnMessagesReceived(MessagesType,QString)));
@@ -334,7 +335,7 @@ void MainWindow::SetupLogsTable()
 
 void MainWindow::UpdateLogsFilter()
 {
-    m_mutex.lock();
+    //m_mutex.lock();
 #if LOGVIEW_MODE == 1
     m_table->clearTable();
 #elif LOGVIEW_MODE == 2
@@ -353,7 +354,7 @@ void MainWindow::UpdateLogsFilter()
         }
     }
     AddLogToTable(logs);
-    m_mutex.unlock();
+    //m_mutex.unlock();
 }
 
 QList<int> MainWindow::GetPaddingLog(LogPacket log)
@@ -610,6 +611,11 @@ void MainWindow::OnSystemLogsReceived(LogPacket log)
     {
         AddLogToTable(log);
     }
+}
+
+void MainWindow::OnSystemLogsReceived2(QString logs)
+{
+    m_table->appendPlainText(logs);
 }
 
 void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message)
