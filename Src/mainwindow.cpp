@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
-    , m_maxShownLogs(UserConfigs::Get()->GetData("MaxShownLogs", "100").toUInt())
+    , m_maxShownLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
     , m_scrollInterval(UserConfigs::Get()->GetData("ScrollInterval", "250").toUInt())
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
@@ -40,7 +40,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_aboutDialog(nullptr)
     , m_loading(nullptr)
     , m_table(nullptr)
-    , m_paddinglogs("0|0|0|0")
 {
     ui->setupUi(this);
 
@@ -51,8 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     DeviceBridge::Get()->Init(this);
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(QMap<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(QMap<QString,idevice_connection_type>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
-    connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived(LogPacket)), this, SLOT(OnSystemLogsReceived(LogPacket)));
-    //connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived2(QString)), this, SLOT(OnSystemLogsReceived2(QString)));
+    connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived2(QString)), this, SLOT(OnSystemLogsReceived2(QString)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(MessagesReceived(MessagesType,QString)), this, SLOT(OnMessagesReceived(MessagesType,QString)));
@@ -64,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pidEdit, SIGNAL(currentTextChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
     connect(ui->excludeEdit, SIGNAL(textChanged(QString)), this, SLOT(OnExcludeFilterChanged(QString)));
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
+    connect(ui->stopCheck, SIGNAL(stateChanged(int)), this, SLOT(OnStopChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
     connect(ui->saveOutputBtn, SIGNAL(pressed()), this, SLOT(OnSaveOutputClicked()));
@@ -94,11 +93,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pidEdit->installEventFilter(m_eventFilter);
     ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
     ui->pidEdit->setCurrentIndex(0);
+    DeviceBridge::Get()->LogsFilterByPID(ui->pidEdit->currentText());
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
     connect(ui->installBtn, SIGNAL(pressed()), this, SLOT(OnInstallClicked()));
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
     connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
+    DeviceBridge::Get()->SetMaxCachedLogs(m_maxShownLogs);
     ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
@@ -206,13 +207,6 @@ MainWindow::~MainWindow()
     m_devicesModel->clear();
     delete m_devicesModel;
     delete m_table;
-#if LOGVIEW_MODE == 2
-    m_tableContextMenu->clear();
-    delete m_tableContextMenu;
-#endif
-#if LOGVIEW_MODE == 1 || LOGVIEW_MODE == 2
-    delete m_dataModel;
-#endif
     ui->deviceTable->setModel(nullptr);
     delete m_eventFilter;
     m_scrollTimer->stop();
@@ -273,50 +267,6 @@ void MainWindow::SetupDevicesTable()
 
 void MainWindow::SetupLogsTable()
 {
-#if LOGVIEW_MODE == 1
-    if (!m_table)
-    {
-        m_dataModel = new QicsDataModelDefault(0, 0);
-        m_table = new QicsTable(0, 0, CustomGrid::createGrid, 0, m_dataModel);
-        ui->logLayout->addWidget(m_table);
-    }
-    m_table->addColumns(5);
-    m_table->addRows(1);
-    m_table->columnHeaderRef().cellRef(0,0).setLabel("DateTime");
-    m_table->columnHeaderRef().cellRef(0,1).setLabel("DeviceName");
-    m_table->columnHeaderRef().cellRef(0,2).setLabel("ProcessID");
-    m_table->columnHeaderRef().cellRef(0,3).setLabel("Type");
-    m_table->columnHeaderRef().cellRef(0,4).setLabel("Messages");
-    m_table->columnHeaderRef().cellRef(0,4).setWidthInPixels(1000);
-    //m_table->setSelectionPolicy(Qics::QicsSelectionPolicy::SelectMultipleRow);
-    m_table->setReadOnly(true);
-#elif  LOGVIEW_MODE == 2
-    if (!m_table)
-    {
-        m_dataModel = new CustomModel();
-        m_dataModel->setMaxData(m_maxShownLogs);
-
-        m_table = new QTableView();
-        m_table->setModel(m_dataModel);
-        m_table->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeMode::ResizeToContents);
-        m_table->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
-        m_table->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-        m_table->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-        m_table->setWordWrap(false);
-        m_table->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-        m_table->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
-        m_table->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_table, SIGNAL(customContextMenuRequested(QPoint)), SLOT(OnContextMenuRequested(QPoint)));
-        ui->logLayout->addWidget(m_table);
-
-        m_tableContextMenu = new QMenu(this);
-        m_tableContextMenu->addAction(new QAction("Resume", this));
-        m_tableContextMenu->addSeparator();
-        m_tableContextMenu->addAction(new QAction("Copy", this));
-        m_tableContextMenu->addAction(new QAction("Select All", this));
-        connect(m_tableContextMenu, SIGNAL(triggered(QAction*)), this, SLOT(OnContextMenuTriggered(QAction*)));
-    }
-#else
     if (!m_table)
     {
         m_table = new QPlainTextEdit();
@@ -330,185 +280,6 @@ void MainWindow::SetupLogsTable()
         m_table->setFont(font);
         ui->logLayout->addWidget(m_table);
     }
-#endif
-}
-
-void MainWindow::UpdateLogsFilter()
-{
-    //m_mutex.lock();
-#if LOGVIEW_MODE == 1
-    m_table->clearTable();
-#elif LOGVIEW_MODE == 2
-    m_dataModel->clear();
-#else
-    m_table->clear();
-    m_paddinglogs = "0|0|0|0";
-#endif
-    SetupLogsTable();
-
-    QList<LogPacket> logs;
-    for (LogPacket& m_Log : m_liveLogs)
-    {
-        if (m_Log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries)) {
-            logs << m_Log;
-        }
-    }
-    AddLogToTable(logs);
-    //m_mutex.unlock();
-}
-
-QList<int> MainWindow::GetPaddingLog(LogPacket log)
-{
-    QList<int> lengths;
-    QStringList len_split = m_paddinglogs.split('|');
-    for (int idx = 0; idx < len_split.size(); idx++) {
-        switch (idx) {
-        case 0:
-            if (len_split[idx].toInt() < log.getDateTime().size())
-                lengths << log.getDateTime().size();
-            else
-                lengths << len_split[idx].toInt();
-            break;
-        case 1:
-            if (len_split[idx].toInt() < log.getDeviceName().size())
-                lengths << log.getDeviceName().size();
-            else
-                lengths << len_split[idx].toInt();
-            break;
-        case 2:
-            if (len_split[idx].toInt() < log.getProcessID().size())
-                lengths << log.getProcessID().size();
-            else
-                lengths << len_split[idx].toInt();
-            break;
-        case 3:
-            if (len_split[idx].toInt() < log.getLogType().size())
-                lengths << log.getLogType().size();
-            else
-                lengths << len_split[idx].toInt();
-            break;
-        default:
-            break;
-        }
-    }
-    QString new_length = QString::asprintf("%d|%d|%d|%d", lengths[0], lengths[1], lengths[2], lengths[3]);
-    if (!m_paddinglogs.contains(new_length)){
-        m_paddinglogs = new_length;
-    }
-    return lengths;
-}
-
-void MainWindow::AddLogToTable(LogPacket log)
-{
-#if LOGVIEW_MODE == 1
-    if (!m_dataModel->isRowEmpty(0))
-        m_dataModel->addRows(1);
-
-    auto idx = m_dataModel->numRows() - 1;
-    m_dataModel->setItem(idx, 0, QicsDataString(log.getDateTime()));
-    m_dataModel->setItem(idx, 1, QicsDataString(log.getDeviceName()));
-    m_dataModel->setItem(idx, 2, QicsDataString(log.getProcessID()));
-    m_dataModel->setItem(idx, 3, QicsDataString(log.getLogType()));
-
-    auto lines = log.getLogMessage().split('\n');
-    if (lines.count() > 0)
-    {
-        for (quint64 line_idx = 0; line_idx < lines.count(); line_idx++)
-        {
-            if (line_idx > 0)
-            {
-                m_dataModel->addRows(1);
-            }
-            m_dataModel->setItem(idx + line_idx, 4, QicsDataString(lines[line_idx]));
-        }
-    }
-    else
-    {
-        m_dataModel->setItem(idx, 4, QicsDataString(log.getLogMessage()));
-    }
-
-    if (m_dataModel->numRows() > m_maxShownLogs)
-    {
-        quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
-        m_dataModel->deleteRows(deleteCount, 0);
-    }
-#elif LOGVIEW_MODE == 2
-    m_dataModel->addItem(log);
-#else
-    QList<int> lengths = GetPaddingLog(log);
-    auto lines = log.getLogMessage().split('\n');
-    if (lines.count() > 0)
-    {
-        for (qsizetype line_idx = 0; line_idx < lines.count(); line_idx++)
-        {
-            if (line_idx > 0)
-                m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
-                                         .arg("", -lengths[0])
-                                         .arg("", -lengths[1])
-                                         .arg("", -lengths[2])
-                                         .arg("", -lengths[3])
-                                         .arg(lines[line_idx]));
-            else
-                m_table->appendPlainText(QString("%1\t%2\t%3\t%4\t%5")
-                                         .arg(log.getDateTime(), -lengths[0])
-                                         .arg(log.getDeviceName(), -lengths[1])
-                                         .arg(log.getProcessID(), -lengths[2])
-                                         .arg(log.getLogType(), -lengths[3])
-                                         .arg(lines[line_idx]));
-        }
-    }
-    else
-    {
-        m_table->appendPlainText(log.GetRawData());
-    }
-#endif
-}
-
-void MainWindow::AddLogToTable(QList<LogPacket> logs)
-{
-    if (logs.count() == 0)
-        return;
-
-#if LOGVIEW_MODE == 1
-    m_dataModel->addRows(m_dataModel->isRowEmpty(0) ? logs.count()-1 : logs.count());
-    auto first_idx = m_dataModel->numRows() - logs.count() - 1;
-    for (int idx = 0; idx <logs.count(); idx++)
-    {
-        m_dataModel->setItem(first_idx + idx, 0, QicsDataString(logs[idx].getDateTime()));
-        m_dataModel->setItem(first_idx + idx, 1, QicsDataString(logs[idx].getDeviceName()));
-        m_dataModel->setItem(first_idx + idx, 2, QicsDataString(logs[idx].getProcessID()));
-        m_dataModel->setItem(first_idx + idx, 3, QicsDataString(logs[idx].getLogType()));
-
-        auto lines = logs[idx].getLogMessage().split('\n');
-        if (lines.count() > 0)
-        {
-            for (quint64 line_idx = 0; line_idx < lines.count(); line_idx++)
-            {
-                if (line_idx > 0)
-                {
-                    m_dataModel->addRows(1);
-                }
-                m_dataModel->setItem(idx + line_idx, 4, QicsDataString(lines[line_idx]));
-            }
-        }
-        else
-        {
-            m_dataModel->setItem(idx, 4, QicsDataString(logs[idx].getLogMessage()));
-        }
-    }
-
-    if (m_dataModel->numRows() > m_maxShownLogs)
-    {
-        quint64 deleteCount = m_dataModel->numRows() - m_maxShownLogs;
-        m_dataModel->deleteRows(deleteCount, 0);
-    }
-#elif LOGVIEW_MODE == 2
-    m_dataModel->addItems(logs);
-#else
-    foreach (auto log, logs) {
-        AddLogToTable(log);
-    }
-#endif
 }
 
 void MainWindow::UpdateInfoWidget()
@@ -595,24 +366,6 @@ void MainWindow::OnDeviceConnected()
     OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
 }
 
-void MainWindow::OnSystemLogsReceived(LogPacket log)
-{
-    if (ui->stopCheck->isChecked())
-        return;
-
-    m_liveLogs.push_back(log);
-#if LOGVIEW_MODE == 1 || LOGVIEW_MODE == 2
-    while ((unsigned int)m_liveLogs.size() > m_maxShownLogs)
-    {
-        m_liveLogs.erase(m_liveLogs.begin());
-    }
-#endif
-    if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries))
-    {
-        AddLogToTable(log);
-    }
-}
-
 void MainWindow::OnSystemLogsReceived2(QString logs)
 {
     m_table->appendPlainText(logs);
@@ -646,38 +399,20 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
 
 void MainWindow::OnTextFilterChanged(QString text)
 {
-    m_currentFilter = text;
-    UpdateLogsFilter();
+    m_table->clear();
+    DeviceBridge::Get()->LogsFilterByString(text);
 }
 
 void MainWindow::OnPidFilterChanged(QString text)
 {
-    QStringList userBinaries;
-    if (text.trimmed().toLower().contains("by user apps only") || text.trimmed().toLower().contains("related to user apps"))
-    {
-        IsInstalledUpdated();
-        bool isUserAppsOnly = text.trimmed().toLower().contains("by user apps only");
-        QString op1 = isUserAppsOnly ? "\\[|" : "|";
-        QString op2 = isUserAppsOnly ? "\\[" : "";
-        foreach (auto appinfo, m_installedApps)
-        {
-            QString bin_name = appinfo["CFBundleExecutable"].toString();
-            userBinaries << bin_name;
-        }
-        m_userbinaries = userBinaries.join(op1) + op2;
-    }
-    else
-    {
-        m_userbinaries.clear();
-        m_pidFilter = text;
-    }
-    UpdateLogsFilter();
+    m_table->clear();
+    DeviceBridge::Get()->LogsFilterByPID(text);
 }
 
 void MainWindow::OnExcludeFilterChanged(QString text)
 {
-    m_excludeFilter = text;
-    UpdateLogsFilter();
+    m_table->clear();
+    DeviceBridge::Get()->LogsExcludeByString(text);
 }
 
 void MainWindow::OnAutoScrollChecked(int state)
@@ -690,19 +425,18 @@ void MainWindow::OnAutoScrollChecked(int state)
     }
 }
 
+void MainWindow::OnStopChecked(int state)
+{
+    bool isStop = state == 0 ? false : true;
+    DeviceBridge::Get()->ProcessSystemLogs(!isStop);
+}
+
 void MainWindow::OnClearClicked()
 {
     bool is_stop = ui->stopCheck->isChecked();
     ui->stopCheck->setChecked(true);
 
-#if LOGVIEW_MODE == 1
-    m_table->clearTable();
-#elif LOGVIEW_MODE == 2
-    m_dataModel->clear();
-#else
     m_table->clear();
-    m_paddinglogs = "0|0|0|0";
-#endif
     m_liveLogs.clear();
     SetupLogsTable();
 
@@ -714,48 +448,6 @@ void MainWindow::OnSaveClicked()
     bool is_stop = ui->stopCheck->isChecked();
     ui->stopCheck->setChecked(true);
 
-#if LOGVIEW_MODE == 1
-    int rowCount = m_table->selectionList(true)->rows().count();
-    int columnCount = m_table->selectionList(true)->columns().count();
-    if (rowCount <= 1 && columnCount <= 1)
-        m_table->selectAll();
-
-    m_table->copy();
-    QClipboard *clipboard = QGuiApplication::clipboard();
-    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
-    QFile f(filepath);
-    if (f.open(QIODevice::WriteOnly))
-    {
-        QTextStream stream(&f);
-        stream << clipboard->text();
-        f.close();
-    }
-    m_table->clearSelectionList();
-#elif LOGVIEW_MODE == 2
-    QModelIndexList indexes = m_table->selectionModel()->selectedRows();
-    QString data_str = "";
-    if (indexes.count() <= 1)
-    {
-        for (qsizetype idx = 0; idx < m_dataModel->rowCount(); idx++)
-            data_str.append(m_dataModel->getLogPacket(idx).GetRawData() + "\n");
-    }
-    else
-    {
-        foreach (auto item, indexes)
-            data_str.append(m_dataModel->getLogPacket(item.row()).GetRawData() + "\n");
-    }
-    m_table->clearSelection();
-
-    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
-    if (!filepath.isEmpty()) {
-        QFile f(filepath);
-        if (f.open(QIODevice::WriteOnly)) {
-            QTextStream stream(&f);
-            stream << data_str;
-            f.close();
-        }
-    }
-#else
     QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
     if (!filepath.isEmpty()) {
         QFile f(filepath);
@@ -765,7 +457,6 @@ void MainWindow::OnSaveClicked()
             f.close();
         }
     }
-#endif
     ui->stopCheck->setChecked(is_stop);
 }
 
@@ -877,9 +568,7 @@ void MainWindow::OnScrollTimerTick()
 void MainWindow::OnConfigureClicked()
 {
     m_maxShownLogs = ui->maxShownLogs->text().toUInt();
-#if LOGVIEW_MODE == 2
-    m_dataModel->setMaxData(m_maxShownLogs);
-#endif
+    DeviceBridge::Get()->SetMaxCachedLogs(m_maxShownLogs);
     m_scrollInterval = ui->scrollInterval->text().toUInt();
 
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
@@ -1220,40 +909,6 @@ void MainWindow::OnBottomTabChanged(int index)
         ui->scrollCheck->setCheckState(Qt::Unchecked);
         break;
     }
-}
-
-void MainWindow::OnContextMenuRequested(QPoint pos)
-{
-#if LOGVIEW_MODE == 2
-    m_lastStopChecked = ui->stopCheck->isChecked();
-    ui->stopCheck->setChecked(true);
-    m_tableContextMenu->popup(m_table->viewport()->mapToGlobal(pos));
-#endif
-}
-
-void MainWindow::OnContextMenuTriggered(QAction *action)
-{
-#if LOGVIEW_MODE == 2
-    if (action->text().toLower().contains("copy"))
-    {
-        QModelIndexList indexes = m_table->selectionModel()->selectedRows();
-        QString data_str = "";
-        foreach (auto item, indexes)
-            data_str.append(m_dataModel->getLogPacket(item.row()).GetRawData() + "\n");
-        m_table->clearSelection();
-        QApplication::clipboard()->setText(data_str);
-    }
-    else if (action->text().toLower().contains("select all"))
-    {
-        m_table->selectAll();
-    }
-    else if (action->text().toLower().contains("resume"))
-    {
-        ui->stopCheck->setChecked(false);
-    }
-
-    //ui->stopCheck->setChecked(m_tableContextMenu);
-#endif
 }
 
 void MainWindow::OnClearOutputClicked()

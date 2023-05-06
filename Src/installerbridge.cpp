@@ -32,6 +32,9 @@ QJsonDocument DeviceBridge::GetInstalledApps()
 
 QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
 {
+    if (!m_installer)
+        return m_installedApps;
+
     auto apps_update = [this](){
         QJsonDocument jsonArray = GetInstalledApps();
         QMap<QString, QJsonDocument> newAppList;
@@ -42,12 +45,15 @@ QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
             app_info.setObject(jsonArray[idx].toObject());
             newAppList[bundle_id] = app_info;
         }
+        m_logHandler->UpdateInstalledList(newAppList);
+        m_mutex.lock();
         m_installedApps = newAppList;
+        m_mutex.unlock();
     };
 
     if (doAsync)
     {
-        AsyncManager::Get()->StartAsyncRequest([&apps_update]() {
+        AsyncManager::Get()->StartAsyncRequest([apps_update]() {
             apps_update();
         });
     }

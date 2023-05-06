@@ -7,18 +7,7 @@
 #include <QTimer>
 #include <QSplashScreen>
 #include <QMutex>
-
-#define LOGVIEW_MODE 0 //0:QPlainTextEdit 1:QIcsTable 2:QTableView
-#if LOGVIEW_MODE == 1
-#include <QicsDataModelDefault.h>
-#include <QicsTable.h>
-#include "customgrid.h"
-#elif LOGVIEW_MODE == 2
-#include <QTableView>
-#include "custommodel.h"
-#else
 #include <QPlainTextEdit>
-#endif
 
 #include "devicebridge.h"
 #include "customkeyfiler.h"
@@ -50,10 +39,6 @@ protected:
 private:
     void SetupDevicesTable();
     void SetupLogsTable();
-    void UpdateLogsFilter();
-    QList<int> GetPaddingLog(LogPacket log);
-    void AddLogToTable(LogPacket log);
-    void AddLogToTable(QList<LogPacket> logs);
     void UpdateInfoWidget();
     void RefreshSocketList();
     bool IsInstalledUpdated();
@@ -64,10 +49,6 @@ private:
     AppInfo *m_appInfo;
     float m_ratioTopWidth;
     float m_topWidth;
-    QString m_currentFilter;
-    QString m_pidFilter;
-    QString m_excludeFilter;
-    QString m_userbinaries;
     QString m_choosenBundleId;
     QString m_installerLogs;
     std::vector<LogPacket> m_liveLogs;
@@ -80,16 +61,7 @@ private:
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
     LoadingDialog *m_loading;
-#if LOGVIEW_MODE == 1
-    QicsDataModelDefault *m_dataModel;
-    QicsTable *m_table;
-#elif LOGVIEW_MODE == 2
-    CustomModel *m_dataModel;
-    QTableView *m_table;
-#else
     QPlainTextEdit *m_table;
-#endif
-    QString m_paddinglogs;
     QMutex m_mutex;
     bool m_lastAutoScroll;
     int m_lastMaxScroll;
@@ -102,13 +74,13 @@ private slots:
     void OnRefreshClicked();
     void OnUpdateDevices(QMap<QString, idevice_connection_type> devices);
     void OnDeviceConnected();
-    void OnSystemLogsReceived(LogPacket log);
     void OnSystemLogsReceived2(QString logs);
     void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
     void OnTextFilterChanged(QString text);
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
     void OnAutoScrollChecked(int state);
+    void OnStopChecked(int state);
     void OnClearClicked();
     void OnSaveClicked();
     void OnClickedEvent(QObject* object);
@@ -144,8 +116,6 @@ private slots:
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
     void OnBottomTabChanged(int index);
-    void OnContextMenuRequested(QPoint pos);
-    void OnContextMenuTriggered(QAction* action);
     void OnClearOutputClicked();
     void OnSaveOutputClicked();
 };

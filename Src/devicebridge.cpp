@@ -30,17 +30,14 @@ DeviceBridge::DeviceBridge() :
     m_crashlog(nullptr),
     m_installer(nullptr),
     m_syslog(nullptr),
-    m_filterThread(new AsyncManager(1)),
-    m_maxCachedLogs(0),
-    m_paddings({0,0,0,0})
+    m_logHandler(new LogFilterThread())
 {
+    connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
 }
 
 DeviceBridge::~DeviceBridge()
 {
-    m_filterThread->StopThreads();
-    delete m_filterThread;
-
+    delete m_logHandler;
     idevice_event_unsubscribe();
     ResetConnection();
 }
@@ -254,7 +251,6 @@ void DeviceBridge::StartServices()
         if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
-
 
     emit ProcessStatusChanged(80, "Starting syslog relay service...");
     serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;

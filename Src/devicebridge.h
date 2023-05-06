@@ -17,7 +17,9 @@
 #include <libimobiledevice/screenshotr.h>
 #include <libimobiledevice/service.h>
 #include "logpacket.h"
+#include "logfilterthread.h"
 #include "asyncmanager.h"
+#include "qmutex.h"
 
 #define TOOL_NAME                       "idebugtool"
 #define ITUNES_METADATA_PLIST_FILENAME  "iTunesMetadata.plist"
@@ -89,6 +91,7 @@ private:
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
+    QMutex m_mutex;
 
     static DeviceBridge *m_instance;
 
@@ -129,28 +132,23 @@ signals:
 
      //SyslogBridge
  public:
-     inline void SetMaxCachedLogs(qsizetype number) { m_maxCachedLogs = number; }
+     void ProcessSystemLogs(bool enable);
+     void SetMaxCachedLogs(qsizetype number);
      void LogsFilterByString(QString text_or_regex);
      void LogsExcludeByString(QString exclude_text);
      void LogsFilterByPID(QString pid_name);
-     void LogsFilterByBinaries(QString user_binaries);
-     void SystemLogsFilter(QString text_or_regex, QString pid_name, QString exclude_text, QString user_binaries);
+     void SystemLogsFilter(QString text_or_regex, QString pid_name, QString exclude_text);
+     void ReloadLogsFilter();
+     LogFilterThread* GetLogHandler() { return m_logHandler; }
      QStringList GetPIDFilteringTemplate();
  private:
      static void SystemLogsCallback(char c, void *user_data);
      void TriggerSystemLogsReceived(LogPacket log);
-     QList<int> ParsePaddings(LogPacket log);
-     QString LogToString(LogPacket log);
      syslog_relay_client_t m_syslog;
-     AsyncManager *m_filterThread;
-     QList<LogPacket> m_cachedLogs, m_logsWillBeFiltered;
-     qsizetype m_maxCachedLogs;
-     QString m_oldFiltered, m_newFiltered;
-     QString m_currentFilter, m_pidFilter, m_excludeFilter, m_userbinaries;
-     QList<int> m_paddings;
+     LogFilterThread* m_logHandler;
  signals:
-     void SystemLogsReceived2(QString logs);
      void SystemLogsReceived(LogPacket log);
+     void SystemLogsReceived2(QString logs);
 };
 
 #endif // DEVICEBRIDGE_H
