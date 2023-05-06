@@ -40,9 +40,9 @@ DeviceBridge::DeviceBridge() :
 
 DeviceBridge::~DeviceBridge()
 {
-    delete m_logHandler;
     idevice_event_unsubscribe();
     ResetConnection();
+    delete m_logHandler;
 }
 
 void DeviceBridge::Init(QWidget *parent)

@@ -4,15 +4,16 @@ LogFilterThread::LogFilterThread()
     : m_maxCachedLogs(0)
     , m_paddings({0,0,0,0})
     , m_terminateFilter(false)
+    , m_thread(new QThread())
     , m_processLogs(true)
 {
-    m_thread = new QThread();
     connect(m_thread, SIGNAL(started()), SLOT(doWork()));
     moveToThread(m_thread);
 }
 
 LogFilterThread::~LogFilterThread()
 {
+    ClearCachedLogs();
     delete m_thread;
 }
 

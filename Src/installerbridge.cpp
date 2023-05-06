@@ -28,6 +28,7 @@ QJsonDocument DeviceBridge::GetInstalledApps()
 
     jsonArray = PlistToJson(apps);
     plist_free(apps);
+    return jsonArray;
 }
 
 QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
