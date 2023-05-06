@@ -1170,7 +1170,7 @@ color: rgb(255, 255, 255);</string>
                                       </font>
                                      </property>
                                      <property name="text">
-                                      <string>Max shown logs</string>
+                                      <string>Max cached logs</string>
                                      </property>
                                     </widget>
                                    </item>
