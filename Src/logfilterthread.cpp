@@ -16,17 +16,21 @@ LogFilterThread::~LogFilterThread()
     delete m_thread;
 }
 
+void LogFilterThread::ClearCachedLogs()
+{
+    m_oldFiltered.clear();
+    m_newFiltered.clear();
+    m_cachedLogs.clear();
+    m_logsWillBeFiltered.clear();
+}
+
 void LogFilterThread::LogsFilterByString(QString text_or_regex)
 {
     if (m_thread->isRunning())
         StopFilter();
 
     m_currentFilter = text_or_regex;
-    m_paddings = {0,0,0,0};
-    m_oldFiltered.clear();
-
-    m_logsWillBeFiltered = m_cachedLogs;
-    m_thread->start();
+    StartFilter();
 }
 
 void LogFilterThread::LogsExcludeByString(QString exclude_text)
@@ -35,11 +39,7 @@ void LogFilterThread::LogsExcludeByString(QString exclude_text)
         StopFilter();
 
     m_excludeFilter = exclude_text;
-    m_paddings = {0,0,0,0};
-    m_oldFiltered.clear();
-
-    m_logsWillBeFiltered = m_cachedLogs;
-    m_thread->start();
+    StartFilter();
 }
 
 void LogFilterThread::LogsFilterByPID(QString pid_name)
@@ -55,11 +55,7 @@ void LogFilterThread::LogsFilterByPID(QString pid_name)
     {
         m_pidFilter = pid_name;
     }
-    m_paddings = {0,0,0,0};
-    m_oldFiltered.clear();
-
-    m_logsWillBeFiltered = m_cachedLogs;
-    m_thread->start();
+    StartFilter();
 }
 
 void LogFilterThread::SystemLogsFilter(QString text_or_regex, QString pid_name, QString exclude_text)
@@ -77,11 +73,7 @@ void LogFilterThread::SystemLogsFilter(QString text_or_regex, QString pid_name, 
     }
     m_currentFilter = text_or_regex;
     m_excludeFilter = exclude_text;
-    m_paddings = {0,0,0,0};
-    m_oldFiltered.clear();
-
-    m_logsWillBeFiltered = m_cachedLogs;
-    m_thread->start();
+    StartFilter();
 }
 
 void LogFilterThread::ReloadLogsFilter()
@@ -110,27 +102,23 @@ QList<int> LogFilterThread::ParsePaddings(LogPacket log)
         switch (idx) {
         case 0:
             if (m_paddings[idx] < log.getDateTime().size())
-                lengths << log.getDateTime().size();
-            else
-                lengths << m_paddings[idx];
+                m_paddings[idx] = log.getDateTime().size();
+            lengths << m_paddings[idx];
             break;
         case 1:
             if (m_paddings[idx] < log.getDeviceName().size())
-                lengths << log.getDeviceName().size();
-            else
-                lengths << m_paddings[idx];
+                m_paddings[idx] = log.getDeviceName().size();
+            lengths << m_paddings[idx];
             break;
         case 2:
             if (m_paddings[idx] < log.getProcessID().size())
-                lengths << log.getProcessID().size();
-            else
-                lengths << m_paddings[idx];
+                m_paddings[idx] = log.getProcessID().size();
+            lengths << m_paddings[idx];
             break;
         case 3:
             if (m_paddings[idx] < log.getLogType().size())
-                lengths << log.getLogType().size();
-            else
-                lengths << m_paddings[idx];
+                m_paddings[idx] = log.getLogType().size();
+            lengths << m_paddings[idx];
             break;
         default:
             break;
@@ -168,6 +156,19 @@ QString LogFilterThread::LogToString(LogPacket log)
     return log.GetRawData();
 }
 
+void LogFilterThread::StartFilter()
+{
+    m_paddings = {0,0,0,0};
+    m_logsWillBeFiltered = m_cachedLogs;
+    m_oldFiltered.clear();
+
+    if (m_thread->isRunning()) {
+        m_thread->quit();
+        m_thread->wait();
+    }
+    m_thread->start();
+}
+
 void LogFilterThread::StopFilter()
 {
     m_mutex.lock();
@@ -177,6 +178,7 @@ void LogFilterThread::StopFilter()
 
 void LogFilterThread::doWork()
 {
+    emit FilterStatusChanged(true);
     foreach (LogPacket log, m_logsWillBeFiltered)
     {
         if (m_terminateFilter) {
@@ -188,6 +190,8 @@ void LogFilterThread::doWork()
             m_oldFiltered.append(LogToString(log) + "\r");
     }
     m_thread->quit();
+    m_thread->wait();
+    emit FilterStatusChanged(false);
 
     if (!m_processLogs) {
         emit FilterComplete(m_oldFiltered);
@@ -209,26 +213,37 @@ void LogFilterThread::UpdateSystemLog(LogPacket log)
 
     if (m_thread->isRunning())
     {
-        m_newFiltered.append(LogToString(log) + "\r");
+        if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, ""))
+            m_newFiltered.append(LogToString(log) + "\r");
     }
     else
     {
         QString compiled;
         if (!m_oldFiltered.isEmpty()) {
+#ifdef DEBUG
+            compiled.append(":: START CACHED FILTERRED :::::::::::::\r");
+#endif
             compiled.append(m_oldFiltered);
+#ifdef DEBUG
+            compiled.append(":: END CACHED FITLTERRED  :::::::::::::\r");
+#endif
             m_oldFiltered.clear();
         }
         if (!m_newFiltered.isEmpty()) {
+#ifdef DEBUG
+            compiled.append(":: START FILTERRED DURING FILTERING :::::::::::::\r");
+#endif
             compiled.append(m_newFiltered);
+#ifdef DEBUG
+            compiled.append(":: END FILTERRED DURING FILTERING   :::::::::::::\r");
+#endif
             m_newFiltered.clear();
         }
-        if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, "")) {
-            if (!compiled.isEmpty())
-                compiled.append(LogToString(log));
-            else
-                compiled = LogToString(log);
 
-            emit FilterComplete(compiled);
-        }
+        if (log.Filter(m_currentFilter, m_pidFilter, m_excludeFilter, ""))
+            compiled.append(LogToString(log));
+
+        if (!compiled.isEmpty())
+            emit FilterComplete(compiled.trimmed());
     }
 }

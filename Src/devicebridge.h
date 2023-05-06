@@ -58,7 +58,6 @@ public:
     ~DeviceBridge();
 
     void Init(QWidget *parent);
-
     void ConnectToDevice(QString udid);
     QString GetCurrentUdid();
     bool IsConnected();
@@ -82,6 +81,7 @@ private:
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
+    static bool m_destroyed;
 
     idevice_t m_device;
     lockdownd_client_t m_client;
@@ -132,7 +132,8 @@ signals:
 
      //SyslogBridge
  public:
-     void ProcessSystemLogs(bool enable);
+     void ClearCachedLogs();
+     void CaptureSystemLogs(bool enable);
      void SetMaxCachedLogs(qsizetype number);
      void LogsFilterByString(QString text_or_regex);
      void LogsExcludeByString(QString exclude_text);
@@ -147,6 +148,7 @@ signals:
      syslog_relay_client_t m_syslog;
      LogFilterThread* m_logHandler;
  signals:
+     void FilterStatusChanged(bool isfiltering);
      void SystemLogsReceived(LogPacket log);
      void SystemLogsReceived2(QString logs);
 };

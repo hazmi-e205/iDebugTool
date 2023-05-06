@@ -17,6 +17,7 @@ public:
 
     inline void CaptureSystemLogs(bool enable) { m_processLogs = enable; }
     inline void SetMaxCachedLogs(qsizetype number) { m_maxCachedLogs = number; }
+    void ClearCachedLogs();
     void LogsFilterByString(QString text_or_regex);
     void LogsExcludeByString(QString exclude_text);
     void LogsFilterByPID(QString pid_name);
@@ -28,6 +29,7 @@ public:
 private:
     QList<int> ParsePaddings(LogPacket log);
     QString LogToString(LogPacket log);
+    void StartFilter();
     void StopFilter();
 
     QList<LogPacket> m_cachedLogs, m_logsWillBeFiltered;
@@ -43,6 +45,7 @@ private:
 
 signals:
     void FilterComplete(QString compiledLogs);
+    void FilterStatusChanged(bool isfiltering);
 
 private slots:
     void doWork();

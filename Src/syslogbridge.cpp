@@ -61,9 +61,14 @@ void DeviceBridge::ReloadLogsFilter()
     m_logHandler->ReloadLogsFilter();
 }
 
-void DeviceBridge::ProcessSystemLogs(bool enable)
+void DeviceBridge::CaptureSystemLogs(bool enable)
 {
     m_logHandler->CaptureSystemLogs(enable);
+}
+
+void DeviceBridge::ClearCachedLogs()
+{
+    m_logHandler->ClearCachedLogs();
 }
 
 QStringList DeviceBridge::GetPIDFilteringTemplate()
@@ -86,6 +91,9 @@ void DeviceBridge::TriggerSystemLogsReceived(LogPacket log)
 
 void DeviceBridge::SystemLogsCallback(char c, void *user_data)
 {
+    if (m_destroyed)
+        return;
+
     LogPacket packet;
     if(ParseSystemLogs(c, packet))
     {

@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QSaveFile>
 
+bool DeviceBridge::m_destroyed = false;
 DeviceBridge *DeviceBridge::m_instance = nullptr;
 DeviceBridge *DeviceBridge::Get()
 {
@@ -18,6 +19,7 @@ void DeviceBridge::Destroy()
 {
     if(m_instance)
         delete m_instance;
+    m_destroyed = true;
 }
 
 DeviceBridge::DeviceBridge() :
@@ -33,6 +35,7 @@ DeviceBridge::DeviceBridge() :
     m_logHandler(new LogFilterThread())
 {
     connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
+    connect(m_logHandler, SIGNAL(FilterStatusChanged(bool)), this, SIGNAL(FilterStatusChanged(bool)));
 }
 
 DeviceBridge::~DeviceBridge()
@@ -582,10 +585,12 @@ void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_co
 
 void DeviceBridge::DeviceEventCallback(const idevice_event_t *event, void *userdata)
 {
-    DeviceBridge::Get()->TriggerUpdateDevices(event->event, event->conn_type, event->udid);
+    if (!m_destroyed)
+        DeviceBridge::Get()->TriggerUpdateDevices(event->event, event->conn_type, event->udid);
 }
 
 ssize_t DeviceBridge::ImageMounterCallback(void *buf, size_t size, void *userdata)
 {
-    return fread(buf, 1, size, (FILE*)userdata);
+    if (!m_destroyed)
+        return fread(buf, 1, size, (FILE*)userdata);
 }

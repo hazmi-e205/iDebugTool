@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_ratioTopWidth(0.4f)
     , m_scrollTimer(nullptr)
     , m_eventFilter(nullptr)
-    , m_maxShownLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
+    , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
     , m_scrollInterval(UserConfigs::Get()->GetData("ScrollInterval", "250").toUInt())
     , m_textDialog(nullptr)
     , m_imageMounter(nullptr)
@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(QMap<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(QMap<QString,idevice_connection_type>)));
     connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
     connect(DeviceBridge::Get(), SIGNAL(SystemLogsReceived2(QString)), this, SLOT(OnSystemLogsReceived2(QString)));
+    connect(DeviceBridge::Get(), SIGNAL(FilterStatusChanged(bool)), this, SLOT(OnFilterStatusChanged(bool)));
     connect(DeviceBridge::Get(), SIGNAL(InstallerStatusChanged(InstallerMode,QString,int,QString)), this, SLOT(OnInstallerStatusChanged(InstallerMode,QString,int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
     connect(DeviceBridge::Get(), SIGNAL(MessagesReceived(MessagesType,QString)), this, SLOT(OnMessagesReceived(MessagesType,QString)));
@@ -99,8 +100,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->UninstallBtn, SIGNAL(pressed()), this, SLOT(OnUninstallClicked()));
     connect(ui->bundleIds, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
 
-    DeviceBridge::Get()->SetMaxCachedLogs(m_maxShownLogs);
-    ui->maxShownLogs->setText(QString::number(m_maxShownLogs));
+    DeviceBridge::Get()->SetMaxCachedLogs(m_maxCachedLogs);
+    ui->maxShownLogs->setText(QString::number(m_maxCachedLogs));
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
     connect(ui->configureBtn, SIGNAL(pressed()), this, SLOT(OnConfigureClicked()));
     connect(ui->proxyBtn, SIGNAL(pressed()), this, SLOT(OnProxyClicked()));
@@ -428,7 +429,7 @@ void MainWindow::OnAutoScrollChecked(int state)
 void MainWindow::OnStopChecked(int state)
 {
     bool isStop = state == 0 ? false : true;
-    DeviceBridge::Get()->ProcessSystemLogs(!isStop);
+    DeviceBridge::Get()->CaptureSystemLogs(!isStop);
 }
 
 void MainWindow::OnClearClicked()
@@ -437,8 +438,7 @@ void MainWindow::OnClearClicked()
     ui->stopCheck->setChecked(true);
 
     m_table->clear();
-    m_liveLogs.clear();
-    SetupLogsTable();
+    DeviceBridge::Get()->ClearCachedLogs();
 
     ui->stopCheck->setChecked(is_stop);
 }
@@ -567,8 +567,8 @@ void MainWindow::OnScrollTimerTick()
 
 void MainWindow::OnConfigureClicked()
 {
-    m_maxShownLogs = ui->maxShownLogs->text().toUInt();
-    DeviceBridge::Get()->SetMaxCachedLogs(m_maxShownLogs);
+    m_maxCachedLogs = ui->maxShownLogs->text().toUInt();
+    DeviceBridge::Get()->SetMaxCachedLogs(m_maxCachedLogs);
     m_scrollInterval = ui->scrollInterval->text().toUInt();
 
     UserConfigs::Get()->SaveData("MaxShownLogs", ui->maxShownLogs->text());
@@ -927,4 +927,12 @@ void MainWindow::OnSaveOutputClicked()
             f.close();
         }
     }
+}
+
+void MainWindow::OnFilterStatusChanged(bool isfiltering)
+{
+    if (isfiltering)
+        m_table->setPlainText(QString("Filterring about %1 cached logs...").arg(m_maxCachedLogs));
+    else
+        m_table->clear();
 }

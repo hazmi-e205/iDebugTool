@@ -376,5 +376,6 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)
 {
-    DeviceBridge::Get()->TriggetInstallerStatus(PlistToJson(command), PlistToJson(status));
+    if (!m_destroyed)
+        DeviceBridge::Get()->TriggetInstallerStatus(PlistToJson(command), PlistToJson(status));
 }

@@ -51,11 +51,10 @@ private:
     float m_topWidth;
     QString m_choosenBundleId;
     QString m_installerLogs;
-    std::vector<LogPacket> m_liveLogs;
     QMap<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
-    quint64 m_maxShownLogs, m_scrollInterval;
+    quint64 m_maxCachedLogs, m_scrollInterval;
     TextViewer *m_textDialog;
     ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
@@ -118,5 +117,6 @@ private slots:
     void OnBottomTabChanged(int index);
     void OnClearOutputClicked();
     void OnSaveOutputClicked();
+    void OnFilterStatusChanged(bool isfiltering);
 };
 #endif // MAINWINDOW_H
