@@ -511,6 +511,13 @@ bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(i
     return true;
 }
 
+std::function<void(int,int,QString)> callback_tmp = NULL;
+void zip_progress_callback(int current, int total, const char* filename)
+{
+    if (callback_tmp)
+        callback_tmp(current, total, QString::asprintf("Packing '%s' to package file...", filename));
+}
+
 bool zip_directory(QString input_dir, QString output_filename, std::function<void(int,int,QString)> callback)
 {
     QString output_dir = QFileInfo(output_filename).absolutePath();
@@ -551,7 +558,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     {
         idx++;
         QString relativepath = dir.relativeFilePath(file_name);
-        callback(idx, total, QString::asprintf("Adding `%s' to archive...", relativepath.toUtf8().data()));
+        //callback(idx, total, QString::asprintf("Adding `%s' to archive...", relativepath.toUtf8().data()));
 
         zip_source *source = zip_source_file(zipper, file_name.toUtf8().data(), 0, 0);
         if (source == nullptr)
@@ -568,8 +575,9 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
             return false;
         }
     }
-    callback(idx, total, QString::asprintf("Finalizing `%s'...", output_filename.toUtf8().data()));
-    zip_close(zipper);
+    callback_tmp = callback;
+    zip_close_with_callback(zipper, zip_progress_callback);
+    callback_tmp = NULL;
     return true;
 }
 

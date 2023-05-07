@@ -1,5 +1,5 @@
 diff --git a/lib/zip.h b/lib/zip.h
-index f8b55ac0..8e90b581 100644
+index f8b55ac0..5e9fbbb8 100644
 --- a/lib/zip.h
 +++ b/lib/zip.h
 @@ -38,7 +38,7 @@
@@ -11,3 +11,46 @@ index f8b55ac0..8e90b581 100644
  #else
  #define ZIP_EXTERN
  #endif
+@@ -204,10 +204,11 @@ typedef zip_int64_t (*zip_source_callback)(void *, void *, zip_uint64_t,
+ 					   enum zip_source_cmd);
+ 
+ 
+-
++typedef void(*progress_callback)(int,int,const char*);
+ ZIP_EXTERN zip_int64_t zip_add(struct zip *, const char *, struct zip_source *);
+ ZIP_EXTERN zip_int64_t zip_add_dir(struct zip *, const char *);
+ ZIP_EXTERN int zip_close(struct zip *);
++ZIP_EXTERN int zip_close_with_callback(struct zip *, progress_callback);
+ ZIP_EXTERN int zip_delete(struct zip *, zip_uint64_t);
+ ZIP_EXTERN void zip_error_clear(struct zip *);
+ ZIP_EXTERN void zip_error_get(struct zip *, int *, int *);
+diff --git a/lib/zip_close.c b/lib/zip_close.c
+index f4ae2a45..c7483fc3 100644
+--- a/lib/zip_close.c
++++ b/lib/zip_close.c
+@@ -65,10 +65,16 @@ struct filelist {
+     const char *name;
+ };
+ 
+-
+ 
++void dummy_callback(int a, int b, const char* c){}
+ ZIP_EXTERN int
+ zip_close(struct zip *za)
++{
++    return zip_close_with_callback(za, dummy_callback);
++}
++
++ZIP_EXTERN int
++zip_close_with_callback(struct zip *za, progress_callback callback)
+ {
+     int survivors;
+     int i, j, error;
+@@ -221,6 +227,7 @@ zip_close(struct zip *za)
+ 	    de.filename_len = strlen(de.filename);
+ 	    cd->entry[j].filename = za->entry[i].ch_filename;
+ 	    cd->entry[j].filename_len = de.filename_len;
++        callback(j + 1, survivors, de.filename);
+ 	}
+ 
+ 	if (za->entry[i].ch_extra_len != -1) {
