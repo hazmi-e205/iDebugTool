@@ -54,7 +54,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
 
         // Local Callback
         auto zipper_callback = [&](int progress, int total, QString messages){
-            emit SigningResult(SigningStatus::PROCESS, QString::asprintf("(%d/%d) %s", progress, total, messages.toUtf8().data()));
+            emit SigningResult(SigningStatus::PROCESS, QString("(%1/%2) %3").arg(progress).arg(total).arg(messages));
         };
 
         // Unpack build...
@@ -86,11 +86,15 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         }
 
         // Repack build...
+        QFileInfo build_info(params.OriginalBuild);
+        QString final_build = !params.OutputBuild.isEmpty() ? params.OutputBuild : QString("%1/%2_Recodesigned_%3.%4")
+                .arg(GetDirectory(DIRECTORY_TYPE::RECODESIGNED))
+                .arg(build_info.baseName())
+                .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz"))
+                .arg(build_info.completeSuffix());
         if (params.DoRepack)
         {
             emit SigningResult(SigningStatus::PROCESS, "Repacking...");
-            QFileInfo build_info(params.OriginalBuild);
-            QString final_build = GetDirectory(DIRECTORY_TYPE::RECODESIGNED) + "/" + build_info.baseName() + "_Recodesigned." + build_info.completeSuffix();
             if (!zip_directory(extract_dir, final_build, zipper_callback))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Repack failed!");
@@ -98,9 +102,11 @@ void Recodesigner::Process(const Recodesigner::Params& params)
             }
         }
 
+        QString end_message = QString("\nRecodesigned build can be found at\n%1")
+                .arg(params.DoRepack ? final_build : (GetDirectory(DIRECTORY_TYPE::ZSIGN_TEMP) + " (Temporary Directory)"));
         if (params.DoInstall)
-            emit SigningResult(SigningStatus::INSTALL, "Done and continue to install!");
+            emit SigningResult(SigningStatus::INSTALL, QString("Done and continue to install!%1").arg(end_message));
         else
-            emit SigningResult(SigningStatus::SUCCESS, "Done!");
+            emit SigningResult(SigningStatus::SUCCESS, QString("Done!%1").arg(end_message));
     });
 }

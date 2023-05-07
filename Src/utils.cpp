@@ -511,11 +511,11 @@ bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(i
     return true;
 }
 
-std::function<void(int,int,QString)> callback_tmp = NULL;
+std::function<void(int,int,QString)> zip_directory_callback = NULL;
 void zip_progress_callback(int current, int total, const char* filename)
 {
-    if (callback_tmp)
-        callback_tmp(current, total, QString::asprintf("Packing '%s' to package file...", filename));
+    if (zip_directory_callback)
+        zip_directory_callback(current, total, QString::asprintf("Packing '%s' to package file...", filename));
 }
 
 bool zip_directory(QString input_dir, QString output_filename, std::function<void(int,int,QString)> callback)
@@ -575,10 +575,10 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
             return false;
         }
     }
-    callback_tmp = callback;
-    zip_close_with_callback(zipper, zip_progress_callback);
-    callback_tmp = NULL;
-    return true;
+    zip_directory_callback = callback;
+    int result = zip_close_with_callback(zipper, zip_progress_callback);
+    zip_directory_callback = NULL;
+    return result == 0;
 }
 
 QStringList FindFiles(QString dir, QStringList criteria)

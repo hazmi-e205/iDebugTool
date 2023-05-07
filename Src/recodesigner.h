@@ -14,6 +14,7 @@ public:
     struct Params{
     public:
         QString OriginalBuild;
+        QString OutputBuild;
         QString PrivateKey;
         QString PrivateKeyPassword;
         QString Provision;
