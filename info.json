@@ -69,7 +69,7 @@
         {
             "project": "libzip",
             "url": "https://github.com/nih-at/libzip",
-            "branch": "v1.9.2",
+            "branch": "rel-0-10",
             "path": "Externals/libzip",
             "use_submodules": false
         },

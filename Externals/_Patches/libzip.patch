@@ -1,0 +1,13 @@
+diff --git a/lib/zip.h b/lib/zip.h
+index f8b55ac0..8e90b581 100644
+--- a/lib/zip.h
++++ b/lib/zip.h
+@@ -38,7 +38,7 @@
+ 
+ #ifndef ZIP_EXTERN
+ #ifdef _WIN32
+-#define ZIP_EXTERN __declspec(dllimport)
++#define ZIP_EXTERN
+ #else
+ #define ZIP_EXTERN
+ #endif
