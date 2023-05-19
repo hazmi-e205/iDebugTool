@@ -1,13 +1,13 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha6",
+    "status": "beta1",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "cc540a20e64b469f7d9d4754610c0692436880d6",
+            "revision": "860ffb707af3af94467d2ece4ad258dda957c6cd",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -15,7 +15,7 @@
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
-            "revision": "4e14ae142f998bfdcad71f3099c0e4aa3628354c",
+            "revision": "f47c36f5bd2a653a3bd7fb1cf1d2c50b0e6193fb",
             "path": "Externals/libusbmuxd",
             "use_submodules": false
         },
@@ -23,15 +23,14 @@
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "6fcb8794592c8b275e615a6bc863c8c10e978174",
+            "revision": "214bafdde6a1434ead87357afe6cb41b32318495",
             "path": "Externals/libimobiledevice-glue",
             "use_submodules": false
         },
         {
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
-            "branch": "master",
-            "revision": "bfc97788f081584ced9cd35d85b69b3fec6b907c",
+            "branch": "2.3.0",
             "path": "Externals/libplist",
             "use_submodules": false
         },
@@ -47,7 +46,7 @@
             "project": "zsign",
             "url": "https://github.com/zhlynn/zsign",
             "branch": "master",
-            "revision": "27016df1150eeaf27e8d8c148ccb3cad10d31e73",
+            "revision": "b7103a84f4b4c29b8523111ee159407796e6af5a",
             "path": "Externals/zsign",
             "use_submodules": false
         },
@@ -82,13 +81,5 @@
         }
     ],
     "deprecated": [
-        {
-            "project": "qicstable",
-            "url": "https://gitlab.com/ics-qicstable/qicstable",
-            "branch": "master",
-            "revision": "918a272baa8e49106aa0c6bbc3f3711d12402485",
-            "path": "Externals/qicstable",
-            "use_submodules": false
-        }
     ]
 }

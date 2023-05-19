@@ -1,14 +1,7 @@
 include "common.lua"
 
-local use_qicstable = false
-
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
-    if use_qicstable then
-        external "qicstable"
-            location  ("../Externals")
-            kind "None"
-    end
     include "openssl.lua"
     include "libzip.lua"
     include "libplist.lua"
@@ -98,20 +91,5 @@ project "iDebugTool"
         links
         {
             "dl",
-        }
-    end
-
-    -- Integrate QicsTable
-    if use_qicstable then
-        QtIncludes {"../Externals/qicstable/qicstable_config.pri"}
-        QtModules {"xml"}
-        includedirs {"../Externals/qicstable/include"}
-        links {"qicstable_d"}
-        libdirs {"../Externals/qicstable/lib"}
-    else
-        excludes
-        {
-            "../Src/customgrid.h",
-            "../Src/customgrid.cpp",
         }
     end
