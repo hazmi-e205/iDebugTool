@@ -785,3 +785,44 @@ void DecorateSplitter(QSplitter* splitter, int index)
         layout->addStretch();
     }
 }
+
+bool CopyFolder(QString input_dir, QString output_dir, std::function<void (int, int, QString)> callback)
+{
+    QStringList list_dirs, list_files;
+    QDir dir(input_dir);
+    QDirIterator it_dir(input_dir, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_dir.hasNext())
+        list_dirs << it_dir.next();
+
+    QDirIterator it_file(input_dir, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_file.hasNext())
+        list_files << it_file.next();
+
+    int idx = 0;
+    int total = list_dirs.count() + list_files.count();
+    foreach (QString dir_name, list_dirs)
+    {
+        idx++;
+        QString relativepath = dir.relativeFilePath(dir_name);
+        QString targetpath = QString("%1/%2").arg(output_dir).arg(relativepath);
+        callback(idx, total, QString("Creating `%1' to '%2'...").arg(relativepath).arg(output_dir));
+        if (!QDir().mkpath(targetpath))
+        {
+            callback(idx, total, QString("Can't create `%1' to '%2'...").arg(relativepath).arg(output_dir));
+            return false;
+        }
+    }
+    foreach (QString file_name, list_files)
+    {
+        idx++;
+        QString relativepath = dir.relativeFilePath(file_name);
+        QString targetpath = QString("%1/%2").arg(output_dir).arg(relativepath);
+        callback(idx, total, QString("Copying `%1' to '%2'...").arg(relativepath).arg(output_dir));
+        if (!QFile(file_name).copy(targetpath))
+        {
+            callback(idx, total, QString("Can't copy `%1' to '%2'...").arg(relativepath).arg(output_dir));
+            return false;
+        }
+    }
+    return true;
+}

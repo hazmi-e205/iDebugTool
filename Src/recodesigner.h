@@ -18,6 +18,9 @@ public:
         QString PrivateKey;
         QString PrivateKeyPassword;
         QString Provision;
+        QString NewBundleId;
+        QString NewBundleVersion;
+        QString NewDisplayName;
         bool DoUnpack;
         bool DoRepack;
         bool DoCodesign;

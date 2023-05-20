@@ -58,14 +58,27 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         };
 
         // Unpack build...
+        QFileInfo build_info(params.OriginalBuild);
         QString extract_dir = GetDirectory(DIRECTORY_TYPE::ZSIGN_TEMP);
-        if (params.DoUnpack)
+        if (build_info.isDir() && params.OriginalBuild.endsWith(".app", Qt::CaseInsensitive))
+        {
+            emit SigningResult(SigningStatus::PROCESS, "Copying the build files...");
+            QDir dir(extract_dir);
+            if (dir.exists())
+                dir.removeRecursively();
+            QString tempdir = QString("%1/Payload/%2").arg(extract_dir).arg(build_info.fileName());
+            if (!CopyFolder(params.OriginalBuild, tempdir, zipper_callback))
+            {
+                emit SigningResult(SigningStatus::FAILED, "ERROR: Copy to temporary dir failed!");
+                return;
+            }
+        }
+        else if (params.DoUnpack)
         {
             emit SigningResult(SigningStatus::PROCESS, "Extracting the build file...");
             QDir dir(extract_dir);
             if (dir.exists())
                 dir.removeRecursively();
-            QDir().mkpath(extract_dir);
             if (!zip_extract_all(params.OriginalBuild, extract_dir, zipper_callback))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Unpack failed!");
@@ -78,7 +91,11 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         {
             emit SigningResult(SigningStatus::PROCESS, "Re-codesign-ing...");
             ZAppBundle bundle;
-            if(!bundle.SignFolder(&zSignAsset, extract_dir.toStdString(), "", "", "", "", true, false, false))
+            if(!bundle.SignFolder(&zSignAsset,
+                                  extract_dir.toStdString(),
+                                  params.NewBundleId.toStdString(),
+                                  params.NewBundleVersion.toStdString(),
+                                  params.NewDisplayName.toStdString(), "", true, false, false))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Sign failed!");
                 return;
@@ -86,12 +103,10 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         }
 
         // Repack build...
-        QFileInfo build_info(params.OriginalBuild);
-        QString final_build = !params.OutputBuild.isEmpty() ? params.OutputBuild : QString("%1/%2_Recodesigned_%3.%4")
+        QString final_build = !params.OutputBuild.isEmpty() ? params.OutputBuild : QString("%1/%2_Recodesigned_%3.ipa")
                 .arg(GetDirectory(DIRECTORY_TYPE::RECODESIGNED))
                 .arg(build_info.baseName())
-                .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz"))
-                .arg(build_info.completeSuffix());
+                .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz"));
         if (params.DoRepack)
         {
             emit SigningResult(SigningStatus::PROCESS, "Repacking...");
@@ -103,7 +118,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         }
 
         QString end_message = QString("\nRecodesigned build can be found at\n%1")
-                .arg(params.DoRepack ? final_build : (GetDirectory(DIRECTORY_TYPE::ZSIGN_TEMP) + " (Temporary Directory)"));
+                .arg(params.DoRepack ? final_build : (extract_dir + " (Temporary Directory)"));
         if (params.DoInstall)
             emit SigningResult(SigningStatus::INSTALL, QString("Done and continue to install!%1").arg(end_message));
         else

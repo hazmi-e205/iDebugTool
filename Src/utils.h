@@ -6,8 +6,6 @@
 #include <QJsonObject>
 #include <QSplitter>
 #include <plist/plist.h>
-#include <libimobiledevice/afc.h>
-#include "logpacket.h"
 
 QJsonObject PlistToJsonObject(plist_t node);
 QJsonDocument PlistToJson(plist_t node);
@@ -26,6 +24,7 @@ bool FilterVersion(QStringList& versions, QString version);
 QStringList FindFiles(QString dir, QStringList criteria);
 QStringList FindDirs(QString dir, QStringList criteria);
 QString BytesToString(uint32_t bytes);
+bool CopyFolder(QString input_dir, QString output_dir, std::function<void(int,int,QString)> callback);
 
 enum DIRECTORY_TYPE
 {
