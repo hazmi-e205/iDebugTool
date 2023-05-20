@@ -453,7 +453,7 @@ bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(i
     };
 
     QMap<int, FileItem> list_items;
-    for (int idx = 0; idx < zip_get_num_entries(za, 0); idx++) {
+    for (quint64 idx = 0; idx < zip_get_num_entries(za, 0); idx++) {
         struct zip_stat sb;
         if (zip_stat_index(za, idx, 0, &sb) == 0) {
             size_t len = strlen(sb.name);
