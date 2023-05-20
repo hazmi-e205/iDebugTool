@@ -712,6 +712,7 @@ void MainWindow::OnSymbolicateClicked()
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
     CrashSymbolicator::Get()->Process(crashpath, dsympath);
+    ui->bottomWidget->setCurrentIndex(1);
 }
 
 void MainWindow::OnSymbolicateResult(QString messages, bool error)
@@ -719,7 +720,8 @@ void MainWindow::OnSymbolicateResult(QString messages, bool error)
     if (error)
     {
         QMessageBox::critical(this, "Error", messages, QMessageBox::Ok);
-        ui->statusbar->showMessage("Symbolication failed because " + messages + "!");
+        ui->statusbar->showMessage("Symbolication failed!");
+        ui->outputEdit->appendPlainText(messages);
     }
     else
     {
@@ -736,7 +738,8 @@ void MainWindow::OnSymbolicateResult(QString messages, bool error)
         {
             QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SYMBOLICATED));
         }
-        ui->statusbar->showMessage("Symbolicated file saved to '" + messages + "'!");
+        ui->outputEdit->appendPlainText("Symbolicated file saved to '" + messages + "'!");
+        ui->statusbar->showMessage("Symbolication success!");
     }
 }
 

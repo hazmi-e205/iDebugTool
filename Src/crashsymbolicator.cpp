@@ -72,7 +72,16 @@ void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
         QString line = "";
         std::wstring name = m_dsym->GetName();
 
-        CMachOW* crashed_macho = m_dsym->GetMachO(m_crashlog->GetUUID());
+        CMachOW* crashed_macho = NULL;
+        try {
+            crashed_macho = m_dsym->GetMachO(m_crashlog->GetUUID());
+        } catch (const char* messages) {
+            emit SymbolicateResult(QString("Crashlog invalid! (%1)\n"
+                                           "Please check your crashlog and dsym or try to symbolicate or debug it in xcode...\n"
+                                           "\nLast crashlog: %2\n"
+                                           "\nLast dsym: %3\n").arg(messages).arg(crashlogPath).arg(dsymDir), true);
+            return;
+        }
         std::ifstream infile(crashlogPath.toStdString());
         std::string cline;
         while (std::getline(infile, cline))
