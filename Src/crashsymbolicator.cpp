@@ -42,6 +42,7 @@ void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
         if (!oldstyle.isEmpty())
         {
             Process(oldstyle, dsymDir);
+            return;
         }
 
         bool result = CSearchMachO::Search(crashlogPath.toStdWString().c_str(), *this);
@@ -296,7 +297,8 @@ QString CrashSymbolicator::buildFrameStack(const QJsonArray &frames, const QJson
         QJsonObject binaryImage = binaryImages[frame["imageIndex"].toInt()].toObject();
         int address = frame["imageOffset"].toInt() + binaryImage["base"].toInt();
         content.append(QString("%1").arg(idx, -5));
-        content.append(QString("%1").arg(binaryImage["name"].toString(""), -40));
+        content.append(QString("%1").arg(binaryImage["name"].toString(""), -30));
+        content.append("\t");
 
         QString hexvalue = QString("%1").arg(address, 8, 16, QLatin1Char( '0' ));
         content.append(QString("0x%1 ").arg(hexvalue));
