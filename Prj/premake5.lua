@@ -11,6 +11,38 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
 
+project "SelfUpdater"
+    kind "WindowedApp"
+    AppName "SelfUpdater"
+    AppCompany "hazmi-e205 Indonesia"
+    AppCopyright ("Copyright (c) hazmi-e205 Indonesia " .. os.date("%Y"))
+    AppDescription "Self Updater for iOS Debugging Tool"
+    AppIcon "../Assets/bulb.ico"
+
+    local info_str = io.readfile("../info.json")
+    info_json, err = json.decode(info_str)
+    AppVersion (info_json.version)
+
+    QtModules
+    {
+        "network",
+    }
+
+    files
+    {
+        "../Updater/**.h",
+        "../Updater/**.cpp",
+        "../Updater/**.ui",
+        "../Src/utils.**",
+        "../Src/userconfigs.**",
+        "../Src/simplerequest.**",
+    }
+
+    includedirs
+    {
+        "../Src",
+    }
+
 project "iDebugTool"
     kind "WindowedApp"
     AppName "iDebugTool"
