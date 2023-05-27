@@ -1,5 +1,6 @@
 #include "logpacket.h"
 #include "utils.h"
+#include <QRegularExpression>
 
 LogPacket::LogPacket()
 {

@@ -3,9 +3,11 @@
 #include <QFileDialog>
 #include <QSaveFile>
 #include <QMessageBox>
+#include <QJsonObject>
 #include <ui_imagemounter.h>
 #include <zip.h>
 #include "utils.h"
+#include "extended_zip.h"
 
 ImageMounter::ImageMounter(QWidget *parent)
   : QDialog(parent)

@@ -1,5 +1,5 @@
 #include "devicebridge.h"
-#include "utils.h"
+#include "extended_plist.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileInfo>

@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QCoreApplication>
+#include <QJsonArray>
+#include <QJsonObject>
 #include "utils.h"
 
 AppInfo::AppInfo(QWidget *parent)

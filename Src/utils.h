@@ -1,18 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
+#include <QWidget>
 
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QSplitter>
-#include <plist/plist.h>
-
-QJsonObject PlistToJsonObject(plist_t node);
-QJsonDocument PlistToJson(plist_t node);
-QJsonArray PlistToJsonArray(plist_t node);
-QJsonValue PlistDictToJsonValue(plist_t node);
-QJsonValue PlistNodeToJsonValue(plist_t node);
-QJsonValue PlistArrayToJsonValue(plist_t node);
 QString Base64Encode(QString string);
 void StringWithSpaces(QString &string, bool CapFirstOnly = false);
 QString FindRegex(QString rawString, QString regex);
@@ -55,11 +44,6 @@ enum STYLE_TYPE
     ROUNDED_COMBOBOX_LIGHT
 };
 void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
-void DecorateSplitter(QSplitter* splitter, int index);
-
-int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len);
-int zip_get_app_directory(struct zip* zf, QString &path);
-bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(int,int,QString)> callback);
-bool zip_directory(QString input_dir, QString output_filename, std::function<void(int,int,QString)> callback);
+void DecorateSplitter(QWidget* splitterWidget, int index);
 
 #endif // UTILS_H

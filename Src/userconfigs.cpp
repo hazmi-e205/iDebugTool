@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QSaveFile>
 #include <QDir>
+#include <QJsonObject>
 
 UserConfigs *UserConfigs::m_instance = nullptr;
 UserConfigs *UserConfigs::Get()

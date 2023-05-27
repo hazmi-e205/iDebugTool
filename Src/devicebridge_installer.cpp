@@ -2,12 +2,15 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileInfo>
+#include <QJsonObject>
 #include <zip.h>
 #include <libgen.h>
 #include <stdio.h>
 #include "utils.h"
 #include "asyncmanager.h"
 #include "common/json.h"
+#include "extended_plist.h"
+#include "extended_zip.h"
 
 QJsonDocument DeviceBridge::GetInstalledApps()
 {
