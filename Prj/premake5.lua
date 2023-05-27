@@ -12,7 +12,7 @@ solution "iDebugTool"
     include "zsign.lua"
 
 project "SelfUpdater"
-    kind "WindowedApp"
+    kind "ConsoleApp"
     AppName "SelfUpdater"
     AppCompany "hazmi-e205 Indonesia"
     AppCopyright ("Copyright (c) hazmi-e205 Indonesia " .. os.date("%Y"))
@@ -23,19 +23,10 @@ project "SelfUpdater"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
-    QtModules
-    {
-        "network",
-    }
-
     files
     {
         "../Updater/**.h",
         "../Updater/**.cpp",
-        "../Updater/**.ui",
-        "../Src/utils.**",
-        "../Src/userconfigs.**",
-        "../Src/simplerequest.**",
     }
 
     includedirs
