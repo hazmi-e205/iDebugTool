@@ -66,12 +66,6 @@ QString FindRegex(QString rawString, QString regex)
     return captured.length() > 0 ? captured[0] : "";
 }
 
-bool IsInternetOn()
-{
-    SimpleRequest req;
-    return req.IsInternetOn();
-}
-
 quint64 VersionToUInt(QString version_raw)
 {
     std::array<int,5> version = {0,0,0,3,0};
@@ -210,25 +204,25 @@ QString ParseVersion(QString version_raw)
 QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidget *parent, const QString &filter)
 {
     QString last_dir = UserConfigs::Get()->GetData("Last" + titleType + "Dir", "");
-    QString result, result_dir;
+    QString result;
 
     switch (browsetype)
     {
     case BROWSE_TYPE::OPEN_FILE:
-        result = result_dir = QFileDialog::getOpenFileName(parent, "Choose " + titleType + "...", last_dir, filter);
+        result = QFileDialog::getOpenFileName(parent, "Choose " + titleType + "...", last_dir, filter);
         break;
 
     case BROWSE_TYPE::SAVE_FILE:
-        result = result_dir = QFileDialog::getSaveFileName(parent, "Save " + titleType + "...", last_dir, filter);
+        result = QFileDialog::getSaveFileName(parent, "Save " + titleType + "...", last_dir, filter);
         break;
 
     case BROWSE_TYPE::OPEN_DIR:
-        result = result_dir = QFileDialog::getExistingDirectory(parent, "Choose " + titleType + "...", last_dir);
+        result = QFileDialog::getExistingDirectory(parent, "Choose " + titleType + "...", last_dir);
         break;
     }
 
-    if (!result_dir.isEmpty())
-        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", result_dir.mid(0, result_dir.length() - QFileInfo(result_dir).fileName().length() - 1));
+    if (!result.isEmpty())
+        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", GetBaseDirectory(result));
 
     return result;
 }
@@ -413,4 +407,12 @@ bool CopyFolder(QString input_dir, QString output_dir, std::function<void (int, 
         }
     }
     return true;
+}
+
+QString GetBaseDirectory(QString inpath)
+{
+    QDir dir(inpath);
+    if (dir.cdUp())
+        return dir.absolutePath();
+    return inpath;
 }

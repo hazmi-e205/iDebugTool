@@ -5,7 +5,6 @@
 QString Base64Encode(QString string);
 void StringWithSpaces(QString &string, bool CapFirstOnly = false);
 QString FindRegex(QString rawString, QString regex);
-bool IsInternetOn();
 QString ParseVersion(QString version_raw);
 quint64 VersionToUInt(QString version_raw);
 QString UIntToVersion(quint64 version_int, bool full = false);
@@ -28,6 +27,7 @@ enum DIRECTORY_TYPE
     RECODESIGNED
 };
 QString GetDirectory(DIRECTORY_TYPE dirtype);
+QString GetBaseDirectory(QString inpath);
 
 enum BROWSE_TYPE
 {
