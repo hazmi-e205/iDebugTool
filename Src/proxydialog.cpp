@@ -1,7 +1,7 @@
 #include "proxydialog.h"
 #include "ui_proxydialog.h"
 #include "userconfigs.h"
-#include "utils.h"
+#include "simplerequest.h"
 #include <QNetworkProxy>
 #include <QMessageBox>
 
@@ -77,7 +77,7 @@ void ProxyDialog::OnCheckClicked()
     }
     QNetworkProxy::setApplicationProxy(proxy);
 
-    if (IsInternetOn())
+    if (SimpleRequest::IsInternetOn())
         QMessageBox::information(this, "Info", "Internet is available", QMessageBox::Ok);
     else
         QMessageBox::critical(this, "Error", "ERROR: No internet access.", QMessageBox::Ok);

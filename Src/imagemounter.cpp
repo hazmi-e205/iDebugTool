@@ -61,7 +61,7 @@ void ImageMounter::RefreshUI(bool fetchImages)
         ui->Signatures->setText("No image mounted!");
     }
 
-    if (IsInternetOn())
+    if (SimpleRequest::IsInternetOn())
     {
         ui->onlineTab->setEnabled(true);
         ui->tabWidget->setCurrentWidget(ui->onlineTab);
