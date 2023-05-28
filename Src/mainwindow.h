@@ -37,66 +37,95 @@ protected:
     void dropEvent(QDropEvent *e) override;
 
 private:
-    void SetupDevicesTable();
-    void SetupLogsTable();
-    void UpdateInfoWidget();
-    void RefreshSocketList();
-    bool IsInstalledUpdated();
-    void RefreshPIDandBundleID();
-    void RefreshPrivateKeyList();
     Ui::MainWindow *ui;
-    QStandardItemModel *m_devicesModel;
     AppInfo *m_appInfo;
     float m_ratioTopWidth;
     float m_topWidth;
-    QString m_choosenBundleId;
-    QString m_installerLogs;
-    QMap<QString, QJsonDocument> m_installedApps;
     QTimer *m_scrollTimer;
     CustomKeyFilter *m_eventFilter;
-    quint64 m_maxCachedLogs, m_scrollInterval;
+    quint64 m_scrollInterval;
     TextViewer *m_textDialog;
-    ImageMounter *m_imageMounter;
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
-    LoadingDialog *m_loading;
-    QPlainTextEdit *m_table;
     QMutex m_mutex;
     bool m_lastAutoScroll;
     int m_lastMaxScroll;
     bool m_lastStopChecked;
-    QMenu *m_tableContextMenu;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
+    void OnAutoScrollChecked(int state);
+    void OnClickedEvent(QObject* object);
+    void OnScrollTimerTick();
+    void OnConfigureClicked();
+    void OnProxyClicked();
+    void OnUpdateClicked();
+    void OnMessagesReceived(MessagesType type, QString messages);
+    void OnBottomTabChanged(int index);
+    void OnClearOutputClicked();
+    void OnSaveOutputClicked();
+
+    //Device UI
+private:
+    LoadingDialog *m_loading;
+    QStandardItemModel *m_devicesModel;
+    void SetupDevicesUI();
+    void UpdateInfoWidget();
+private slots:
     void OnDevicesTableClicked(QModelIndex index);
     void OnRefreshClicked();
     void OnUpdateDevices(QMap<QString, idevice_connection_type> devices);
     void OnDeviceConnected();
+    void RefreshSocketList();
+    void OnSocketClicked();
+    void OnSystemInfoClicked();
+    void OnProcessStatusChanged(int percentage, QString message);
+
+    //Syslog UI
+private:
+    QPlainTextEdit *m_table;
+    quint64 m_maxCachedLogs;
+    void SetupSyslogUI();
+private slots:
+    void OnClearClicked();
+    void OnSaveClicked();
+    void OnStopChecked(int state);
     void OnSystemLogsReceived2(QString logs);
-    void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
+    void OnFilterStatusChanged(bool isfiltering);
     void OnTextFilterChanged(QString text);
     void OnPidFilterChanged(QString text);
     void OnExcludeFilterChanged(QString text);
-    void OnAutoScrollChecked(int state);
-    void OnStopChecked(int state);
-    void OnClearClicked();
-    void OnSaveClicked();
-    void OnClickedEvent(QObject* object);
+
+    //AppManager and Installer UI
+private:
+    QString m_choosenBundleId;
+    QMap<QString, QJsonDocument> m_installedApps;
+    void SetupAppManagerUI();
+    bool IsInstalledUpdated();
+    void RefreshPIDandBundleID();
+private slots:
     void OnInstallClicked();
     void OnUninstallClicked();
-    void OnScrollTimerTick();
-    void OnConfigureClicked();
-    void OnProxyClicked();
-    void OnSleepClicked();
-    void OnShutdownClicked();
-    void OnRestartClicked();
+    void OnInstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
     void OnBundleIdChanged(QString text);
-    void OnSystemInfoClicked();
     void OnAppInfoClicked();
-    void OnImageMounterClicked();
-    void OnScreenshotClicked();
-    void OnSocketClicked();
+
+    //Recodesigner UI
+private:
+    void SetupRecodesignerUI();
+    void RefreshPrivateKeyList();
+private slots:
+    void OnOriginalBuildClicked();
+    void OnPrivateKeyClicked();
+    void OnProvisionClicked();
+    void OnCodesignClicked();
+    void OnPrivateKeyChanged(QString key);
+    void OnSigningResult(Recodesigner::SigningStatus status, QString messages);
+
+    //Crashlogs UI
+private:
+    void SetupCrashlogsUI();
+private slots:
     void OnSyncCrashlogsClicked();
     void OnCrashlogsStatusChanged(QString text);
     void OnCrashlogClicked();
@@ -104,19 +133,17 @@ private slots:
     void OnDwarfClicked();
     void OnSymbolicateClicked();
     void OnSymbolicateResult(QString messages, bool error);
+
+    //Toolbox UI
+private:
+    ImageMounter *m_imageMounter;
+    void SetupToolboxUI();
+private slots:
+    void OnImageMounterClicked();
+    void OnScreenshotClicked();
     void OnScreenshotReceived(QString imagePath);
-    void OnProcessStatusChanged(int percentage, QString message);
-    void OnUpdateClicked();
-    void OnMessagesReceived(MessagesType type, QString messages);
-    void OnSigningResult(Recodesigner::SigningStatus status, QString messages);
-    void OnOriginalBuildClicked();
-    void OnPrivateKeyClicked();
-    void OnProvisionClicked();
-    void OnCodesignClicked();
-    void OnPrivateKeyChanged(QString key);
-    void OnBottomTabChanged(int index);
-    void OnClearOutputClicked();
-    void OnSaveOutputClicked();
-    void OnFilterStatusChanged(bool isfiltering);
+    void OnSleepClicked();
+    void OnShutdownClicked();
+    void OnRestartClicked();
 };
 #endif // MAINWINDOW_H
