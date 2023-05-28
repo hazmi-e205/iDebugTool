@@ -173,7 +173,15 @@ void MainWindow::dropEvent(QDropEvent *e)
 {
     foreach (const QUrl &url, e->mimeData()->urls()) {
         QString fileName = url.toLocalFile();
-        ui->installPath->setText(fileName);
+
+        // Drop in Dashboard, we will install it...
+        if (ui->featureWidget->currentIndex() == 0 && (fileName.endsWith(".ipa", Qt::CaseInsensitive) || fileName.endsWith(".app", Qt::CaseInsensitive)))
+        {
+            ui->installPath->setText(fileName);
+            OnInstallClicked();
+            UserConfigs::Get()->SaveData("LastAppDir", GetBaseDirectory(fileName));
+            break;
+        }
     }
 }
 
