@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "utils.h"
 #include "userconfigs.h"
+#include <QJsonObject>
 
 void MainWindow::SetupRecodesignerUI()
 {
@@ -17,17 +18,14 @@ void MainWindow::SetupRecodesignerUI()
 void MainWindow::RefreshPrivateKeyList()
 {
     ui->privateKeyEdit->clear();
-    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
-    QStringList privatekeyslist = privatekeys.split("|");
-    foreach (QString privatekey, privatekeyslist) {
-        QStringList keypass = privatekeys.split("*");
-        ui->privateKeyEdit->addItem(keypass.at(0));
-    }
+    QJsonObject privatekeys = UserConfigs::Get()->GetData("PrivateKey", QJsonObject());
+    foreach (const QString& keyname, privatekeys.keys())
+        ui->privateKeyEdit->addItem(keyname);
 
-    QString provisionsData = UserConfigs::Get()->GetData("Provisions", "");
-    QStringList provisions = provisionsData.split("|");
-    if (ui->provisionEdit->count() == 0 && provisions.count() > 0)
-        ui->provisionEdit->addItems(provisions);
+    ui->provisionEdit->clear();
+    QStringList provisions = UserConfigs::Get()->GetData("Provision", QStringList());
+    foreach (const QString& provname, provisions)
+        ui->provisionEdit->addItem(provname);
 }
 
 void MainWindow::OnOriginalBuildClicked()
@@ -61,48 +59,34 @@ void MainWindow::OnCodesignClicked()
     params.DoInstall = ui->InstallCheck->isChecked();
     Recodesigner::Get()->Process(params);
 
-    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
-    if (privatekeys.toLower().contains(params.PrivateKey.toLower()))
+    if (!params.PrivateKey.isEmpty())
     {
-        QStringList privatekeylist = privatekeys.split("|");
-        privatekeys = "";
-        foreach (QString privatekey, privatekeylist) {
-            QStringList keypass = privatekey.split("*");
-            privatekeys = (privatekeys.isEmpty() ? "" : (privatekeys + "|"))
-                    + keypass.at(0) + "*"
-                    + (keypass.at(0).toLower() == params.PrivateKey.toLower() ? params.PrivateKeyPassword : keypass.at(1));
-        }
-        UserConfigs::Get()->SaveData("PrivateKeys", privatekeys);
-    }
-    else
-    {
-        UserConfigs::Get()->SaveData("PrivateKeys", (privatekeys.isEmpty() ? "" : (privatekeys + "|")) + params.PrivateKey + "*" + params.PrivateKeyPassword);
+        QJsonObject privatekeys = UserConfigs::Get()->GetData("PrivateKey", QJsonObject());
+        if (!privatekeys.keys().contains(params.PrivateKey, Qt::CaseInsensitive))
+            ui->privateKeyEdit->addItem(params.PrivateKey);
+        privatekeys[params.PrivateKey] = params.PrivateKeyPassword;
+        UserConfigs::Get()->SaveData("PrivateKey", privatekeys);
     }
 
-    QString provisionsData = UserConfigs::Get()->GetData("Provisions", "");
-    QStringList provisions = provisionsData.split("|");
-    if (!provisions.contains(params.Provision) && !params.Provision.isEmpty())
+    if (!params.Provision.isEmpty())
     {
-        UserConfigs::Get()->SaveData("Provisions", (provisionsData.isEmpty() ? "" : (provisionsData + "|")) + params.Provision);
-        ui->provisionEdit->addItem(params.Provision);
+        QStringList provisions = UserConfigs::Get()->GetData("Provision", QStringList());
+        if (!provisions.contains(params.Provision, Qt::CaseInsensitive)) {
+            ui->provisionEdit->addItem(params.Provision);
+            provisions.append(params.Provision);
+        }
+        UserConfigs::Get()->SaveData("Provision", provisions);
     }
-    RefreshPrivateKeyList();
+
     ui->codesignBtn->setEnabled(false);
     ui->bottomWidget->setCurrentIndex(1);
 }
 
 void MainWindow::OnPrivateKeyChanged(QString key)
 {
-    QString privatekeys = UserConfigs::Get()->GetData("PrivateKeys", "");
-    QStringList privatekeyslist = privatekeys.split("|");
-    foreach (QString privatekey, privatekeyslist) {
-        QStringList keypass = privatekey.split("*");
-        if (keypass.at(0).toLower() == key.toLower())
-        {
-            ui->privateKeyPasswordEdit->setText(keypass.at(1));
-            break;
-        }
-    }
+    QJsonObject privatekeys = UserConfigs::Get()->GetData("PrivateKey", QJsonObject());
+    if (privatekeys.keys().contains(key, Qt::CaseInsensitive))
+        ui->privateKeyPasswordEdit->setText(privatekeys[key].toString());
 }
 
 void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)

@@ -3,7 +3,7 @@
 #include <QFile>
 #include <QSaveFile>
 #include <QDir>
-#include <QJsonObject>
+#include <QJsonArray>
 
 UserConfigs *UserConfigs::m_instance = nullptr;
 UserConfigs *UserConfigs::Get()
@@ -32,6 +32,14 @@ void UserConfigs::SaveData(QString key, QJsonValue value)
     SaveToFile();
 }
 
+void UserConfigs::SaveData(QString key, QStringList values)
+{
+    QJsonArray array;
+    foreach (const auto& value, values)
+        array.append(value);
+    SaveData(key, array);
+}
+
 QString UserConfigs::GetData(QString key, QString defaultvalue)
 {
     ReadFromFile();
@@ -41,16 +49,41 @@ QString UserConfigs::GetData(QString key, QString defaultvalue)
     return defaultvalue;
 }
 
-bool UserConfigs::GetBool(QString key, bool defaultvalue)
+QString UserConfigs::GetData(QString key, const char *defaultvalue)
+{
+    return GetData(key, QString(defaultvalue));
+}
+
+bool UserConfigs::GetData(QString key, bool defaultvalue)
 {
     ReadFromFile();
     return m_json[key].toBool(defaultvalue);
 }
 
-int UserConfigs::GetInt(QString key, int defaultvalue)
+int UserConfigs::GetData(QString key, int defaultvalue)
 {
     ReadFromFile();
     return m_json[key].toInt(defaultvalue);
+}
+
+QJsonObject UserConfigs::GetData(QString key, QJsonObject defaultvalue)
+{
+    ReadFromFile();
+    return m_json[key].toObject(defaultvalue);
+}
+
+QStringList UserConfigs::GetData(QString key, QStringList defaultvalue)
+{
+    ReadFromFile();
+    QJsonArray defaultArray;
+    foreach (const QString& value, defaultvalue)
+        defaultArray.append(value);
+
+    defaultArray = m_json[key].toArray(defaultArray);
+    defaultvalue.clear();
+    foreach (const auto& value, defaultArray)
+        defaultvalue << value.toString();
+    return defaultvalue;
 }
 
 void UserConfigs::SaveToFile()
