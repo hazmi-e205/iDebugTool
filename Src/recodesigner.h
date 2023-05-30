@@ -21,6 +21,7 @@ public:
         QString NewBundleId;
         QString NewBundleVersion;
         QString NewDisplayName;
+        QString NewEntitlements;
         bool DoUnpack;
         bool DoRepack;
         bool DoCodesign;

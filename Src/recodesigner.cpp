@@ -47,7 +47,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
 
         emit SigningResult(SigningStatus::PROCESS, "Loading the certificate and provision...");
         ZSignAsset zSignAsset;
-        if (!zSignAsset.Init("", params.PrivateKey.toStdString(), params.Provision.toStdString(), "", params.PrivateKeyPassword.toStdString()))
+        if (!zSignAsset.Init("", params.PrivateKey.toStdString(), params.Provision.toStdString(), params.NewEntitlements.toStdString(), params.PrivateKeyPassword.toStdString()))
         {
             emit SigningResult(SigningStatus::FAILED, "ERROR: Load certificate and provision failed!");
             return;
