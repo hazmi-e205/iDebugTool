@@ -18,7 +18,7 @@ project "SelfUpdater"
     AppCompany "hazmi-e205 Indonesia"
     AppCopyright ("Copyright (c) hazmi-e205 Indonesia " .. os.date("%Y"))
     AppDescription "Self Updater for iOS Debugging Tool"
-    AppIcon "../Assets/bulb.ico"
+    AppIcon "../Assets/technical.ico"
 
     local info_str = io.readfile("../info.json")
     info_json, err = json.decode(info_str)
