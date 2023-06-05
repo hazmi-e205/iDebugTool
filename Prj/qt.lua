@@ -57,6 +57,11 @@ api.register {
     scope = "project",
     kind = "list:file",
 }
+api.register {
+    name= "QtCopyFiles",
+    scope = "project",
+    kind = "string",
+}
 
 p.modules.qt = {}
 local qt = p.modules.qt
@@ -207,6 +212,9 @@ function qt.project_pro(prj)
     if #prj.QtConfigs > 0 then
         _p('CONFIG += ' .. table.concat(prj.QtConfigs, " "))
     end
+    if prj.QtCopyFiles ~= nil then
+        _p('CONFIG += file_copies')
+    end
     if prj.kind == "ConsoleApp" then
         _p('CONFIG -= app_bundle')
     end
@@ -351,6 +359,14 @@ function qt.project_pro(prj)
         qt.add_targetdir(0, prj)
     end
     _p('')
+
+    -- copy files
+    if prj.QtCopyFiles ~= nil then
+        _p('COPIES += addfiles')
+        _p('addfiles.files = $$files(' .. prj.QtCopyFiles .. ')')
+        _p('addfiles.path = $$DESTDIR')
+        _p('')
+    end
 
     -- app properties
     if prj.AppName then

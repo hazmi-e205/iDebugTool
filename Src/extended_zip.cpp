@@ -3,92 +3,6 @@
 #include <QDir>
 #include <QDirIterator>
 
-int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len)
-{
-    struct zip_stat zs;
-    struct zip_file *zfile;
-    int zindex = zip_name_locate(zf, filename, locate_flags);
-
-    *buffer = NULL;
-    *len = 0;
-
-    if (zindex < 0) {
-        return -1;
-    }
-
-    zip_stat_init(&zs);
-
-    if (zip_stat_index(zf, zindex, 0, &zs) != 0) {
-        fprintf(stderr, "ERROR: zip_stat_index '%s' failed!\n", filename);
-        return -2;
-    }
-
-    if (zs.size > 10485760) {
-        fprintf(stderr, "ERROR: file '%s' is too large!\n", filename);
-        return -3;
-    }
-
-    zfile = zip_fopen_index(zf, zindex, 0);
-    if (!zfile) {
-        fprintf(stderr, "ERROR: zip_fopen '%s' failed!\n", filename);
-        return -4;
-    }
-
-    *buffer = (char*)malloc(zs.size);
-    if (zs.size > LLONG_MAX || zip_fread(zfile, *buffer, zs.size) != (zip_int64_t)zs.size) {
-        fprintf(stderr, "ERROR: zip_fread %llu bytes from '%s'\n", (uint64_t)zs.size, filename);
-        free(*buffer);
-        *buffer = NULL;
-        zip_fclose(zfile);
-        return -5;
-    }
-    *len = zs.size;
-    zip_fclose(zfile);
-    return 0;
-}
-
-int zip_get_app_directory(struct zip* zf, QString &path)
-{
-    int i = 0;
-    int c = zip_get_num_files(zf);
-    int len = 0;
-    const char* name = NULL;
-
-    /* look through all filenames in the archive */
-    do {
-        /* get filename at current index */
-        name = zip_get_name(zf, i++, 0);
-        if (name != NULL) {
-            /* check if we have a "Payload/.../" name */
-            len = strlen(name);
-            if (!strncmp(name, "Payload/", 8) && (len > 8)) {
-                /* skip hidden files */
-                if (name[8] == '.')
-                    continue;
-
-                /* locate the second directory delimiter */
-                const char* p = name + 8;
-                do {
-                    if (*p == '/') {
-                        break;
-                    }
-                } while(p++ != NULL);
-
-                /* try next entry if not found */
-                if (p == NULL)
-                    continue;
-
-                /* copy filename */
-                QFileInfo file_info(name);
-                path = file_info.filePath().remove(file_info.fileName());
-                break;
-            }
-        }
-    } while(i < c);
-
-    return 0;
-}
-
 bool zip_extract_all(QString input_zip, QString output_dir, std::function<void(int,int,QString)> callback)
 {
     QDir().mkpath(output_dir);
@@ -234,4 +148,71 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
     int result = zip_close_with_callback(zipper, zip_progress_callback);
     zip_directory_callback = NULL;
     return result == 0;
+}
+
+//===================================//
+#include <bit7z/bitarchivereader.hpp>
+#include <bit7z/bitexception.hpp>
+using namespace bit7z;
+
+bool ZipGetContents(QString zip_file, QString inside_path, std::vector<char>& data_out)
+{
+    try
+    {
+#if defined(WIN32) && defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.dll" };
+#elif defined(WIN32) && defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.dll" };
+#elif defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.so" };)
+#elif defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.so" };
+#endif
+        BitArchiveReader arc{ lib, zip_file.toStdString(), BitFormat::Zip };
+        auto it = arc.find(inside_path.toStdString());
+        if (it != arc.end())
+        {
+            std::vector<byte_t> data_temp;
+            arc.extract(data_temp, it->index());
+            data_out = std::vector<char>(data_temp.begin(), data_temp.end());
+            return true;
+        }
+        qDebug() << "Not found";
+    }
+    catch ( const BitException& ex )
+    {
+        qDebug() << ex.what();
+    }
+    return false;
+}
+
+bool ZipGetAppDirectory(QString zip_file, QString &path_out)
+{
+    try
+    {
+#if defined(WIN32) && defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.dll" };
+#elif defined(WIN32) && defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.dll" };
+#elif defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.so" };)
+#elif defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.so" };
+#endif
+        BitArchiveReader arc{ lib, zip_file.toStdString(), BitFormat::Zip };
+        for (auto itr = arc.begin(); itr != arc.end(); ++itr)
+        {
+            if (itr->name().find(".app") != std::string::npos)
+            {
+                path_out = QString::fromStdString(itr->path());
+                return true;
+            }
+        }
+        qDebug() << "Not found";
+    }
+    catch ( const BitException& ex )
+    {
+        qDebug() << ex.what();
+    }
+    return false;
 }

@@ -86,8 +86,6 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             return;
         }
         char *bundleidentifier = NULL;
-        plist_t sinf = NULL;
-        plist_t meta = NULL;
         QString pkgname = "";
         uint64_t af = 0;
         char buf[8192];
@@ -113,7 +111,8 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         int errp = 0;
         struct zip *zf = NULL;
 
-        if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive))) {
+        if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive)))
+        {
             zf = zip_open(path.toUtf8().data(), 0, &errp);
             if (!zf) {
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
@@ -195,7 +194,9 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             printf("DONE.\n");
 
             instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
-        } else if (QFileInfo(path).isDir()) {
+        }
+        else if (QFileInfo(path).isDir())
+        {
             /* extract the CFBundleIdentifier from the package */
             /* construct full filename to Info.plist */
             QString filename = path + "/Info.plist";
@@ -219,102 +220,38 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
                 return;
             }
             instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
-        } else {
-            zf = zip_open(path.toUtf8().data(), 0, &errp);
-            if (!zf) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: zip_open: " + path + ": " + QString::number(errp));
-                return;
-            }
-
-            /* extract iTunesMetadata.plist from package */
-            char *zbuf = NULL;
-            uint32_t len = 0;
-            plist_t meta_dict = NULL;
-            if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
-                meta = plist_new_data(zbuf, len);
-                if (memcmp(zbuf, "bplist00", 8) == 0) {
-                    plist_from_bin(zbuf, len, &meta_dict);
-                } else {
-                    plist_from_xml(zbuf, len, &meta_dict);
-                }
-            } else {
-                fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
-            }
-            free(zbuf);
-
+        }
+        else
+        {
             /* determine .app directory in archive */
-            zbuf = NULL;
-            len = 0;
-            plist_t info = NULL;
-            QString filename = NULL;
             QString app_directory_name;
-
-            if (zip_get_app_directory(zf, app_directory_name)) {
+            if (!ZipGetAppDirectory(path, app_directory_name)) {
                 emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Unable to locate app directory in archive!");
                 return;
             }
 
             /* construct full filename to Info.plist */
-            filename = app_directory_name + "Info.plist";
-
-            if (zip_get_contents(zf, filename.toUtf8().data(), 0, &zbuf, &len) < 0) {
+            QString filename = app_directory_name + "\\Info.plist";
+            std::vector<char> info;
+            if (!ZipGetContents(path, filename, info)) {
                 emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not locate " + filename + " in archive!");
-                zip_unchange_all(zf);
-                zip_close(zf);
                 return;
             }
 
-            if (memcmp(zbuf, "bplist00", 8) == 0) {
-                plist_from_bin(zbuf, len, &info);
-            } else {
-                plist_from_xml(zbuf, len, &info);
-            }
-            free(zbuf);
-
-            if (!info) {
+            JValue jvInfo;
+            if (!jvInfo.readPList(&info[0], info.size()))
+            {
                 emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not parse Info.plist!");
-                zip_unchange_all(zf);
-                zip_close(zf);
                 return;
             }
-
-            char *bundleexecutable = NULL;
-
-            plist_t bname = plist_dict_get_item(info, "CFBundleExecutable");
-            if (bname) {
-                plist_get_string_val(bname, &bundleexecutable);
-            }
-
-            bname = plist_dict_get_item(info, "CFBundleIdentifier");
-            if (bname) {
-                plist_get_string_val(bname, &bundleidentifier);
-            }
-            plist_free(info);
-            info = NULL;
-
-            if (!bundleexecutable) {
+            bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
+            if (!jvInfo.has("CFBundleExecutable")) {
                 emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not determine value for CFBundleExecutable!");
-                zip_unchange_all(zf);
-                zip_close(zf);
                 return;
             }
-
-            QString sinfname = "Payload/" + QString(bundleexecutable) + ".app/SC_Info/" + bundleexecutable + ".sinf";
-            free(bundleexecutable);
-
-            /* extract .sinf from package */
-            zbuf = NULL;
-            len = 0;
-            if (zip_get_contents(zf, sinfname.toUtf8().data(), 0, &zbuf, &len) == 0) {
-                sinf = plist_new_data(zbuf, len);
-            } else {
-                fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname.toUtf8().data());
-            }
-            free(zbuf);
 
             /* copy archive to device */
             pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
-
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Sending " + QFileInfo(path).fileName());
             auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
             {
@@ -330,12 +267,6 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 
             if (bundleidentifier) {
                 instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
-            }
-            if (sinf) {
-                instproxy_client_options_add(client_opts, "ApplicationSINF", sinf, NULL);
-            }
-            if (meta) {
-                instproxy_client_options_add(client_opts, "iTunesMetadata", meta, NULL);
             }
         }
         if (zf) {

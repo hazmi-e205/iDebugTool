@@ -30,7 +30,6 @@ project "7z"
         "../Externals/bit7z/third_party/7-zip/C/Lzma86Dec.*",
         "../Externals/bit7z/third_party/7-zip/C/Lzma86Enc.*",
         "../Externals/bit7z/third_party/7-zip/C/LzmaLib.*",
-        "../Externals/bit7z/third_party/7-zip/C/7zAlloc.*",
         "../Externals/bit7z/third_party/7-zip/CPP/Common/CksumReg.*",
         "../Externals/bit7z/third_party/7-zip/CPP/Common/CommandLineParser.*",
         "../Externals/bit7z/third_party/7-zip/CPP/Common/C_FileIO.*",
