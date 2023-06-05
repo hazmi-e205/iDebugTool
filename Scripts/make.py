@@ -238,9 +238,9 @@ def Build():
     compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
     make_path     = ("make" if "linux" in sys.platform else (compiler_dir + "mingw32-make")) + exe_ext
     build_final   = build_dir + "/" + prj_type + "/bin/"
+    os.environ["PATH"] += os.pathsep + os.pathsep.join([compiler_dir])
     
     cprint("Generate makefile from qmake...", 'yellow', attrs=['reverse', 'blink'])
-    os.environ["PATH"] += os.pathsep + os.pathsep.join([compiler_dir])
     if not os.path.exists(build_cache):
         os.makedirs(build_cache)
     utils.call([qmake_path, prj_path, "-spec", "linux-g++" if "linux" in sys.platform else "win32-g++", "\"CONFIG+=qtquickcompiler\""], build_cache)

@@ -60,16 +60,16 @@ if IsQt() then
     system "Windows"
 	language "C++"
 
-	QtConfigs {"c++11"}
+	QtConfigs {"c++17"}
 	filter {"kind:ConsoleApp"}
 		QtConfigs {"console"}
 	filter {"kind:StaticLib"}
 		QtConfigs {"staticlib"}
 	filter {}
 
-	filter {"kind:ConsoleApp or WindowedApp or SharedLib"}
+	filter {"kind:ConsoleApp or WindowedApp"}
 		targetdir ("../Build/" .. GetPathFromPlatform() .. "/bin/")
-	filter {"kind:StaticLib"}
+	filter {"kind:StaticLib or SharedLib"}
 		targetdir ("../Build/" .. GetPathFromPlatform() .. "/libs/")
 	filter {}
 

@@ -10,6 +10,7 @@ solution "iDebugTool"
     include "libimobiledevice-glue.lua"
     include "macholib.lua"
     include "zsign.lua"
+    include "bit7z.lua"
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -79,6 +80,7 @@ project "iDebugTool"
         "../Externals/MachOLib",
         "../Externals/zsign",
         "../Externals/mingw-patch",
+        "../Externals/bit7z/include",
     }
 
     links
@@ -96,6 +98,7 @@ project "iDebugTool"
         "minizip",
         "zsign",
         "mingw-patch",
+        "bit7z",
     }
 
     libdirs

@@ -66,6 +66,13 @@
             "use_submodules": false
         },
         {
+            "project": "bit7z",
+            "url": "https://github.com/rikyoz/bit7z",
+            "branch": "v4.0.0-rc",
+            "path": "Externals/bit7z",
+            "use_submodules": true
+        },
+        {
             "project": "libzip",
             "url": "https://github.com/nih-at/libzip",
             "branch": "rel-0-10",
