@@ -202,9 +202,11 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
         BitArchiveReader arc{ lib, zip_file.toStdString(), BitFormat::Zip };
         for (auto itr = arc.begin(); itr != arc.end(); ++itr)
         {
-            if (itr->name().find(".app") != std::string::npos)
+            QString path_in(itr->path().c_str());
+            if (path_in.contains(".app", Qt::CaseInsensitive))
             {
-                path_out = QString::fromStdString(itr->path());
+                qsizetype idx = path_in.indexOf(".app",Qt::CaseInsensitive);
+                path_out = path_in.mid(0, idx + 4);
                 return true;
             }
         }
