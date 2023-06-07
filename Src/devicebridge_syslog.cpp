@@ -71,11 +71,10 @@ void DeviceBridge::ClearCachedLogs()
     m_logHandler->ClearCachedLogs();
 }
 
-QStringList DeviceBridge::GetPIDFilteringTemplate()
+QStringList DeviceBridge::GetPIDOptions(QMap<QString, QJsonDocument>& installed_apps)
 {
     QStringList result = QStringList() << "By user apps only" << "Related to user apps";
-    m_installedApps = GetInstalledApps(true);
-    foreach (auto appinfo, m_installedApps)
+    foreach (auto appinfo, installed_apps)
     {
         QString bundle_id = appinfo["CFBundleExecutable"].toString();
         result << bundle_id + "\\[\\d+\\]";

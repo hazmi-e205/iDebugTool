@@ -69,40 +69,14 @@ void MainWindow::OnAppInfoClicked()
         m_textDialog->ShowText("App Information",m_installedApps[m_choosenBundleId].toJson());
 }
 
-bool MainWindow::IsInstalledUpdated()
-{
-    auto apps = DeviceBridge::Get()->GetInstalledApps();
-    if (apps.array().size() != m_installedApps.size())
-    {
-        m_installedApps.clear();
-        for (int idx = 0; idx < apps.array().count(); idx++)
-        {
-            QString bundle_id = apps[idx]["CFBundleIdentifier"].toString();
-            QJsonDocument app_info;
-            app_info.setObject(apps[idx].toObject());
-            m_installedApps[bundle_id] = app_info;
-        }
-        return true;
-    }
-    return false;
-}
-
 void MainWindow::RefreshPIDandBundleID()
 {
-    if (IsInstalledUpdated() || ui->bundleIds->count() != m_installedApps.size() || (ui->pidEdit->count() - 2) != (m_installedApps.size() * 2))
-    {
-        ui->bundleIds->clear();
-        ui->bundleIds->addItems(m_installedApps.keys());
+    m_installedApps = DeviceBridge::Get()->GetInstalledApps(true);
+    ui->bundleIds->clear();
+    ui->bundleIds->addItems(m_installedApps.keys());
 
-        QString old_string = ui->pidEdit->currentText();
-        ui->pidEdit->clear();
-        ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
-        foreach (auto appinfo, m_installedApps)
-        {
-            QString bundle_id = appinfo["CFBundleExecutable"].toString();
-            ui->pidEdit->addItem(bundle_id + "\\[\\d+\\]");
-            ui->pidEdit->addItem(bundle_id);
-        }
-        ui->pidEdit->setEditText(old_string);
-    }
+    QString old_string = ui->pidEdit->currentText();
+    ui->pidEdit->clear();
+    ui->pidEdit->addItems(DeviceBridge::GetPIDOptions(m_installedApps));
+    ui->pidEdit->setEditText(old_string);
 }

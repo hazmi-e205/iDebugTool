@@ -48,7 +48,7 @@ void LogFilterThread::LogsFilterByPID(QString pid_name)
     if (m_thread->isRunning())
         StopFilter();
 
-    if (pid_name.trimmed().toLower().contains("by user apps only") || pid_name.trimmed().toLower().contains("related to user apps"))
+    if (pid_name.trimmed().contains("by user apps only", Qt::CaseInsensitive) || pid_name.trimmed().contains("related to user apps", Qt::CaseInsensitive))
     {
         m_pidFilter = m_pidlist[pid_name.trimmed().toLower()];
     }
@@ -64,7 +64,7 @@ void LogFilterThread::SystemLogsFilter(QString text_or_regex, QString pid_name, 
     if (m_thread->isRunning())
         StopFilter();
 
-    if (pid_name.trimmed().toLower().contains("by user apps only") || pid_name.trimmed().toLower().contains("related to user apps"))
+    if (pid_name.trimmed().contains("by user apps only", Qt::CaseInsensitive) || pid_name.trimmed().contains("related to user apps", Qt::CaseInsensitive))
     {
         m_pidFilter = m_pidlist[pid_name.trimmed().toLower()];
     }

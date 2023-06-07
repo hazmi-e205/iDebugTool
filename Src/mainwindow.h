@@ -101,7 +101,6 @@ private:
     QString m_choosenBundleId;
     QMap<QString, QJsonDocument> m_installedApps;
     void SetupAppManagerUI();
-    bool IsInstalledUpdated();
     void RefreshPIDandBundleID();
 private slots:
     void OnInstallClicked();

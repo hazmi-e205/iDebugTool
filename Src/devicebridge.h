@@ -141,7 +141,7 @@ signals:
      void SystemLogsFilter(QString text_or_regex, QString pid_name, QString exclude_text);
      void ReloadLogsFilter();
      LogFilterThread* GetLogHandler() { return m_logHandler; }
-     QStringList GetPIDFilteringTemplate();
+     static QStringList GetPIDOptions(QMap<QString, QJsonDocument>& installed_apps);
  private:
      static void SystemLogsCallback(char c, void *user_data);
      void TriggerSystemLogsReceived(LogPacket log);
