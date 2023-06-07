@@ -106,6 +106,9 @@ project "iDebugTool"
         "../Build/" .. GetPathFromPlatform() .. "/libs",
     }
 
+    local copyext = "$$PWD/../../../Scripts/copyext.py"
+    local copysrc = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs"
+    local copydst = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/bin"
     if IsWindows() then
         links
         {
@@ -113,11 +116,11 @@ project "iDebugTool"
             "Ws2_32",
             "Ole32",
         }
+        prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
     else
         links
         {
             "dl",
         }
+        prelinkcommands {"python " .. copyext .. " .so " .. copysrc .. " " .. copydst}
     end
-
-    prelinkcommands {"python $$PWD/../../../Scripts/copyext.py .dll $$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs $$PWD/../../../Build/" .. GetPathFromPlatform() .. "/bin"}

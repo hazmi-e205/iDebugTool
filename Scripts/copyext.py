@@ -1,8 +1,8 @@
 import os, sys, utils
 
-extension = sys.argv[0]
-dll_dir   = sys.argv[1]
-dst_dir   = sys.argv[2]
+extension = sys.argv[1]
+dll_dir   = sys.argv[2]
+dst_dir   = sys.argv[3]
 list_dir  = os.listdir(dll_dir)
 for x in list_dir:
     if x.endswith(extension) or x.endswith(extension):
