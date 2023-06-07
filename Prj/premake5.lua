@@ -113,11 +113,11 @@ project "iDebugTool"
             "Ws2_32",
             "Ole32",
         }
-        QtCopyFiles ("$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs/*.dll")
     else
         links
         {
             "dl",
         }
-        QtCopyFiles ("$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs/*.so")
     end
+
+    prelinkcommands {"python $$PWD/../../../Scripts/copyext.py .dll $$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs $$PWD/../../../Build/" .. GetPathFromPlatform() .. "/bin"}
