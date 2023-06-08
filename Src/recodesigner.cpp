@@ -80,7 +80,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
             QDir dir(extract_dir);
             if (dir.exists())
                 dir.removeRecursively();
-            if (!zip_extract_all(params.OriginalBuild, extract_dir, zipper_callback))
+            if (!ZipExtractAll(params.OriginalBuild, extract_dir, zipper_callback))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Unpack failed!");
                 return;

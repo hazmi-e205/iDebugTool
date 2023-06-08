@@ -153,6 +153,9 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
 //===================================//
 #include <bit7z/bitarchivereader.hpp>
 #include <bit7z/bitexception.hpp>
+#include <bit7z/bitfileextractor.hpp>
+#include <QSaveFile>
+#include "utils.h"
 using namespace bit7z;
 
 bool ZipGetContents(QString zip_file, QString inside_path, std::vector<char>& data_out)
@@ -200,9 +203,9 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
         BitArchiveReader arc{ lib, zip_file.toStdString(), BitFormat::Zip };
-        for (auto itr = arc.begin(); itr != arc.end(); ++itr)
+        for (auto it = arc.begin(); it != arc.end(); ++it)
         {
-            QString path_in(itr->path().c_str());
+            QString path_in(it->path().c_str());
             if (path_in.contains(".app", Qt::CaseInsensitive))
             {
                 qsizetype idx = path_in.indexOf(".app",Qt::CaseInsensitive);
@@ -216,5 +219,66 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
     {
         qDebug() << ex.what();
     }
+    return false;
+}
+
+bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (int, int, QString)> callback)
+{
+    int idx = 0, total = 0;
+    try
+    {
+#if defined(WIN32) && defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.dll" };
+#elif defined(WIN32) && defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.dll" };
+#elif defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.so" };)
+#elif defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.so" };
+#endif
+        BitArchiveReader arc{ lib, input_zip.toStdString(), BitFormat::Zip };
+        total = arc.items().size();
+        for (auto it = arc.begin(); it != arc.end(); ++it)
+        {
+            idx = it->index() + 1;
+            QString path_in(it->path().c_str());
+            QFileInfo file_info(output_dir + "/" + path_in);
+            if (it->isDir())
+            {
+                callback(idx, total, QString("Creating directory to %1...").arg(file_info.absoluteFilePath()));
+                QDir().mkpath(file_info.absoluteFilePath());
+            }
+            else
+            {
+                callback(idx, total, QString("Extracting file to %1...").arg(file_info.absoluteFilePath()));
+                QString aaa = GetBaseDirectory(file_info.absoluteFilePath());
+                QDir().mkpath(aaa);
+
+                // convert to char array
+                std::vector<byte_t> data_temp;
+                arc.extract(data_temp, it->index());
+                std::vector<char> data_out = std::vector<char>(data_temp.begin(), data_temp.end());
+
+                //write to file
+                QSaveFile file(file_info.absoluteFilePath());
+                file.open(QIODevice::WriteOnly);
+                file.write(&data_out[0], data_temp.size());
+                if (!file.commit()) {
+                    callback(idx, total, QString("Failed to extract %1 !").arg(file_info.absoluteFilePath()));
+                    return false;
+                }
+            }
+        }
+    }
+    catch ( const BitException& ex )
+    {
+        callback(idx, total, ex.what());
+        return false;
+    }
+    return true;
+}
+
+bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (int, int, QString)> callback)
+{
     return false;
 }

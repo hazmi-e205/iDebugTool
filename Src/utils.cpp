@@ -411,8 +411,7 @@ bool CopyFolder(QString input_dir, QString output_dir, std::function<void (int, 
 
 QString GetBaseDirectory(QString inpath)
 {
-    QDir dir(inpath);
-    if (dir.cdUp())
-        return dir.absolutePath();
-    return inpath;
+    QFileInfo info(inpath);
+    QString abspath = info.absoluteFilePath();
+    return abspath.mid(0, abspath.length() - info.fileName().length() - 1);
 }
