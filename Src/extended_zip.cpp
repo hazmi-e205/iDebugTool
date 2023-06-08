@@ -154,6 +154,7 @@ bool zip_directory(QString input_dir, QString output_filename, std::function<voi
 #include <bit7z/bitarchivereader.hpp>
 #include <bit7z/bitexception.hpp>
 #include <bit7z/bitfileextractor.hpp>
+#include <bit7z/bitfilecompressor.hpp>
 #include <QSaveFile>
 #include "utils.h"
 using namespace bit7z;
@@ -251,8 +252,8 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (in
             else
             {
                 callback(idx, total, QString("Extracting file to %1...").arg(file_info.absoluteFilePath()));
-                QString aaa = GetBaseDirectory(file_info.absoluteFilePath());
-                QDir().mkpath(aaa);
+                QString basedir = GetBaseDirectory(file_info.absoluteFilePath());
+                QDir().mkpath(basedir);
 
                 // convert to char array
                 std::vector<byte_t> data_temp;
@@ -278,7 +279,59 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (in
     return true;
 }
 
-bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (int, int, QString)> callback)
+bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (quint64, quint64, QString)> callback)
 {
-    return false;
+    QString status = "";
+    quint64 progress = 0, total = 0;
+    QString basedir = GetBaseDirectory(output_filename);
+    QDir().mkpath(basedir);
+
+    try
+    {
+#if defined(WIN32) && defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.dll" };
+#elif defined(WIN32) && defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.dll" };
+#elif defined(NDEBUG)
+        Bit7zLibrary lib{ "7z.so" };)
+#elif defined(DEBUG)
+        Bit7zLibrary lib{ "7z_d.so" };
+#endif
+        BitFileCompressor compressor{ lib, BitFormat::Zip };
+        compressor.setTotalCallback([&total](const uint64_t& totalsize){
+            total = totalsize;
+        });
+        compressor.setFileCallback([&progress, &callback, &status, &total](const tstring& currentfile){
+            qDebug() << currentfile.c_str();
+            status = QString::fromStdString(currentfile);
+            if (callback) {
+                callback(progress, total, QString("Packing %1 to archive...").arg(status));
+            }
+        });
+        compressor.setProgressCallback([&progress, &callback, &status, &total](const uint64_t& progresssize){
+            progress = progresssize;
+            if (callback) {
+                callback(progress, total, QString("Packing %1 to archive...").arg(status));
+            }
+            return true;
+        });
+
+        std::map<std::string, std::string> files;
+        QDir dir(input_dir);
+        QDirIterator it_file(input_dir, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+        while (it_file.hasNext())
+        {
+            QString filepath = it_file.next();
+            QString relativepath = dir.relativeFilePath(filepath);
+            files[filepath.toStdString()] = relativepath.toStdString();
+        }
+        compressor.compress(files, output_filename.toStdString());
+
+    }
+    catch ( const BitException& ex )
+    {
+        callback(progress, total, ex.what());
+        return false;
+    }
+    return true;
 }

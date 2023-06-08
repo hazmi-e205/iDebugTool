@@ -111,7 +111,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         if (params.DoRepack)
         {
             emit SigningResult(SigningStatus::PROCESS, "Repacking...");
-            if (!zip_directory(extract_dir, final_build, zipper_callback))
+            if (!ZipDirectory(extract_dir, final_build, zipper_callback))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Repack failed!");
                 return;
