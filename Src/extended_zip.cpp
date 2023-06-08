@@ -225,7 +225,8 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
 
 bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (int, int, QString)> callback)
 {
-    int idx = 0, total = 0;
+    QString status = "";
+    quint64 progress = 0, total = 0;
     try
     {
 #if defined(WIN32) && defined(NDEBUG)
@@ -237,43 +238,28 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (in
 #elif defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
-        BitArchiveReader arc{ lib, input_zip.toStdString(), BitFormat::Zip };
-        total = arc.items().size();
-        for (auto it = arc.begin(); it != arc.end(); ++it)
-        {
-            idx = it->index() + 1;
-            QString path_in(it->path().c_str());
-            QFileInfo file_info(output_dir + "/" + path_in);
-            if (it->isDir())
-            {
-                callback(idx, total, QString("Creating directory to %1...").arg(file_info.absoluteFilePath()));
-                QDir().mkpath(file_info.absoluteFilePath());
+        BitFileExtractor extractor{ lib, BitFormat::Zip };
+        extractor.setTotalCallback([&total](const uint64_t& totalsize){
+            total = totalsize;
+        });
+        extractor.setFileCallback([&progress, &callback, &status, &total](const tstring& currentfile){
+            status = QString::fromStdString(currentfile);
+            if (callback) {
+                callback(progress, total, QString("(%1 of %2) Extracting %3 to directory...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
-            else
-            {
-                callback(idx, total, QString("Extracting file to %1...").arg(file_info.absoluteFilePath()));
-                QString basedir = GetBaseDirectory(file_info.absoluteFilePath());
-                QDir().mkpath(basedir);
-
-                // convert to char array
-                std::vector<byte_t> data_temp;
-                arc.extract(data_temp, it->index());
-                std::vector<char> data_out = std::vector<char>(data_temp.begin(), data_temp.end());
-
-                //write to file
-                QSaveFile file(file_info.absoluteFilePath());
-                file.open(QIODevice::WriteOnly);
-                file.write(&data_out[0], data_temp.size());
-                if (!file.commit()) {
-                    callback(idx, total, QString("Failed to extract %1 !").arg(file_info.absoluteFilePath()));
-                    return false;
-                }
+        });
+        extractor.setProgressCallback([&progress, &callback, &status, &total](const uint64_t& progresssize){
+            progress = progresssize;
+            if (callback) {
+                callback(progress, total, QString("(%1 of %2) Extracting %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
-        }
+            return true;
+        });
+        extractor.extract(input_zip.toStdString(), output_dir.toStdString());
     }
-    catch ( const BitException& ex )
+    catch (const BitException& ex)
     {
-        callback(idx, total, ex.what());
+        callback(progress, total, ex.what());
         return false;
     }
     return true;
@@ -302,16 +288,15 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
             total = totalsize;
         });
         compressor.setFileCallback([&progress, &callback, &status, &total](const tstring& currentfile){
-            qDebug() << currentfile.c_str();
             status = QString::fromStdString(currentfile);
             if (callback) {
-                callback(progress, total, QString("Packing %1 to archive...").arg(status));
+                callback(progress, total, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
         });
         compressor.setProgressCallback([&progress, &callback, &status, &total](const uint64_t& progresssize){
             progress = progresssize;
             if (callback) {
-                callback(progress, total, QString("Packing %1 to archive...").arg(status));
+                callback(progress, total, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
             return true;
         });
@@ -326,7 +311,6 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
             files[filepath.toStdString()] = relativepath.toStdString();
         }
         compressor.compress(files, output_filename.toStdString());
-
     }
     catch ( const BitException& ex )
     {

@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "simplerequest.h"
 #include "userconfigs.h"
 #include <iostream>
 #include <string>
