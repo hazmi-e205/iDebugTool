@@ -246,7 +246,7 @@ function qt.project_pro(prj)
         local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
         if v:endswith(".hpp") or v:endswith(".h") or v:endswith(".inl") then
             table.insert(header_list, relative_str)
-        elseif v:endswith(".cpp") or v:endswith(".c") or v:endswith(".asm") then
+        elseif v:endswith(".cpp") or v:endswith(".cc") or v:endswith(".c") or v:endswith(".asm") then
             table.insert(source_list, relative_str)
         elseif v:endswith(".ui") then
             table.insert(ui_list, relative_str)

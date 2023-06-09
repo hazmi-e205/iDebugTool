@@ -11,6 +11,7 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
+    include "qbreakpad.lua"
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -47,6 +48,11 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
+    QtConfigs
+    {
+        "force_debug_info",
+    }
+
     QtModules
     {
         "network",
@@ -81,6 +87,7 @@ project "iDebugTool"
         "../Externals/zsign",
         "../Externals/mingw-patch",
         "../Externals/bit7z/include",
+        "../Externals/qBreakpad/handler",
     }
 
     links
@@ -99,6 +106,7 @@ project "iDebugTool"
         "zsign",
         "mingw-patch",
         "bit7z",
+        "qBreakpad",
     }
 
     libdirs
