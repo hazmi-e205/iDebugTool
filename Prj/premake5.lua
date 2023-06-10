@@ -11,6 +11,7 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
+    include "asmcrashreport.lua"
     include "qbreakpad.lua"
 
 project "SelfUpdater"
@@ -51,6 +52,7 @@ project "iDebugTool"
     QtConfigs
     {
         "force_debug_info",
+        "separate_debug_info",
     }
 
     QtModules
@@ -62,6 +64,11 @@ project "iDebugTool"
     {
         "../info.json",
         "../Assets/**",
+    }
+
+    QtIncludes
+    {
+        -- "../Externals/asmCrashReport/asmCrashReport.pri",
     }
 
     files
@@ -87,6 +94,7 @@ project "iDebugTool"
         "../Externals/zsign",
         "../Externals/mingw-patch",
         "../Externals/bit7z/include",
+        "../Externals/asmCrashReport/src",
         "../Externals/qBreakpad/handler",
     }
 
@@ -106,6 +114,7 @@ project "iDebugTool"
         "zsign",
         "mingw-patch",
         "bit7z",
+        "asmCrashReport",
         "qBreakpad",
     }
 
@@ -123,6 +132,7 @@ project "iDebugTool"
             "Iphlpapi",
             "Ws2_32",
             "Ole32",
+            "Dbghelp",
         }
         prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
     else
