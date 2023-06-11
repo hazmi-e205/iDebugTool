@@ -90,13 +90,6 @@
             "use_submodules": true
         },
         {
-            "project": "libzip",
-            "url": "https://github.com/nih-at/libzip",
-            "branch": "rel-0-10",
-            "path": "Externals/libzip",
-            "use_submodules": false
-        },
-        {
             "project": "zlib",
             "url": "https://github.com/madler/zlib",
             "branch": "v1.2.11",

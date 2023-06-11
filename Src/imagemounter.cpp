@@ -294,7 +294,7 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
             auto unpack_callback = [&](int progress, int total, QString messages){
                 ui->logField->append(QString::asprintf("(%d of %d) %s", progress, total, messages.toUtf8().data()));
             };
-            if (!zip_extract_all(temp_zip, m_downloadout, unpack_callback))
+            if (!ZipExtractAll(temp_zip, m_downloadout, unpack_callback))
             {
                 ui->logField->append("Extract failed!");
             }

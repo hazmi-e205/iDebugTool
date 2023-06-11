@@ -3,7 +3,7 @@ include "common.lua"
 solution "iDebugTool"
     QtSlnConfigs {"ordered"}
     include "openssl.lua"
-    include "libzip.lua"
+    include "zlib.lua"
     include "libplist.lua"
     include "libusbmuxd.lua"
     include "libimobiledevice.lua"
@@ -86,8 +86,6 @@ project "iDebugTool"
         "../Externals/libplist/include",
         "../Externals/openssl/include",
         "../Externals/libusbmuxd/include",
-        "../Externals/libzip/lib",
-        "../Externals/libzip/build",
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
@@ -107,7 +105,6 @@ project "iDebugTool"
         "imobiledevice-glue",
         "usbmuxd",
         "imobiledevice",
-        "libzip",
         "zlib",
         "MachOLib",
         "minizip",

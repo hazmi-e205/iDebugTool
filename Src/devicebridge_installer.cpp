@@ -106,14 +106,11 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         }
 
         plist_t client_opts = instproxy_client_options_new();
-
-        /* open install package */
-        int errp = 0;
-        struct zip *zf = NULL;
-
         if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive)))
         {
-            zf = zip_open(path.toUtf8().data(), 0, &errp);
+#ifdef IPCC_SUPPORT
+            int errp = 0;
+            struct zip *zf = zip_open(path.toUtf8().data(), 0, &errp);
             if (!zf) {
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
                 return;
@@ -190,10 +187,17 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
                     zip_fclose(zfile);
                 }
             }
+            if (zf) {
+                zip_unchange_all(zf);
+                zip_close(zf);
+            }
             free(ipcc);
             printf("DONE.\n");
 
             instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
+#else
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: IPCC not supported!");
+#endif
         }
         else if (QFileInfo(path).isDir())
         {
@@ -268,10 +272,6 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
             if (bundleidentifier) {
                 instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
             }
-        }
-        if (zf) {
-            zip_unchange_all(zf);
-            zip_close(zf);
         }
 
         /* perform installation or upgrade */
