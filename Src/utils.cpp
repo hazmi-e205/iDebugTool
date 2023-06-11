@@ -418,16 +418,16 @@ QString GetBaseDirectory(QString inpath)
 void CheckDrMinGWReports(QString filename, std::function<void (QString,int)> callback)
 {
     QString filepath = GetDirectory(DIRECTORY_TYPE::APP) + "/" + filename;
-    QFile MyFile(filepath);
-    MyFile.open(QIODevice::ReadWrite);
-    QTextStream in (&MyFile);
+    QFile file(filepath);
+    file.open(QIODevice::ReadOnly);
+    QTextStream in(&file);
     QString content = in.readAll();
-    MyFile.close();
+    file.close();
 
     int current_reports = content.count("Error occurred",Qt::CaseInsensitive);
-    if (current_reports != UserConfigs::Get()->GetData("LastCrashesCount", 0))
+    if (current_reports != UserConfigs::Get()->GetData(filename + "_count", 0))
     {
-        UserConfigs::Get()->SaveData("LastCrashesCount", current_reports);
+        UserConfigs::Get()->SaveData(filename + "_count", current_reports);
         callback(filepath, current_reports);
     }
 }
