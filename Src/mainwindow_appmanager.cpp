@@ -16,6 +16,9 @@ void MainWindow::SetupAppManagerUI()
 
 void MainWindow::OnInstallClicked()
 {
+    DeviceBridge* bridge = NULL;
+    bridge->GetDeviceInfo();
+
     DeviceBridge::Get()->InstallApp(ui->upgrade->isChecked() ? InstallerMode::CMD_UPGRADE : InstallerMode::CMD_INSTALL, ui->installPath->text());
     ui->installBtn->setEnabled(false);
     ui->bottomWidget->setCurrentIndex(1);

@@ -45,5 +45,6 @@ enum STYLE_TYPE
 };
 void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
 void DecorateSplitter(QWidget* splitterWidget, int index);
+void CheckDrMinGWReports(QString filename, std::function<void(QString,int)> callback);
 
 #endif // UTILS_H

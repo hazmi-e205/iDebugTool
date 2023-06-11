@@ -414,3 +414,20 @@ QString GetBaseDirectory(QString inpath)
     QString abspath = info.absoluteFilePath();
     return abspath.mid(0, abspath.length() - info.fileName().length() - 1);
 }
+
+void CheckDrMinGWReports(QString filename, std::function<void (QString,int)> callback)
+{
+    QString filepath = GetDirectory(DIRECTORY_TYPE::APP) + "/" + filename;
+    QFile MyFile(filepath);
+    MyFile.open(QIODevice::ReadWrite);
+    QTextStream in (&MyFile);
+    QString content = in.readAll();
+    MyFile.close();
+
+    int current_reports = content.count("Error occurred",Qt::CaseInsensitive);
+    if (current_reports != UserConfigs::Get()->GetData("LastCrashesCount", 0))
+    {
+        UserConfigs::Get()->SaveData("LastCrashesCount", current_reports);
+        callback(filepath, current_reports);
+    }
+}
