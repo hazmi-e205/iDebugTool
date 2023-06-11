@@ -2,6 +2,7 @@ include "common.lua"
 
 project "crypto"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {
@@ -101,6 +102,7 @@ project "crypto"
 
 project "openssl"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {

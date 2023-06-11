@@ -2,6 +2,7 @@ include "common.lua"
 
 project "imobiledevice-glue"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {

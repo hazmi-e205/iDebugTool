@@ -2,6 +2,7 @@ include "common.lua"
 
 project "zlib"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {
@@ -11,6 +12,7 @@ project "zlib"
 
 project "minizip"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {

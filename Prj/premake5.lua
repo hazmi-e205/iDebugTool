@@ -11,8 +11,9 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
-    include "asmcrashreport.lua"
-    include "qbreakpad.lua"
+    if IsLinux() or IsMac() then
+        include "asmcrashreport.lua"
+    end
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -49,26 +50,14 @@ project "iDebugTool"
     info_json, err = json.decode(info_str)
     AppVersion (info_json.version)
 
-    QtConfigs
-    {
-        "force_debug_info",
-        "separate_debug_info",
-    }
-
-    QtModules
-    {
-        "network",
-    }
+    QtModules {"network"}
+    QtConfigs {"force_debug_info"}
+    -- QtIncludes {"../Externals/asmCrashReport/asmCrashReport.pri"}
 
     QtResources
     {
         "../info.json",
         "../Assets/**",
-    }
-
-    QtIncludes
-    {
-        -- "../Externals/asmCrashReport/asmCrashReport.pri",
     }
 
     files
@@ -92,8 +81,6 @@ project "iDebugTool"
         "../Externals/zsign",
         "../Externals/mingw-patch",
         "../Externals/bit7z/include",
-        "../Externals/asmCrashReport/src",
-        "../Externals/qBreakpad/handler",
     }
 
     links
@@ -111,8 +98,6 @@ project "iDebugTool"
         "zsign",
         "mingw-patch",
         "bit7z",
-        "asmCrashReport",
-        "qBreakpad",
     }
 
     libdirs
@@ -135,12 +120,29 @@ project "iDebugTool"
             "Ws2_32",
             "Ole32",
             "Dbghelp",
+            "exchndl",
         }
+        libdirs
+        {
+            "../Prebuilt/drmingw-win64/lib",
+        }
+        includedirs
+        {
+            "../Prebuilt/drmingw-win64/include",
+        }
+        local drmingw = "$$PWD/../../../Prebuilt/drmingw-win64/bin"
+        prelinkcommands {"python " .. copyext .. " mgwhelp.dll " .. drmingw .. " " .. copydst}
+        prelinkcommands {"python " .. copyext .. " exchndl.dll " .. drmingw .. " " .. copydst}
         prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
     else
         links
         {
+            "asmCrashReport",
             "dl",
+        }
+        includedirs
+        {
+            "../Externals/asmCrashReport/src",
         }
         prelinkcommands {"python " .. copyext .. " .so " .. copysrc .. " " .. copydst}
     end

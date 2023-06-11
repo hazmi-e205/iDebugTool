@@ -2,6 +2,7 @@ include "common.lua"
 
 project "zsign"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {
@@ -29,6 +30,7 @@ project "zsign"
 if IsWindows() then
     project "mingw-patch"
         kind "StaticLib"
+        QtConfigs {"force_debug_info"}
         files
         {
             "../Externals/mingw-patch/**.h",

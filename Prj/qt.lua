@@ -290,7 +290,7 @@ function qt.project_pro(prj)
         _p('QMAKE_PRE_LINK += \\')
         for k,v in ipairs(prj.prelinkcommands) do
             if k ~= #prj.prelinkcommands then
-                v = v .. ' \\'
+                v = v .. ' &&\\'
             end
             _p(1, v)
         end

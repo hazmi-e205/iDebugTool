@@ -2,6 +2,7 @@ include "common.lua"
 
 project "cnary"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {
@@ -21,6 +22,7 @@ project "cnary"
 
 project "plist"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {

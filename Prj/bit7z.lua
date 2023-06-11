@@ -113,6 +113,7 @@ project "7z"
 
 project "bit7z"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {

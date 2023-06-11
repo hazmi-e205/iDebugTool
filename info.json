@@ -68,14 +68,6 @@
             "use_submodules": true
         },
         {
-            "project": "qBreakpad",
-            "url": "https://github.com/buzzySmile/qBreakpad",
-            "branch": "master",
-            "revision": "0553f6c00354d5b65bbaf539f4c1f784efd2f543",
-            "path": "Externals/qBreakpad",
-            "use_submodules": true
-        },
-        {
             "project": "openssl",
             "url": "https://github.com/openssl/openssl",
             "branch": "OpenSSL_1_1_1m",

@@ -2,6 +2,7 @@ include "common.lua"
 
 project "usbmuxd"
     kind "StaticLib"
+    QtConfigs {"force_debug_info"}
 
     files
     {
