@@ -41,6 +41,7 @@ project "plist"
 
     defines
     {
+        "LIBPLIST_STATIC",
         "HAVE_CONFIG_H",
     }
 

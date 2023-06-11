@@ -123,6 +123,11 @@ project "iDebugTool"
         "../Build/" .. GetPathFromPlatform() .. "/libs",
     }
 
+    defines
+    {
+        "LIBPLIST_STATIC",
+    }
+
     local copyext = "$$PWD/../../../Scripts/copyext.py"
     local copysrc = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs"
     local copydst = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/bin"

@@ -30,7 +30,8 @@
         {
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
-            "branch": "2.3.0",
+            "branch": "master",
+            "revision": "f28cf0f1e51c7554d590cbec56abac46b4a44b4e",
             "path": "Externals/libplist",
             "use_submodules": false
         },

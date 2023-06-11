@@ -7,9 +7,6 @@
 /* Define if debug message output code should be built. */
 /* #undef DEBUG */
 
-/* Define to 1 if you have the `asprintf' function. */
-#define HAVE_ASPRINTF 1
-
 /* Define if the C compiler supports constructor/destructor attributes */
 #define HAVE_ATTRIBUTE_CONSTRUCTOR 1
 
@@ -41,7 +38,7 @@
 /* #undef HAVE_PTHREAD_PRIO_INHERIT */
 
 /* If available, contains the Python version number currently in use. */
-/* #undef HAVE_PYTHON */
+#define HAVE_PYTHON "3.10"
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -51,12 +48,6 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
-
-/* Define to 1 if you have the `stpcpy' function. */
-/* #undef HAVE_STPCPY */
-
-/* Define to 1 if you have the `strcasecmp' function. */
-#define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `strdup' function. */
 #define HAVE_STRDUP 1
@@ -94,9 +85,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* Define to 1 if you have the `vasprintf' function. */
-#define HAVE_VASPRINTF 1
-
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
 
@@ -110,7 +98,7 @@
 #define PACKAGE_NAME "libplist"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libplist 2.2.1"
+#define PACKAGE_STRING "libplist 2.3.0-17-gf28cf0f"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libplist"
@@ -119,7 +107,7 @@
 #define PACKAGE_URL "https://libimobiledevice.org"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.2.1"
+#define PACKAGE_VERSION "2.3.0-17-gf28cf0f"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -131,7 +119,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "2.2.1"
+#define VERSION "2.3.0-17-gf28cf0f"
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

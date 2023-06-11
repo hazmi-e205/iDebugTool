@@ -27,6 +27,7 @@ project "imobiledevice"
     defines
     {
         "HAVE_CONFIG_H",
+        "LIBPLIST_STATIC",
     }
 
     buildoptions
