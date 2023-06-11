@@ -1,0 +1,13 @@
+diff --git a/src/asmCrashReport.cpp b/src/asmCrashReport.cpp
+index d1b8ec6..a82e4e0 100644
+--- a/src/asmCrashReport.cpp
++++ b/src/asmCrashReport.cpp
+@@ -78,7 +78,7 @@ namespace asmCrashReport
+ 
+          for ( const QString &data : cReportHeader + inFrameInfoList )
+          {
+-            stream << data << endl;
++             stream << data << Qt::endl;
+          }
+ 
+          fileWritten = true;
