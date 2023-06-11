@@ -26,7 +26,7 @@ if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"
 
 #compiler
 qt_dir           = "C:/Qt"
-qt_version       = "6.4.1"
+qt_version       = "6.5.1"
 aqt_compiler     = "tools_mingw90"
 aqt_creator      = "qtcreator_gui"
 compiler_name    = "gcc" if "linux" in sys.platform else "mingw"
@@ -334,6 +334,10 @@ if __name__ == "__main__":
             is_reset = True
         if "--patch" in arg:
             is_apply_patch = True
+        if "--qt" in arg:
+            qt_split = arg.split('=')
+            if len(qt_split) > 1:
+                qt_version = qt_split[1].strip()
         if "--aqt" in arg:
             is_aqtinstaller = True
             aqt_split = arg.split('=')

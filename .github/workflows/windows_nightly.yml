@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  QT_VERSION: 6.5.0
+  QT_VERSION: 6.5.1
   SOURCE_DIR: ${{ github.workspace }}
   BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
   ARCHIVE_NAME: nightly-build
