@@ -150,5 +150,6 @@ private:
     void SetupDebuggerUI();
 private slots:
     void OnStartDebuggingClicked();
+    void OnDebuggerReceived(QString logs);
 };
 #endif // MAINWINDOW_H

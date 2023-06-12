@@ -159,8 +159,10 @@ public:
      void StartDebugging(QString bundleId, bool detach_after_start = false, QString parameters = "", QString arguments = "");
      void StopDebugging();
 private:
+     debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
      debugserver_client_t m_debugger;
 signals:
+     void DebuggerReceived(QString logs);
 };
 
 #endif // DEVICEBRIDGE_H

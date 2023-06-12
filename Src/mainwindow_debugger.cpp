@@ -5,6 +5,7 @@ void MainWindow::SetupDebuggerUI()
 {
     connect(ui->startDebugBtn, SIGNAL(pressed()), this, SLOT(OnStartDebuggingClicked()));
     connect(ui->bundleEdit, SIGNAL(textActivated(QString)), this, SLOT(OnBundleIdChanged(QString)));
+    connect(DeviceBridge::Get(), SIGNAL(DebuggerReceived(QString)), this, SLOT(OnDebuggerReceived(QString)));
 }
 
 void MainWindow::OnStartDebuggingClicked()
@@ -19,4 +20,9 @@ void MainWindow::OnStartDebuggingClicked()
         DeviceBridge::Get()->StopDebugging();
         ui->startDebugBtn->setText("Start Debugging");
     }
+}
+
+void MainWindow::OnDebuggerReceived(QString logs)
+{
+    ui->debuggerEdit->appendPlainText(logs);
 }
