@@ -16,6 +16,7 @@
 #include <libimobiledevice/mobile_image_mounter.h>
 #include <libimobiledevice/screenshotr.h>
 #include <libimobiledevice/service.h>
+#include <libimobiledevice/debugserver.h>
 #include "logpacket.h"
 #include "logfilterthread.h"
 #include "asyncmanager.h"
@@ -152,6 +153,13 @@ signals:
      void FilterStatusChanged(bool isfiltering);
      void SystemLogsReceived(LogPacket log);
      void SystemLogsReceived2(QString logs);
+
+     //DebugBridge
+public:
+     void StartDebugging(QString bundleId, bool detach_after_start = false, QString parameters = "", QString arguments = "");
+private:
+     debugserver_client_t m_debugger;
+signals:
 };
 
 #endif // DEVICEBRIDGE_H

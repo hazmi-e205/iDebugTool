@@ -32,7 +32,8 @@ DeviceBridge::DeviceBridge() :
     m_crashlog(nullptr),
     m_installer(nullptr),
     m_syslog(nullptr),
-    m_logHandler(new LogFilterThread())
+    m_logHandler(new LogFilterThread()),
+    m_debugger(nullptr)
 {
     connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
     connect(m_logHandler, SIGNAL(FilterStatusChanged(bool)), this, SIGNAL(FilterStatusChanged(bool)));
