@@ -79,4 +79,9 @@ void MainWindow::RefreshPIDandBundleID()
     ui->pidEdit->clear();
     ui->pidEdit->addItems(DeviceBridge::GetPIDOptions(m_installedApps));
     ui->pidEdit->setEditText(old_string);
+
+    old_string = ui->bundleEdit->currentText();
+    ui->bundleEdit->clear();
+    ui->bundleEdit->addItems(m_installedApps.keys());
+    ui->bundleEdit->setEditText(old_string);
 }

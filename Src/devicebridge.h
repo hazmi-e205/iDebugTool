@@ -157,6 +157,7 @@ signals:
      //DebugBridge
 public:
      void StartDebugging(QString bundleId, bool detach_after_start = false, QString parameters = "", QString arguments = "");
+     void StopDebugging();
 private:
      debugserver_client_t m_debugger;
 signals:

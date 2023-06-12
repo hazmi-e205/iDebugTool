@@ -54,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupRecodesignerUI();
     SetupCrashlogsUI();
     SetupToolboxUI();
+    SetupDebuggerUI();
 
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
@@ -208,7 +209,7 @@ void MainWindow::OnClickedEvent(QObject* object)
         ui->installPath->setText(filepath);
     }
 
-    if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName())
+    if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName() || object->objectName() == ui->bundleEdit->objectName())
     {
         RefreshPIDandBundleID();
     }

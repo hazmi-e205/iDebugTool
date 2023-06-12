@@ -1,4 +1,5 @@
 #include "devicebridge.h"
+#include "asyncmanager.h"
 
 static int quit_flag = 0;
 static int cancel_receive()
@@ -49,7 +50,7 @@ static debugserver_error_t debugserver_client_handle_response(debugserver_client
         } else {
             printf("Unable to decode exit status from %s", r);
             dres = DEBUGSERVER_E_UNKNOWN_ERROR;
-                }
+        }
     } else if (r && strlen(r) == 0) {
         printf("empty response");
     } else {
@@ -68,217 +69,225 @@ static debugserver_error_t debugserver_client_handle_response(debugserver_client
 
 void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QString parameters, QString arguments)
 {
-    QString container;
-    if (m_installedApps.contains(bundleId))
-        container = m_installedApps[bundleId]["Container"].toString();
-    else
-        return;
+    AsyncManager::Get()->StartAsyncRequest([this, bundleId, detach_after_start, parameters, arguments]()
+    {
+        QString container;
+        if (m_installedApps.contains(bundleId))
+            container = m_installedApps[bundleId]["Container"].toString();
+        else
+            return;
 
-    /* start and connect to debugserver */
-    if (debugserver_client_start_service(m_device, &m_debugger, TOOL_NAME) != DEBUGSERVER_E_SUCCESS) {
-        fprintf(stderr,
-            "Could not start com.apple.debugserver!\n"
-            "Please make sure to mount the developer disk image first:\n"
-            "  1) Get the iOS version from `ideviceinfo -k ProductVersion`.\n"
-            "  2) Find the matching iPhoneOS DeveloperDiskImage.dmg files.\n"
-            "  3) Run `ideviceimagemounter` with the above path.\n");
-        return;
-    }
-
-    /* set receive params */
-    if (debugserver_client_set_receive_params(m_debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
-        fprintf(stderr, "Error in debugserver_client_set_receive_params\n");
-        debugserver_client_free(m_debugger);
-        return;
-    }
-
-    /* enable logging for the session in debug mode */
-    debugserver_command_t command = NULL;
-    char* response = NULL;
-    debugserver_error_t dres;
-    /*fprintf(stdout, "Setting logging bitmask...");
-    debugserver_command_new("QSetLogging:bitmask=LOG_ALL|LOG_RNB_REMOTE|LOG_RNB_PACKETS;", 0, NULL, &command);
-    debugserver_error_t dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
+        /* start and connect to debugserver */
+        if (debugserver_client_start_service(m_device, &m_debugger, TOOL_NAME) != DEBUGSERVER_E_SUCCESS) {
+            fprintf(stderr,
+                    "Could not start com.apple.debugserver!\n"
+                    "Please make sure to mount the developer disk image first:\n"
+                    "  1) Get the iOS version from `ideviceinfo -k ProductVersion`.\n"
+                    "  2) Find the matching iPhoneOS DeveloperDiskImage.dmg files.\n"
+                    "  3) Run `ideviceimagemounter` with the above path.\n");
             return;
         }
-        free(response);
-        response = NULL;
-    }*/
 
-    /* set maximum packet size */
-    printf("Setting maximum packet size...");
-    char* packet_size[2] = { (char*)"1024", NULL};
-    debugserver_command_new("QSetMaxPacketSize:", 1, packet_size, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
+        /* set receive params */
+        if (debugserver_client_set_receive_params(m_debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
+            fprintf(stderr, "Error in debugserver_client_set_receive_params\n");
             debugserver_client_free(m_debugger);
             return;
         }
-        free(response);
-        response = NULL;
-    }
 
-    /* set working directory */
-    printf("Setting working directory...");
-    char* working_dir[2] = {container.toUtf8().data(), NULL};
-    debugserver_command_new("QSetWorkingDir:", 1, working_dir, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
-            debugserver_client_free(m_debugger);
-            return;
-        }
-        free(response);
-        response = NULL;
-    }
+        /* enable logging for the session in debug mode */
+        debugserver_command_t command = NULL;
+        char* response = NULL;
+        debugserver_error_t dres;
+        /*fprintf(stdout, "Setting logging bitmask...");
+        debugserver_command_new("QSetLogging:bitmask=LOG_ALL|LOG_RNB_REMOTE|LOG_RNB_PACKETS;", 0, NULL, &command);
+        debugserver_error_t dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+                return;
+            }
+            free(response);
+            response = NULL;
+        }*/
 
-    /* set environment */
-    QStringList environtment = parameters.split(" ");
-    printf("Setting environment...");
-    foreach (const QString& env, environtment) {
-        printf("setting environment variable: %s", env.toUtf8().data());
-        debugserver_client_set_environment_hex_encoded(m_debugger, env.toUtf8().data(), NULL);
-    }
-
-    /* set arguments and run app */
-    printf("Setting argv...");
-    QString path = m_installedApps[bundleId]["Container"].toString() + "/" + m_installedApps[bundleId]["CFBundleExecutable"].toString();
-    QStringList args = QStringList() << path << arguments.split(" ");
-    char **app_argv = (char**)malloc(sizeof(char*) * args.count());
-    int idx = 0;
-    foreach (const QString& env, environtment) {
-        printf("app_argv[%d] = %s", idx, env.toUtf8().data());
-        app_argv[idx] = env.toUtf8().data();
-        idx += 1;
-    }
-    app_argv[args.count()] = NULL;
-    debugserver_client_set_argv(m_debugger, args.count(), app_argv, NULL);
-    free(app_argv);
-
-    /* check if launch succeeded */
-    printf("Checking if launch succeeded...");
-    debugserver_command_new("qLaunchSuccess", 0, NULL, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
-            debugserver_client_free(m_debugger);
-            return;
-        }
-        free(response);
-        response = NULL;
-    }
-
-    int res = 0;
-    if (detach_after_start) {
-        printf("Detaching from app");
-        debugserver_command_new("D", 0, NULL, &command);
+        /* set maximum packet size */
+        printf("Setting maximum packet size...");
+        char* packet_size[2] = { (char*)"1024", NULL};
+        debugserver_command_new("QSetMaxPacketSize:", 1, packet_size, &command);
         dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+                debugserver_client_free(m_debugger);
+                return;
+            }
+            free(response);
+            response = NULL;
+        }
 
-        res = (dres == DEBUGSERVER_E_SUCCESS) ? 0: -1;
-        debugserver_client_free(m_debugger);
-        return;
-    }
+        /* set working directory */
+        printf("Setting working directory...");
+        char* working_dir[2] = {container.toUtf8().data(), NULL};
+        debugserver_command_new("QSetWorkingDir:", 1, working_dir, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+                debugserver_client_free(m_debugger);
+                return;
+            }
+            free(response);
+            response = NULL;
+        }
 
-    /* set thread */
-    printf("Setting thread...");
-    debugserver_command_new("Hc0", 0, NULL, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
+        /* set environment */
+        QStringList environtment = parameters.split(" ");
+        printf("Setting environment...");
+        foreach (const QString& env, environtment) {
+            printf("setting environment variable: %s", env.toUtf8().data());
+            debugserver_client_set_environment_hex_encoded(m_debugger, env.toUtf8().data(), NULL);
+        }
+
+        /* set arguments and run app */
+        printf("Setting argv...");
+        QString path = m_installedApps[bundleId]["Container"].toString() + "/" + m_installedApps[bundleId]["CFBundleExecutable"].toString();
+        QStringList args = QStringList() << path << arguments.split(" ");
+        char **app_argv = (char**)malloc(sizeof(char*) * args.count());
+        int idx = 0;
+        foreach (const QString& env, environtment) {
+            printf("app_argv[%d] = %s", idx, env.toUtf8().data());
+            app_argv[idx] = env.toUtf8().data();
+            idx += 1;
+        }
+        app_argv[args.count()] = NULL;
+        debugserver_client_set_argv(m_debugger, args.count(), app_argv, NULL);
+        free(app_argv);
+
+        /* check if launch succeeded */
+        printf("Checking if launch succeeded...");
+        debugserver_command_new("qLaunchSuccess", 0, NULL, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+                debugserver_client_free(m_debugger);
+                return;
+            }
+            free(response);
+            response = NULL;
+        }
+
+        int res = 0;
+        if (detach_after_start) {
+            printf("Detaching from app");
+            debugserver_command_new("D", 0, NULL, &command);
+            dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+            debugserver_command_free(command);
+            command = NULL;
+
+            res = (dres == DEBUGSERVER_E_SUCCESS) ? 0: -1;
             debugserver_client_free(m_debugger);
             return;
         }
-        free(response);
-        response = NULL;
-    }
 
-    /* continue running process */
-    printf("Continue running process...");
-    debugserver_command_new("c", 0, NULL, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    printf("Continue response: %s", response);
-
-    /* main loop which is parsing/handling packets during the run */
-    printf("Entering run loop...");
-    while (!quit_flag) {
-        if (dres != DEBUGSERVER_E_SUCCESS) {
-            printf("failed to receive response; error %d", dres);
-            break;
+        /* set thread */
+        printf("Setting thread...");
+        debugserver_command_new("Hc0", 0, NULL, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+                debugserver_client_free(m_debugger);
+                return;
+            }
+            free(response);
+            response = NULL;
         }
 
-        if (response) {
-            printf("response: %s", response);
-            if (strncmp(response, "OK", 2) != 0) {
-                dres = debugserver_client_handle_response(m_debugger, &response, &res);
-                if (dres != DEBUGSERVER_E_SUCCESS) {
-                    printf("failed to process response; error %d; %s", dres, response);
-                    break;
+        /* continue running process */
+        printf("Continue running process...");
+        debugserver_command_new("c", 0, NULL, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        printf("Continue response: %s", response);
+
+        /* main loop which is parsing/handling packets during the run */
+        printf("Entering run loop...");
+        while (!quit_flag) {
+            if (dres != DEBUGSERVER_E_SUCCESS) {
+                printf("failed to receive response; error %d", dres);
+                break;
+            }
+
+            if (response) {
+                printf("response: %s", response);
+                if (strncmp(response, "OK", 2) != 0) {
+                    dres = debugserver_client_handle_response(m_debugger, &response, &res);
+                    if (dres != DEBUGSERVER_E_SUCCESS) {
+                        printf("failed to process response; error %d; %s", dres, response);
+                        break;
+                    }
                 }
             }
+            if (res >= 0) {
+                debugserver_client_free(m_debugger);
+                return;
+            }
+
+            dres = debugserver_client_receive_response(m_debugger, &response, NULL);
         }
-        if (res >= 0) {
+
+        /* ignore quit_flag after this point */
+        if (debugserver_client_set_receive_params(m_debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
+            fprintf(stderr, "Error in debugserver_client_set_receive_params\n");
             debugserver_client_free(m_debugger);
             return;
         }
 
-        dres = debugserver_client_receive_response(m_debugger, &response, NULL);
-    }
+        /* interrupt execution */
+        debugserver_command_new("\x03", 0, NULL, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+            }
+            free(response);
+            response = NULL;
+        }
 
-    /* ignore quit_flag after this point */
-    if (debugserver_client_set_receive_params(m_debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
-        fprintf(stderr, "Error in debugserver_client_set_receive_params\n");
+        /* kill process after we finished */
+        printf("Killing process...");
+        debugserver_command_new("k", 0, NULL, &command);
+        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_command_free(command);
+        command = NULL;
+        if (response) {
+            if (strncmp(response, "OK", 2) != 0) {
+                debugserver_client_handle_response(m_debugger, &response, NULL);
+            }
+            free(response);
+            response = NULL;
+        }
         debugserver_client_free(m_debugger);
-        return;
-    }
-
-    /* interrupt execution */
-    debugserver_command_new("\x03", 0, NULL, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
-        }
-        free(response);
-        response = NULL;
-    }
-
-    /* kill process after we finished */
-    printf("Killing process...");
-    debugserver_command_new("k", 0, NULL, &command);
-    dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
-    debugserver_command_free(command);
-    command = NULL;
-    if (response) {
-        if (strncmp(response, "OK", 2) != 0) {
-            debugserver_client_handle_response(m_debugger, &response, NULL);
-        }
-        free(response);
-        response = NULL;
-    }
-    debugserver_client_free(m_debugger);
+        quit_flag = 0;
+    });
 }
 
+void DeviceBridge::StopDebugging()
+{
+    quit_flag = 1;
+}

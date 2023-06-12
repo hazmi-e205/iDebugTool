@@ -144,5 +144,11 @@ private slots:
     void OnSleepClicked();
     void OnShutdownClicked();
     void OnRestartClicked();
+
+    //Debugger UI
+private:
+    void SetupDebuggerUI();
+private slots:
+    void OnStartDebuggingClicked();
 };
 #endif // MAINWINDOW_H
