@@ -17,6 +17,7 @@
 #include <libimobiledevice/screenshotr.h>
 #include <libimobiledevice/service.h>
 #include <libimobiledevice/debugserver.h>
+#include "debuggerfilterthread.h"
 #include "logpacket.h"
 #include "logfilterthread.h"
 #include "asyncmanager.h"
@@ -158,11 +159,19 @@ signals:
 public:
      void StartDebugging(QString bundleId, bool detach_after_start = false, QString parameters = "", QString arguments = "");
      void StopDebugging();
+     void ClearDebugger();
+     void SetMaxDebuggerLogs(qsizetype number);
+     void DebuggerFilterByString(QString text_or_regex);
+     void DebuggerExcludeByString(QString exclude_text);
+     void DebuggerFilter(QString text_or_regex, QString exclude_text);
+     void DebuggerReloadFilter();
 private:
      debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
      debugserver_client_t m_debugger;
+     DebuggerFilterThread *m_debugHandler;
 signals:
-     void DebuggerReceived(QString logs);
+     void DebuggerReceived(QString messages, bool stopped = false);
+     void DebuggerFilterStatus(bool isfiltering);
 };
 
 #endif // DEVICEBRIDGE_H

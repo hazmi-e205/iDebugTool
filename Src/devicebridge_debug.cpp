@@ -71,25 +71,28 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
     AsyncManager::Get()->StartAsyncRequest([this, bundleId, detach_after_start, parameters, arguments]()
     {
         QString container;
-        if (m_installedApps.contains(bundleId))
+        if (m_installedApps.contains(bundleId)) {
             container = m_installedApps[bundleId]["Container"].toString();
-        else
+        }
+        else {
+            emit DebuggerReceived("App not installed yet", true);
             return;
+        }
 
         /* start and connect to debugserver */
         if (debugserver_client_start_service(m_device, &m_debugger, TOOL_NAME) != DEBUGSERVER_E_SUCCESS) {
-            qDebug() << (
+            emit DebuggerReceived(
                     "Could not start com.apple.debugserver!\n"
                     "Please make sure to mount the developer disk image first:\n"
-                    "  1) Get the iOS version from `ideviceinfo -k ProductVersion`.\n"
-                    "  2) Find the matching iPhoneOS DeveloperDiskImage.dmg files.\n"
-                    "  3) Run `ideviceimagemounter` with the above path.");
+                    "  1) Go to Imagae Mounter in Toolbox.\n"
+                    "  2) Choose closest image version to your iOS version.\n"
+                    "  3) Click Download and Mount.", true);
             return;
         }
 
         /* set receive params */
         if (debugserver_client_set_receive_params(m_debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
-            qDebug() << "Error in debugserver_client_set_receive_params";
+            emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
             debugserver_client_free(m_debugger);
             return;
         }
@@ -122,6 +125,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
+                emit DebuggerReceived("Error setting max packet size occurred: " + QString(response), true);
                 debugserver_client_free(m_debugger);
                 return;
             }
@@ -139,6 +143,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
+                emit DebuggerReceived("Error setting working directory occurred: " + QString(response), true);
                 debugserver_client_free(m_debugger);
                 return;
             }
@@ -178,6 +183,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
+                emit DebuggerReceived("Error checking if launch succeeded occurred: " + QString(response), true);
                 debugserver_client_free(m_debugger);
                 return;
             }
@@ -207,6 +213,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
+                emit DebuggerReceived("Error setting thread occurred: " + QString(response), true);
                 debugserver_client_free(m_debugger);
                 return;
             }
@@ -241,6 +248,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
                 }
             }
             if (res >= 0) {
+                emit DebuggerReceived("Debugger stopped", true);
                 debugserver_client_free(m_debugger);
                 return;
             }
@@ -250,7 +258,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
 
         /* ignore quit_flag after this point */
         if (debugserver_client_set_receive_params(m_debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
-            qDebug() << "Error in debugserver_client_set_receive_params";
+            emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
             debugserver_client_free(m_debugger);
             return;
         }
@@ -283,10 +291,41 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         }
         debugserver_client_free(m_debugger);
         quit_flag = 0;
+        emit DebuggerReceived("Debugger stopped", true);
     });
 }
 
 void DeviceBridge::StopDebugging()
 {
     quit_flag = 1;
+}
+
+void DeviceBridge::ClearDebugger()
+{
+    m_debugHandler->ClearCachedLogs();
+}
+
+void DeviceBridge::SetMaxDebuggerLogs(qsizetype number)
+{
+    m_debugHandler->SetMaxCachedLogs(number);
+}
+
+void DeviceBridge::DebuggerFilterByString(QString text_or_regex)
+{
+    m_debugHandler->LogsFilterByString(text_or_regex);
+}
+
+void DeviceBridge::DebuggerExcludeByString(QString exclude_text)
+{
+    m_debugHandler->LogsExcludeByString(exclude_text);
+}
+
+void DeviceBridge::DebuggerFilter(QString text_or_regex, QString exclude_text)
+{
+    m_debugHandler->LogsFilter(text_or_regex, exclude_text);
+}
+
+void DeviceBridge::DebuggerReloadFilter()
+{
+    m_debugHandler->ReloadLogsFilter();
 }

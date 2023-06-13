@@ -22,21 +22,24 @@ void DeviceBridge::Destroy()
     m_destroyed = true;
 }
 
-DeviceBridge::DeviceBridge() :
-    m_device(nullptr),
-    m_client(nullptr),
-    m_diagnostics(nullptr),
-    m_imageMounter(nullptr),
-    m_screenshot(nullptr),
-    m_afc(nullptr),
-    m_crashlog(nullptr),
-    m_installer(nullptr),
-    m_syslog(nullptr),
-    m_logHandler(new LogFilterThread()),
-    m_debugger(nullptr)
+DeviceBridge::DeviceBridge()
+    : m_device(nullptr)
+    , m_client(nullptr)
+    , m_diagnostics(nullptr)
+    , m_imageMounter(nullptr)
+    , m_screenshot(nullptr)
+    , m_afc(nullptr)
+    , m_crashlog(nullptr)
+    , m_installer(nullptr)
+    , m_syslog(nullptr)
+    , m_logHandler(new LogFilterThread())
+    , m_debugger(nullptr)
+    , m_debugHandler(new DebuggerFilterThread())
 {
     connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
     connect(m_logHandler, SIGNAL(FilterStatusChanged(bool)), this, SIGNAL(FilterStatusChanged(bool)));
+    connect(m_debugHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(DebuggerReceived(QString)));
+    connect(m_debugHandler, SIGNAL(FilterStatusChanged(bool)), this, SIGNAL(DebuggerFilterStatus(bool)));
 }
 
 DeviceBridge::~DeviceBridge()

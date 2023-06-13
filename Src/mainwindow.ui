@@ -324,9 +324,9 @@
                 <property name="geometry">
                  <rect>
                   <x>0</x>
-                  <y>0</y>
-                  <width>907</width>
-                  <height>433</height>
+                  <y>-17</y>
+                  <width>893</width>
+                  <height>430</height>
                  </rect>
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_23">
@@ -2010,7 +2010,7 @@ background-color: rgb(4, 111, 182);</string>
                   <x>0</x>
                   <y>0</y>
                   <width>907</width>
-                  <height>433</height>
+                  <height>413</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -3201,6 +3201,20 @@ color: rgb(255, 255, 255);</string>
                </item>
                <item>
                 <widget class="QLineEdit" name="excludeDbgEdit"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="clearDebugBtn">
+                 <property name="text">
+                  <string>Clear</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="saveDebugBtn">
+                 <property name="text">
+                  <string>Save</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>

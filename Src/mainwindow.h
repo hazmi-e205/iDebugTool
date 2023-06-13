@@ -150,6 +150,11 @@ private:
     void SetupDebuggerUI();
 private slots:
     void OnStartDebuggingClicked();
+    void OnDebuggerClearClicked();
+    void OnDebuggerSaveClicked();
     void OnDebuggerReceived(QString logs);
+    void OnDebuggerFilterStatus(bool isfiltering);
+    void OnDebuggerFilterChanged(QString text);
+    void OnDebuggerExcludeChanged(QString text);
 };
 #endif // MAINWINDOW_H
