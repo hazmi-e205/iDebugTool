@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "utils.h"
 #include <QFile>
+#include <QTextDocument>
+#include <QTextBlock>
 
 void MainWindow::SetupSyslogUI()
 {
@@ -27,6 +29,8 @@ void MainWindow::SetupSyslogUI()
     ui->maxShownLogs->setText(QString::number(m_maxCachedLogs));
     ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
     ui->pidEdit->setCurrentIndex(0);
+    DeviceBridge::Get()->LogsFilterByString(ui->searchEdit->text());
+    DeviceBridge::Get()->LogsExcludeByString(ui->excludeEdit->text());
     DeviceBridge::Get()->LogsFilterByPID(ui->pidEdit->currentText());
 }
 

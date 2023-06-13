@@ -75,18 +75,13 @@ void DeviceBridge::ResetConnection()
 {
     bool is_exist = m_deviceList.find(m_currentUdid) != m_deviceList.end();
     m_currentUdid.clear();
+    StopDebugging();
 
     if(m_client)
     {
         //Quick fix: stuck while reseting connection at exit, switch, reconnect
         //is_exist ? (void)lockdownd_client_free(m_client) : free(m_client);
         m_client = nullptr;
-    }
-
-    if (m_debugger)
-    {
-        debugserver_client_free(m_debugger);
-        m_debugger = nullptr;
     }
 
     if (m_screenshot)

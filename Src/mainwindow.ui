@@ -3058,6 +3058,16 @@ color: rgb(255, 255, 255);</string>
                 </spacer>
                </item>
                <item>
+                <widget class="QCheckBox" name="scrollOutCheck">
+                 <property name="text">
+                  <string>Auto scroll</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="clearOutputBtn">
                  <property name="text">
                   <string>Clear</string>
@@ -3148,9 +3158,12 @@ color: rgb(255, 255, 255);</string>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="checkBox">
+                <widget class="QCheckBox" name="scrollDebugCheck">
                  <property name="text">
                   <string>Auto scroll</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>

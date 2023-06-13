@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "utils.h"
 #include <QFile>
+#include <QTextDocument>
+#include <QTextBlock>
 
 void MainWindow::SetupDebuggerUI()
 {
@@ -24,6 +26,7 @@ void MainWindow::OnStartDebuggingClicked()
 {
     if (ui->startDebugBtn->text().contains("start", Qt::CaseInsensitive))
     {
+        OnDebuggerClearClicked();
         DeviceBridge::Get()->StartDebugging(ui->bundleEdit->currentText(), false, ui->envEdit->text(), ui->argsEdit->text());
         ui->startDebugBtn->setText("Stop Debugging");
     }

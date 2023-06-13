@@ -38,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(DeviceBridge::Get(), SIGNAL(MessagesReceived(MessagesType,QString)), this, SLOT(OnMessagesReceived(MessagesType,QString)));
     connect(ui->topSplitter, SIGNAL(splitterMoved(int,int)), this, SLOT(OnTopSplitterMoved(int,int)));
     connect(ui->scrollCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
+    connect(ui->scrollDebugCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
+    connect(ui->scrollOutCheck, SIGNAL(stateChanged(int)), this, SLOT(OnAutoScrollChecked(int)));
     connect(ui->saveOutputBtn, SIGNAL(pressed()), this, SLOT(OnSaveOutputClicked()));
     connect(ui->clearOutputBtn, SIGNAL(pressed()), this, SLOT(OnClearOutputClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
@@ -102,7 +104,10 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->provisionBtn
                    << ui->codesignBtn
                    << ui->clearOutputBtn
-                   << ui->saveOutputBtn);
+                   << ui->saveOutputBtn
+                   << ui->startDebugBtn
+                   << ui->saveDebugBtn
+                   << ui->clearDebugBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
@@ -116,14 +121,19 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->excludeEdit
                    << ui->originalBuildEdit
                    << ui->privateKeyPasswordEdit
-                   << ui->provisionEdit);
+                   << ui->provisionEdit
+                   << ui->searchDbgEdit
+                   << ui->excludeDbgEdit
+                   << ui->envEdit
+                   << ui->argsEdit);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT, QList<QWidget*>()
                    << ui->bundleIds
                    << ui->socketBox
                    << ui->pidEdit
                    << ui->privateKeyEdit
-                   << ui->provisionEdit);
+                   << ui->provisionEdit
+                   << ui->bundleEdit);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
@@ -217,8 +227,22 @@ void MainWindow::OnClickedEvent(QObject* object)
 
 void MainWindow::OnScrollTimerTick()
 {
-    int max_value = m_table->verticalScrollBar()->maximum();
-    int value = m_table->verticalScrollBar()->value();
+    QPlainTextEdit *component = nullptr;
+    switch(ui->bottomWidget->currentIndex())
+    {
+    case 1:
+        component = ui->outputEdit;
+        break;
+    case 2:
+        component = ui->debuggerEdit;
+        break;
+    default:
+        component = m_table;
+        break;
+    }
+
+    int max_value = component->verticalScrollBar()->maximum();
+    int value = component->verticalScrollBar()->value();
     if (max_value != value)
     {
         if (m_lastAutoScroll && (m_lastMaxScroll == max_value))
@@ -229,7 +253,7 @@ void MainWindow::OnScrollTimerTick()
 
         if (ui->scrollCheck->isChecked())
         {
-            m_table->verticalScrollBar()->setValue(max_value);
+            component->verticalScrollBar()->setValue(max_value);
             m_lastAutoScroll = true;
         }
     }

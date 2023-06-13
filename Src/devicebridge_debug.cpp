@@ -107,7 +107,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             emit DebuggerReceived(
                     "Could not start com.apple.debugserver!\n"
                     "Please make sure to mount the developer disk image first:\n"
-                    "  1) Go to Imagae Mounter in Toolbox.\n"
+                    "  1) Go to Image Mounter in Toolbox.\n"
                     "  2) Choose closest image version to your iOS version.\n"
                     "  3) Click Download and Mount.", true);
             return;
@@ -271,7 +271,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
                 }
             }
             if (res >= 0) {
-                emit DebuggerReceived("Debugger stopped", true);
+                emit DebuggerReceived("Debugger stopped.", true);
                 CloseDebugger();
                 return;
             }
@@ -313,14 +313,19 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             response = NULL;
         }
         CloseDebugger();
-        quit_flag = 0;
-        emit DebuggerReceived("Debugger stopped", true);
+        emit DebuggerReceived("Debugger stopped..", true);
     });
 }
 
 void DeviceBridge::StopDebugging()
 {
-    quit_flag = 1;
+    if (m_debugger)
+        quit_flag = 1;
+
+    while (quit_flag == 1)
+    {
+        QThread::sleep(1);
+    }
 }
 
 void DeviceBridge::ClearDebugger()
@@ -355,6 +360,7 @@ void DeviceBridge::DebuggerReloadFilter()
 
 void DeviceBridge::CloseDebugger()
 {
+    quit_flag = 0;
     if (m_debugger)
     {
         debugserver_client_free(m_debugger);
