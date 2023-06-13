@@ -152,7 +152,7 @@ private slots:
     void OnStartDebuggingClicked();
     void OnDebuggerClearClicked();
     void OnDebuggerSaveClicked();
-    void OnDebuggerReceived(QString logs);
+    void OnDebuggerReceived(QString logs, bool stopped);
     void OnDebuggerFilterStatus(bool isfiltering);
     void OnDebuggerFilterChanged(QString text);
     void OnDebuggerExcludeChanged(QString text);

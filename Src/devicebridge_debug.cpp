@@ -1,10 +1,28 @@
 #include "devicebridge.h"
 #include "asyncmanager.h"
+#include "qforeach.h"
 
 static int quit_flag = 0;
 static int cancel_receive()
 {
     return quit_flag;
+}
+
+QString s_debuggerTemp = "";
+bool ParseDebugger(const QString &in, QStringList &out)
+{
+    s_debuggerTemp += in;
+    if (s_debuggerTemp.contains("\r\n"))
+    {
+        QStringList splitted = s_debuggerTemp.split("\r\n");
+        s_debuggerTemp = splitted.last();
+        splitted.removeLast();
+        if (splitted.count() > 1) {
+            out = splitted;
+            return true;
+        }
+    }
+    return false;
 }
 
 debugserver_error_t DeviceBridge::DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status)
@@ -20,7 +38,12 @@ debugserver_error_t DeviceBridge::DebugServerHandleResponse(debugserver_client_t
     if (r[0] == 'O') {
         /* stdout/stderr */
         debugserver_decode_string(r + 1, strlen(r) - 1, &o);
-        emit DebuggerReceived(o);
+        QStringList parsed;
+        if (ParseDebugger(o, parsed))
+        {
+            foreach(const QString& packet, parsed)
+                m_debugHandler->UpdateLog(packet);
+        }
     } else if (r[0] == 'T') {
         /* thread stopped information */
         qDebug() << QString::asprintf("Thread stopped. Details:\n%s", r + 1);
@@ -93,7 +116,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         /* set receive params */
         if (debugserver_client_set_receive_params(m_debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
             emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
-            debugserver_client_free(m_debugger);
+            CloseDebugger();
             return;
         }
 
@@ -126,7 +149,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
                 emit DebuggerReceived("Error setting max packet size occurred: " + QString(response), true);
-                debugserver_client_free(m_debugger);
+                CloseDebugger();
                 return;
             }
             free(response);
@@ -144,7 +167,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
                 emit DebuggerReceived("Error setting working directory occurred: " + QString(response), true);
-                debugserver_client_free(m_debugger);
+                CloseDebugger();
                 return;
             }
             free(response);
@@ -184,7 +207,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
                 emit DebuggerReceived("Error checking if launch succeeded occurred: " + QString(response), true);
-                debugserver_client_free(m_debugger);
+                CloseDebugger();
                 return;
             }
             free(response);
@@ -200,7 +223,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             command = NULL;
 
             res = (dres == DEBUGSERVER_E_SUCCESS) ? 0: -1;
-            debugserver_client_free(m_debugger);
+            CloseDebugger();
             return;
         }
 
@@ -214,7 +237,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             if (strncmp(response, "OK", 2) != 0) {
                 DebugServerHandleResponse(m_debugger, &response, NULL);
                 emit DebuggerReceived("Error setting thread occurred: " + QString(response), true);
-                debugserver_client_free(m_debugger);
+                CloseDebugger();
                 return;
             }
             free(response);
@@ -249,7 +272,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             }
             if (res >= 0) {
                 emit DebuggerReceived("Debugger stopped", true);
-                debugserver_client_free(m_debugger);
+                CloseDebugger();
                 return;
             }
 
@@ -259,7 +282,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         /* ignore quit_flag after this point */
         if (debugserver_client_set_receive_params(m_debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
             emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
-            debugserver_client_free(m_debugger);
+            CloseDebugger();
             return;
         }
 
@@ -289,7 +312,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             free(response);
             response = NULL;
         }
-        debugserver_client_free(m_debugger);
+        CloseDebugger();
         quit_flag = 0;
         emit DebuggerReceived("Debugger stopped", true);
     });
@@ -328,4 +351,13 @@ void DeviceBridge::DebuggerFilter(QString text_or_regex, QString exclude_text)
 void DeviceBridge::DebuggerReloadFilter()
 {
     m_debugHandler->ReloadLogsFilter();
+}
+
+void DeviceBridge::CloseDebugger()
+{
+    if (m_debugger)
+    {
+        debugserver_client_free(m_debugger);
+        m_debugger = nullptr;
+    }
 }

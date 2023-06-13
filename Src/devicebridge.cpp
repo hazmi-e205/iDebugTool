@@ -83,6 +83,12 @@ void DeviceBridge::ResetConnection()
         m_client = nullptr;
     }
 
+    if (m_debugger)
+    {
+        debugserver_client_free(m_debugger);
+        m_debugger = nullptr;
+    }
+
     if (m_screenshot)
     {
         screenshotr_client_free(m_screenshot);

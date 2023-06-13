@@ -166,6 +166,7 @@ public:
      void DebuggerFilter(QString text_or_regex, QString exclude_text);
      void DebuggerReloadFilter();
 private:
+     void CloseDebugger();
      debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
      debugserver_client_t m_debugger;
      DebuggerFilterThread *m_debugHandler;

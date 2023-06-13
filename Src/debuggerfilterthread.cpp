@@ -98,7 +98,7 @@ void DebuggerFilterThread::UpdateLog(QString log)
         }
 
         if (Filter(log, m_currentFilter, m_excludeFilter))
-            compiled.append(log);
+            compiled.append(log + "\r\n");
 
         if (!compiled.isEmpty())
             emit FilterComplete(compiled.trimmed());
