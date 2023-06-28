@@ -291,8 +291,8 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
             file.commit();
 
             ui->logField->append("Extract Image Package...");
-            auto unpack_callback = [&](int progress, int total, QString messages){
-                ui->logField->append(QString::asprintf("(%d of %d) %s", progress, total, messages.toUtf8().data()));
+            auto unpack_callback = [&](float percentage, QString messages){
+                ui->logField->append(QString("(%1%) %2").arg(percentage, 0, 'f', 2).arg(messages));
             };
             if (!ZipExtractAll(temp_zip, m_downloadout, unpack_callback))
             {

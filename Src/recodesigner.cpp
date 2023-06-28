@@ -54,8 +54,8 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         }
 
         // Local Callback
-        auto zipper_callback = [&](int progress, int total, QString messages){
-            emit SigningResult(SigningStatus::PROCESS, QString("(%1/%2) %3").arg(progress).arg(total).arg(messages));
+        auto zipper_callback = [&](float percentage, QString messages){
+            emit SigningResult(SigningStatus::PROCESS, QString("(%1%) %2").arg(percentage, 0, 'f', 2).arg(messages));
         };
 
         // Unpack build...
@@ -68,7 +68,11 @@ void Recodesigner::Process(const Recodesigner::Params& params)
             if (dir.exists())
                 dir.removeRecursively();
             QString tempdir = QString("%1/Payload/%2").arg(extract_dir).arg(build_info.fileName());
-            if (!CopyFolder(params.OriginalBuild, tempdir, zipper_callback))
+
+            auto copy_callback = [&](int progress, int total, QString messages){
+                emit SigningResult(SigningStatus::PROCESS, QString("(%1/%2) %3").arg(progress).arg(total).arg(messages));
+            };
+            if (!CopyFolder(params.OriginalBuild, tempdir, copy_callback))
             {
                 emit SigningResult(SigningStatus::FAILED, "ERROR: Copy to temporary dir failed!");
                 return;

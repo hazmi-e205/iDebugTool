@@ -74,7 +74,7 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
     return false;
 }
 
-bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (int, int, QString)> callback)
+bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (float, QString)> callback)
 {
     QString status = "";
     quint64 progress = 0, total = 0;
@@ -96,13 +96,15 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (in
         extractor.setFileCallback([&progress, &callback, &status, &total](const tstring& currentfile){
             status = QString::fromStdString(currentfile);
             if (callback) {
-                callback(progress, total, QString("(%1 of %2) Extracting %3 to directory...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
+                float percentage = ((float)progress / (float)total) * 100.f;
+                callback(percentage, QString("(%1 of %2) Extracting %3 to directory...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
         });
         extractor.setProgressCallback([&progress, &callback, &status, &total](const uint64_t& progresssize){
             progress = progresssize;
             if (callback) {
-                callback(progress, total, QString("(%1 of %2) Extracting %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
+                float percentage = ((float)progress / (float)total) * 100.f;
+                callback(percentage, QString("(%1 of %2) Extracting %3 to directory...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
             return true;
         });
@@ -110,13 +112,14 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (in
     }
     catch (const BitException& ex)
     {
-        callback(progress, total, ex.what());
+        float percentage = ((float)progress / (float)total) * 100.f;
+        callback(percentage, ex.what());
         return false;
     }
     return true;
 }
 
-bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (quint64, quint64, QString)> callback)
+bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (float, QString)> callback)
 {
     QString status = "";
     quint64 progress = 0, total = 0;
@@ -141,13 +144,15 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
         compressor.setFileCallback([&progress, &callback, &status, &total](const tstring& currentfile){
             status = QString::fromStdString(currentfile);
             if (callback) {
-                callback(progress, total, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
+                float percentage = ((float)progress / (float)total) * 100.f;
+                callback(percentage, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
         });
         compressor.setProgressCallback([&progress, &callback, &status, &total](const uint64_t& progresssize){
             progress = progresssize;
             if (callback) {
-                callback(progress, total, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
+                float percentage = ((float)progress / (float)total) * 100.f;
+                callback(percentage, QString("(%1 of %2) Packing %3 to archive...").arg(BytesToString(progress)).arg(BytesToString(total)).arg(status));
             }
             return true;
         });
@@ -165,7 +170,8 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
     }
     catch ( const BitException& ex )
     {
-        callback(progress, total, ex.what());
+        float percentage = ((float)progress / (float)total) * 100.f;
+        callback(percentage, ex.what());
         return false;
     }
     return true;
