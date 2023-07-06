@@ -124,7 +124,8 @@ void DeviceBridge::ResetConnection()
 
     if(m_device)
     {
-        idevice_free(m_device);
+        //Quick fix: crash when try to connect unpaired device
+        //idevice_free(m_device);
         m_device = nullptr;
     }
 }
