@@ -39,7 +39,7 @@ void MainWindow::OnStartDebuggingClicked()
 void MainWindow::OnDebuggerClearClicked()
 {
     ui->debuggerEdit->clear();
-    DeviceBridge::Get()->ClearCachedLogs();
+    DeviceBridge::Get()->ClearDebugger();
 }
 
 void MainWindow::OnDebuggerSaveClicked()
