@@ -63,7 +63,7 @@ public:
     void ConnectToDevice(QString udid);
     QString GetCurrentUdid();
     bool IsConnected();
-    QJsonDocument GetDeviceInfo();
+    QJsonDocument GetDeviceInfo(QString udid = "");
     void ResetConnection();
     QMap<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);

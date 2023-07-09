@@ -185,9 +185,9 @@ void DeviceBridge::UpdateDeviceInfo()
     }
 }
 
-QJsonDocument DeviceBridge::GetDeviceInfo()
+QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)
 {
-    return m_deviceInfo[m_currentUdid];
+    return m_deviceInfo[udid.isEmpty() ? m_currentUdid : udid];
 }
 
 void DeviceBridge::StartServices()

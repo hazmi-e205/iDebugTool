@@ -80,7 +80,7 @@ void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
     foreach (const auto& udid, devices.keys())
     {
         QList<QStandardItem*> rowData;
-        QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
+        QString name = DeviceBridge::Get()->GetDeviceInfo(udid)["DeviceName"].toString();
         rowData << new QStandardItem(udid);
         rowData << new QStandardItem(name);
         rowData << new QStandardItem(devices[udid] == idevice_connection_type::CONNECTION_NETWORK ? "network" : "usbmuxd");
