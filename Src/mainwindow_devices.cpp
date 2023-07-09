@@ -101,7 +101,17 @@ void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
 void MainWindow::OnDeviceConnected()
 {
     UpdateInfoWidget();
-    OnUpdateDevices(DeviceBridge::Get()->GetDevices()); //update device name
+
+    // update device name on choosen device
+    for (int idx = 0; idx < m_devicesModel->rowCount(); idx++)
+    {
+        QString udid = m_devicesModel->data(m_devicesModel->index(idx, 0)).toString();
+        if (udid.contains(DeviceBridge::Get()->GetCurrentUdid()))
+        {
+            QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
+            m_devicesModel->setData(m_devicesModel->index(idx, 1), name);
+        }
+    }
 }
 
 void MainWindow::OnSocketClicked()
