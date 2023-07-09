@@ -140,7 +140,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
 
         /* set maximum packet size */
         qDebug() << "Setting maximum packet size...";
-        char* packet_size[2] = { (char*)"1024", NULL};
+        char* packet_size[2] = { (char*)"102400", NULL};
         debugserver_command_new("QSetMaxPacketSize:", 1, packet_size, &command);
         dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
         debugserver_command_free(command);
