@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QScrollBar>
 
 void MainWindow::SetupSyslogUI()
 {
@@ -24,6 +25,7 @@ void MainWindow::SetupSyslogUI()
     connect(ui->stopCheck, SIGNAL(stateChanged(int)), this, SLOT(OnStopChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
+    connect(m_table->verticalScrollBar(), SIGNAL(sliderMoved(int)), this, SLOT(OnSyslogSliderMoved(int)));
 
     DeviceBridge::Get()->SetMaxCachedLogs(m_maxCachedLogs);
     ui->maxShownLogs->setText(QString::number(m_maxCachedLogs));
@@ -32,6 +34,21 @@ void MainWindow::SetupSyslogUI()
     DeviceBridge::Get()->LogsFilterByString(ui->searchEdit->text());
     DeviceBridge::Get()->LogsExcludeByString(ui->excludeEdit->text());
     DeviceBridge::Get()->LogsFilterByPID(ui->pidEdit->currentText());
+}
+
+void MainWindow::OnSyslogSliderMoved(int value)
+{
+    int max_value = m_table->verticalScrollBar()->maximum();
+    if (ui->scrollCheck->isChecked())
+    {
+        if (value < max_value)
+            ui->scrollCheck->setCheckState(Qt::CheckState::Unchecked);
+    }
+    else
+    {
+        if (value == max_value)
+            ui->scrollCheck->setCheckState(Qt::CheckState::Checked);
+    }
 }
 
 void MainWindow::OnSystemLogsReceived2(QString logs)

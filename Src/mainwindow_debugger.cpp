@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QScrollBar>
 
 void MainWindow::SetupDebuggerUI()
 {
@@ -15,6 +16,7 @@ void MainWindow::SetupDebuggerUI()
     connect(ui->excludeDbgEdit, SIGNAL(textChanged(QString)), this, SLOT(OnDebuggerExcludeChanged(QString)));
     connect(ui->clearDebugBtn, SIGNAL(pressed()), this, SLOT(OnDebuggerClearClicked()));
     connect(ui->saveDebugBtn, SIGNAL(pressed()), this, SLOT(OnDebuggerSaveClicked()));
+    connect(ui->debuggerEdit->verticalScrollBar(), SIGNAL(sliderMoved(int)), this, SLOT(OnDebuggerSliderMoved(int)));
 
     DeviceBridge::Get()->DebuggerFilterByString(ui->searchDbgEdit->text());
     DeviceBridge::Get()->DebuggerExcludeByString(ui->excludeDbgEdit->text());
@@ -33,6 +35,21 @@ void MainWindow::OnStartDebuggingClicked()
     else
     {
         DeviceBridge::Get()->StopDebugging();
+    }
+}
+
+void MainWindow::OnDebuggerSliderMoved(int value)
+{
+    int max_value = ui->debuggerEdit->verticalScrollBar()->maximum();
+    if (ui->scrollDebugCheck->isChecked())
+    {
+        if (value < max_value)
+            ui->scrollDebugCheck->setCheckState(Qt::CheckState::Unchecked);
+    }
+    else
+    {
+        if (value == max_value)
+            ui->scrollDebugCheck->setCheckState(Qt::CheckState::Checked);
     }
 }
 

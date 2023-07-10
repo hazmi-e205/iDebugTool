@@ -48,20 +48,17 @@ private:
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
     QMutex m_mutex;
-    bool m_lastAutoScroll;
-    int m_lastMaxScroll;
-    bool m_lastStopChecked;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);
     void OnAutoScrollChecked(int state);
     void OnClickedEvent(QObject* object);
     void OnScrollTimerTick();
+    void OnOutputSliderMoved(int value);
     void OnConfigureClicked();
     void OnProxyClicked();
     void OnUpdateClicked();
     void OnMessagesReceived(MessagesType type, QString messages);
-    void OnBottomTabChanged(int index);
     void OnClearOutputClicked();
     void OnSaveOutputClicked();
 
@@ -87,6 +84,7 @@ private:
     quint64 m_maxCachedLogs;
     void SetupSyslogUI();
 private slots:
+    void OnSyslogSliderMoved(int value);
     void OnClearClicked();
     void OnSaveClicked();
     void OnStopChecked(int state);
@@ -150,6 +148,7 @@ private:
     void SetupDebuggerUI();
 private slots:
     void OnStartDebuggingClicked();
+    void OnDebuggerSliderMoved(int value);
     void OnDebuggerClearClicked();
     void OnDebuggerSaveClicked();
     void OnDebuggerReceived(QString logs, bool stopped);

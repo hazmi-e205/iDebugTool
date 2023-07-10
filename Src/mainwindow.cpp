@@ -45,9 +45,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
     connect(ui->bottomWidget, SIGNAL(currentChanged(int)), this, SLOT(OnBottomTabChanged(int)));
     connect(ui->aboutBtn, SIGNAL(pressed()), m_aboutDialog, SLOT(show()));
+    connect(ui->outputEdit->verticalScrollBar(), SIGNAL(sliderMoved(int)), this, SLOT(OnOutputSliderMoved(int)));
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
-    if (ui->scrollCheck->isChecked())
-        m_scrollTimer->start(m_scrollInterval);
+    m_scrollTimer->start(m_scrollInterval);
 
     ui->statusbar->showMessage("Idle");
     SetupDevicesUI();
@@ -228,36 +228,45 @@ void MainWindow::OnClickedEvent(QObject* object)
 void MainWindow::OnScrollTimerTick()
 {
     QPlainTextEdit *component = nullptr;
-    switch(ui->bottomWidget->currentIndex())
+    QCheckBox *chk_component = nullptr;
+    int component_idx = ui->bottomWidget->currentIndex();
+    switch(component_idx)
     {
     case 1:
+        chk_component = ui->scrollOutCheck;
         component = ui->outputEdit;
         break;
     case 2:
+        chk_component = ui->scrollDebugCheck;
         component = ui->debuggerEdit;
         break;
     default:
+        chk_component = ui->scrollCheck;
         component = m_table;
         break;
     }
 
     int max_value = component->verticalScrollBar()->maximum();
     int value = component->verticalScrollBar()->value();
-    if (max_value != value)
+    if (chk_component->isChecked() && max_value != value)
     {
-        if (m_lastAutoScroll && (m_lastMaxScroll == max_value))
-        {
-            ui->scrollCheck->setCheckState(Qt::CheckState::Unchecked);
-            m_lastAutoScroll = false;
-        }
-
-        if (ui->scrollCheck->isChecked())
-        {
-            component->verticalScrollBar()->setValue(max_value);
-            m_lastAutoScroll = true;
-        }
+        component->verticalScrollBar()->setValue(max_value);
     }
-    m_lastMaxScroll = max_value;
+}
+
+void MainWindow::OnOutputSliderMoved(int value)
+{
+    int max_value = ui->outputEdit->verticalScrollBar()->maximum();
+    if (ui->scrollOutCheck->isChecked())
+    {
+        if (value < max_value)
+            ui->scrollOutCheck->setCheckState(Qt::CheckState::Unchecked);
+    }
+    else
+    {
+        if (value == max_value)
+            ui->scrollOutCheck->setCheckState(Qt::CheckState::Checked);
+    }
 }
 
 void MainWindow::OnConfigureClicked()
@@ -299,21 +308,6 @@ void MainWindow::OnMessagesReceived(MessagesType type, QString messages)
         break;
     default:
         QMessageBox::information(this, "Information", messages, QMessageBox::Ok);
-        break;
-    }
-}
-
-void MainWindow::OnBottomTabChanged(int index)
-{
-    static bool last_autoscroll = false;
-    switch (index)
-    {
-    case 0:
-        ui->scrollCheck->setCheckState(last_autoscroll ? Qt::Checked : Qt::Unchecked);
-        break;
-    default:
-        last_autoscroll = ui->scrollCheck->isChecked();
-        ui->scrollCheck->setCheckState(Qt::Unchecked);
         break;
     }
 }
