@@ -43,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->saveOutputBtn, SIGNAL(pressed()), this, SLOT(OnSaveOutputClicked()));
     connect(ui->clearOutputBtn, SIGNAL(pressed()), this, SLOT(OnClearOutputClicked()));
     connect(ui->updateBtn, SIGNAL(pressed()), this, SLOT(OnUpdateClicked()));
-    connect(ui->bottomWidget, SIGNAL(currentChanged(int)), this, SLOT(OnBottomTabChanged(int)));
     connect(ui->aboutBtn, SIGNAL(pressed()), m_aboutDialog, SLOT(show()));
     connect(ui->outputEdit->verticalScrollBar(), SIGNAL(sliderMoved(int)), this, SLOT(OnOutputSliderMoved(int)));
     connect(m_scrollTimer, SIGNAL(timeout()), this, SLOT(OnScrollTimerTick()));
