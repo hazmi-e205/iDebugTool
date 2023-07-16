@@ -67,9 +67,9 @@ if IsQt() then
 		QtConfigs {"staticlib"}
 	filter {}
 
-	filter {"kind:ConsoleApp or WindowedApp"}
+	filter {"kind:ConsoleApp or WindowedApp or SharedLib"}
 		targetdir ("../Build/" .. GetPathFromPlatform() .. "/bin/")
-	filter {"kind:StaticLib or SharedLib"}
+	filter {"kind:StaticLib"}
 		targetdir ("../Build/" .. GetPathFromPlatform() .. "/libs/")
 	filter {}
 

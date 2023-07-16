@@ -91,7 +91,7 @@ void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
             {
                 if (IsUnsymbolicatedLine(line))
                 {
-                    if (line.indexOf(name) >= 0)
+                    if (line.indexOf(QString::fromStdWString(name)) >= 0)
                     {
                         int replace_start = (line.indexOf(kSPACE_TAB_SEPARATOR) + 2);
                         replace_start = (line.indexOf(kSPACE, replace_start) + 1);

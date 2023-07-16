@@ -79,7 +79,6 @@ project "iDebugTool"
         "../Externals/zlib/contrib/minizip",
         "../Externals/MachOLib",
         "../Externals/zsign",
-        "../Externals/mingw-patch",
         "../Externals/bit7z/include",
     }
 
@@ -96,7 +95,6 @@ project "iDebugTool"
         "MachOLib",
         "minizip",
         "zsign",
-        "mingw-patch",
         "bit7z",
     }
 
@@ -121,6 +119,7 @@ project "iDebugTool"
             "Ole32",
             "Dbghelp",
             "exchndl",
+            "mingw-patch",
         }
         libdirs
         {
@@ -129,11 +128,12 @@ project "iDebugTool"
         includedirs
         {
             "../Prebuilt/drmingw-win64/include",
+            "../Externals/mingw-patch",
         }
         local drmingw = "$$PWD/../../../Prebuilt/drmingw-win64/bin"
         prelinkcommands {"python " .. copyext .. " mgwhelp.dll " .. drmingw .. " " .. copydst}
         prelinkcommands {"python " .. copyext .. " exchndl.dll " .. drmingw .. " " .. copydst}
-        prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
+        -- prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
     else
         links
         {
@@ -144,5 +144,5 @@ project "iDebugTool"
         {
             "../Externals/asmCrashReport/src",
         }
-        prelinkcommands {"python " .. copyext .. " .so " .. copysrc .. " " .. copydst}
+        -- prelinkcommands {"python " .. copyext .. " .so " .. copysrc .. " " .. copydst}
     end

@@ -3,6 +3,10 @@ include "common.lua"
 project "MachOLib"
     kind "StaticLib"
     QtConfigs {"force_debug_info"}
+    
+    if IsLinux() or IsMac() then
+        defines {"HAVE_DECL_BASENAME"}
+    end
 
     files
     {
@@ -18,5 +22,4 @@ project "MachOLib"
         "../Externals/MachOLib/libiberty",
         "../Externals/zlib",
         "../Externals/zlib/contrib/minizip",
-        -- "../Externals/rapidjson/include",
     }

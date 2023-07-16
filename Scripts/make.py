@@ -207,7 +207,7 @@ def InstallAQT():
     if qt_version not in qt_list:
         utils.call([sys.executable, "-m", "pip", "install", "aqtinstall"], base_dir)
         if "linux" in sys.platform:
-            utils.call([sys.executable, "-m", "aqt", "install-qt", qt_platform, "desktop", qt_version, compiler_name + "_" + compiler_arch, "--archives", "qtbase", "icu", "--outputdir", qt_dir], base_dir)    
+            utils.call([sys.executable, "-m", "aqt", "install-qt", qt_platform, "desktop", qt_version, compiler_name + "_" + compiler_arch, "--archives", "qtwayland", "qtbase", "icu", "--outputdir", qt_dir], base_dir)    
         else:
             utils.call([sys.executable, "-m", "aqt", "install-qt", qt_platform, "desktop", qt_version, platform_var + compiler_arch + "_" + compiler_name, "--archives", "qtbase", "MinGW", "--outputdir", qt_dir], base_dir)
     

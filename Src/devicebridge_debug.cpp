@@ -47,13 +47,6 @@ debugserver_error_t DeviceBridge::DebugServerHandleResponse(debugserver_client_t
     } else if (r[0] == 'T') {
         /* thread stopped information */
         qDebug() << QString::asprintf("Thread stopped. Details:\n%s", r + 1);
-        if (exit_status != NULL) {
-            /* "Thread stopped" seems to happen when assert() fails.
-               Use bash convention where signals cause an exit
-               status of 128 + signal
-            */
-            *exit_status = 128 + SIGABRT;
-        }
         /* Break out of the loop. */
         dres = DEBUGSERVER_E_UNKNOWN_ERROR;
     } else if (r[0] == 'E') {
@@ -63,12 +56,6 @@ debugserver_error_t DeviceBridge::DebugServerHandleResponse(debugserver_client_t
         debugserver_decode_string(r + 1, strlen(r) - 1, &o);
         if (o != NULL) {
             qDebug() << QString::asprintf("Exit %s: %u", (r[0] == 'W' ? "status" : "due to signal"), o[0]);
-            if (exit_status != NULL) {
-                /* Use bash convention where signals cause an
-                   exit status of 128 + signal
-                */
-                *exit_status = o[0] + (r[0] == 'W' ? 0 : 128);
-            }
         } else {
             qDebug() << QString::asprintf("Unable to decode exit status from %s", r);
             dres = DEBUGSERVER_E_UNKNOWN_ERROR;

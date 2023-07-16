@@ -10,6 +10,8 @@
 #include <windows.h>
 #define S_IFLNK S_IFREG
 #define S_IFSOCK S_IFREG
+#else
+#include <unistd.h>
 #endif
 #include <string.h>
 #include "utils.h"
