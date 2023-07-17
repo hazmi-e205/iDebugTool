@@ -60,14 +60,6 @@
             "use_submodules": false
         },
         {
-            "project": "asmCrashReport",
-            "url": "https://github.com/asmaloney/asmCrashReport",
-            "branch": "master",
-            "revision": "f42ab5b9a095a84dda6b6ed7e097b4565ced724b",
-            "path": "Externals/asmCrashReport",
-            "use_submodules": true
-        },
-        {
             "project": "openssl",
             "url": "https://github.com/openssl/openssl",
             "branch": "OpenSSL_1_1_1m",

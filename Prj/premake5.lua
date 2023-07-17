@@ -11,9 +11,6 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
-    if IsLinux() or IsMac() then
-        include "asmcrashreport.lua"
-    end
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -52,7 +49,6 @@ project "iDebugTool"
 
     QtModules {"network"}
     QtConfigs {"force_debug_info"}
-    -- QtIncludes {"../Externals/asmCrashReport/asmCrashReport.pri"}
 
     QtResources
     {
@@ -133,16 +129,9 @@ project "iDebugTool"
         local drmingw = "$$PWD/../../../Prebuilt/drmingw-win64/bin"
         prelinkcommands {"python " .. copyext .. " mgwhelp.dll " .. drmingw .. " " .. copydst}
         prelinkcommands {"python " .. copyext .. " exchndl.dll " .. drmingw .. " " .. copydst}
-        -- prelinkcommands {"python " .. copyext .. " .dll " .. copysrc .. " " .. copydst}
     else
         links
         {
-            "asmCrashReport",
             "dl",
         }
-        includedirs
-        {
-            "../Externals/asmCrashReport/src",
-        }
-        -- prelinkcommands {"python " .. copyext .. " .so " .. copysrc .. " " .. copydst}
     end
