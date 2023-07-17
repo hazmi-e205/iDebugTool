@@ -35,6 +35,7 @@ if IsWindows() then
         {
             "../Externals/mingw-patch/**.h",
             "../Externals/mingw-patch/**.c",
+            "../Externals/mingw-patch/**.cpp",
         }
 
         includedirs

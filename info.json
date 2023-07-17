@@ -39,7 +39,7 @@
             "project": "MachOLib",
             "url": "https://github.com/hazmi-e205/MachOLib",
             "branch": "main",
-            "revision": "6c3026296c215476cd67a808999fdc32cfa405ba",
+            "revision": "9e4287455ab50da5c774a2745861b866682faf97",
             "path": "Externals/MachOLib",
             "use_submodules": false
         },
