@@ -2976,7 +2976,7 @@ color: rgb(255, 255, 255);</string>
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="logLayout"/>
+             <widget class="QPlainTextEdit" name="syslogEdit"/>
             </item>
             <item>
              <widget class="QWidget" name="widget_37" native="true">

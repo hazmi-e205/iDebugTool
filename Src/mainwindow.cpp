@@ -25,7 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_aboutDialog(new AboutDialog(&m_appInfo, this))
     , m_loading(new LoadingDialog(this))
     , m_devicesModel(nullptr)
-    , m_table(new QPlainTextEdit())
     , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
     , m_imageMounter(new ImageMounter(this))
 {
@@ -145,7 +144,6 @@ MainWindow::~MainWindow()
     Recodesigner::Destroy();
     m_devicesModel->clear();
     delete m_devicesModel;
-    delete m_table;
     ui->deviceTable->setModel(nullptr);
     delete m_eventFilter;
     m_scrollTimer->stop();
@@ -241,7 +239,7 @@ void MainWindow::OnScrollTimerTick()
         break;
     default:
         chk_component = ui->scrollCheck;
-        component = m_table;
+        component = ui->syslogEdit;
         break;
     }
 

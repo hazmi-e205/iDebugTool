@@ -80,7 +80,6 @@ private slots:
 
     //Syslog UI
 private:
-    QPlainTextEdit *m_table;
     quint64 m_maxCachedLogs;
     void SetupSyslogUI();
 private slots:
