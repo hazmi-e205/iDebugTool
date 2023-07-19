@@ -123,6 +123,7 @@ private:
     void SetupCrashlogsUI();
 private slots:
     void OnSyncCrashlogsClicked();
+    void OnCrashlogsDirClicked();
     void OnCrashlogsStatusChanged(QString text);
     void OnCrashlogClicked();
     void OnDsymClicked();

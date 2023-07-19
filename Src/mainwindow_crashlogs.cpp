@@ -10,6 +10,7 @@ void MainWindow::SetupCrashlogsUI()
     connect(ui->syncCrashlogsBtn, SIGNAL(pressed()), this, SLOT(OnSyncCrashlogsClicked()));
     connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
     connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
+    connect(ui->crashlogsDirBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogsDirClicked()));
     connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
     connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
     connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
@@ -20,6 +21,15 @@ void MainWindow::OnSyncCrashlogsClicked()
 {
     DeviceBridge::Get()->SyncCrashlogs(GetDirectory(DIRECTORY_TYPE::CRASHLOGS));
     ui->bottomWidget->setCurrentIndex(1);
+}
+
+void MainWindow::OnCrashlogsDirClicked()
+{
+    if (!QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::CRASHLOGS)))
+    {
+        ui->bottomWidget->setCurrentIndex(1);
+        ui->outputEdit->appendPlainText("No synchronized crashlogs from device.");
+    }
 }
 
 void MainWindow::OnCrashlogsStatusChanged(QString text)
