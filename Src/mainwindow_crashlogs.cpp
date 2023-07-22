@@ -4,17 +4,34 @@
 #include "crashsymbolicator.h"
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QFile>
 
 void MainWindow::SetupCrashlogsUI()
 {
-    connect(ui->syncCrashlogsBtn, SIGNAL(pressed()), this, SLOT(OnSyncCrashlogsClicked()));
-    connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
-    connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
-    connect(ui->crashlogsDirBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogsDirClicked()));
-    connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
-    connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
-    connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
-    connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult(QString,bool)), this, SLOT(OnSymbolicateResult(QString,bool)));
+    if (!m_stacktraceModel) {
+        m_stacktraceModel = new QStandardItemModel();
+        ui->stacktraceTable->setModel(m_stacktraceModel);
+        ui->stacktraceTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+        ui->stacktraceTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
+        ui->stacktraceTable->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+
+        connect(ui->syncCrashlogsBtn, SIGNAL(pressed()), this, SLOT(OnSyncCrashlogsClicked()));
+        connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
+        connect(ui->crashlogBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogClicked()));
+        connect(ui->crashlogsDirBtn, SIGNAL(pressed()), this, SLOT(OnCrashlogsDirClicked()));
+        connect(ui->dsymBtn, SIGNAL(pressed()), this, SLOT(OnDsymClicked()));
+        connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
+        connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
+        connect(ui->saveSymbolicatedBtn, SIGNAL(pressed()), this, SLOT(OnSaveSymbolicatedClicked()));
+        connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult2(SymbolicatedData,bool)), this, SLOT(OnSymbolicateResult2(SymbolicatedData,bool)));
+        connect(ui->threadEdit, SIGNAL(textActivated(QString)), this, SLOT(OnStacktraceThreadChanged(QString)));
+    }
+    m_stacktraceModel->setHorizontalHeaderItem(0, new QStandardItem("Binary"));
+    m_stacktraceModel->setHorizontalHeaderItem(2, new QStandardItem("Line"));
+    m_stacktraceModel->setHorizontalHeaderItem(3, new QStandardItem("Function"));
+    ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
+    ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeMode::ResizeToContents);
+    ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeMode::ResizeToContents);
 }
 
 void MainWindow::OnSyncCrashlogsClicked()
@@ -63,30 +80,62 @@ void MainWindow::OnSymbolicateClicked()
     ui->bottomWidget->setCurrentIndex(1);
 }
 
-void MainWindow::OnSymbolicateResult(QString messages, bool error)
+void MainWindow::OnSaveSymbolicatedClicked()
 {
+    QString data = m_lastStacktrace.rawString;
+    if (data.isEmpty())
+        return;
+
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Symbolicated", this, "Text File (*.txt)");
+    if (!filepath.isEmpty()) {
+        QFile f(filepath);
+        if (f.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&f);
+            stream << data;
+            f.close();
+        }
+    }
+}
+
+void MainWindow::OnStacktraceThreadChanged(QString threadName)
+{
+    m_stacktraceModel->clear();
+    SetupCrashlogsUI();
+
+    foreach (auto& stack, m_lastStacktrace.stackTraces)
+    {
+        if (stack.threadName == threadName)
+        {
+            foreach (auto& line, stack.lines)
+            {
+                QList<QStandardItem*> rowData;
+                rowData << new QStandardItem(line.binary);
+                rowData << new QStandardItem(line.line);
+                rowData << new QStandardItem(line.function);
+                m_stacktraceModel->appendRow(rowData);
+            }
+            return;
+        }
+    }
+}
+
+void MainWindow::OnSymbolicateResult2(SymbolicatedData data, bool error)
+{
+    m_stacktraceModel->clear();
+    SetupCrashlogsUI();
+
     if (error)
     {
-        QMessageBox::critical(this, "Error", messages, QMessageBox::Ok);
+        QMessageBox::critical(this, "Error", data.rawString, QMessageBox::Ok);
         ui->statusbar->showMessage("Symbolication failed!");
-        ui->outputEdit->appendPlainText(messages);
     }
     else
     {
-        QMessageBox msgBox(QMessageBox::Question, "Symbolication", "Symbolication success and saved to\n" + messages);
-        QPushButton *openButton = msgBox.addButton("Open it!", QMessageBox::ButtonRole::ActionRole);
-        QPushButton *dirButton = msgBox.addButton("Go to directory...", QMessageBox::ButtonRole::ActionRole);
-        msgBox.addButton(QMessageBox::StandardButton::Close);
-        msgBox.exec();
-        if (msgBox.clickedButton() == openButton)
-        {
-            QDesktopServices::openUrl(messages);
-        }
-        else if (msgBox.clickedButton() == dirButton)
-        {
-            QDesktopServices::openUrl(GetDirectory(DIRECTORY_TYPE::SYMBOLICATED));
-        }
-        ui->outputEdit->appendPlainText("Symbolicated file saved to '" + messages + "'!");
         ui->statusbar->showMessage("Symbolication success!");
+        ui->threadEdit->clear();
+        m_lastStacktrace = data;
+        foreach (auto& stack, data.stackTraces) {
+            ui->threadEdit->addItem(stack.threadName);
+        }
     }
 }

@@ -9,6 +9,7 @@
 #include <QMutex>
 #include <QPlainTextEdit>
 
+#include "crashsymbolicator.h"
 #include "devicebridge.h"
 #include "customkeyfiler.h"
 #include "textviewer.h"
@@ -120,6 +121,8 @@ private slots:
 
     //Crashlogs UI
 private:
+    QStandardItemModel *m_stacktraceModel;
+    SymbolicatedData m_lastStacktrace;
     void SetupCrashlogsUI();
 private slots:
     void OnSyncCrashlogsClicked();
@@ -129,7 +132,9 @@ private slots:
     void OnDsymClicked();
     void OnDwarfClicked();
     void OnSymbolicateClicked();
-    void OnSymbolicateResult(QString messages, bool error);
+    void OnSaveSymbolicatedClicked();
+    void OnStacktraceThreadChanged(QString threadName);
+    void OnSymbolicateResult2(SymbolicatedData data, bool error);
 
     //Toolbox UI
 private:

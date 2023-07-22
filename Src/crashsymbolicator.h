@@ -4,7 +4,6 @@
 #include "utility/CSearchMachO.h"
 #include "CMachOCrashLogW.h"
 #include "CMachODSymW.h"
-#include "CMachOW.h"
 #include "CSymbolsPackW.h"
 #include <QString>
 #include <QJsonDocument>
@@ -13,6 +12,25 @@
 #include <QObject>
 
 using namespace MachO;
+
+struct StackLine
+{
+    QString binary;
+    QString line;
+    QString function;
+};
+
+struct StackTrace
+{
+    QString threadName;
+    QList<StackLine> lines;
+};
+
+struct SymbolicatedData
+{
+    QString rawString;
+    QList<StackTrace> stackTraces;
+};
 
 class CrashSymbolicator : public QObject, public CSearchMachO::ISender
 {
@@ -46,6 +64,7 @@ private:
 
 signals:
     void SymbolicateResult(QString messages, bool error = false);
+    void SymbolicateResult2(SymbolicatedData data, bool error = false);
 };
 
 #endif // CRASHSYMBOLICATOR_H

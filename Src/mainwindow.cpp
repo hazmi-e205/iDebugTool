@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_loading(new LoadingDialog(this))
     , m_devicesModel(nullptr)
     , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
+    , m_stacktraceModel(nullptr)
     , m_imageMounter(new ImageMounter(this))
 {
     ui->setupUi(this);
@@ -105,7 +106,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->saveOutputBtn
                    << ui->startDebugBtn
                    << ui->saveDebugBtn
-                   << ui->clearDebugBtn);
+                   << ui->clearDebugBtn
+                   << ui->saveSymbolicatedBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
