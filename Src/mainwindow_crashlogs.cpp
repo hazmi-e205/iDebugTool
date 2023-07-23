@@ -27,11 +27,20 @@ void MainWindow::SetupCrashlogsUI()
         connect(ui->threadEdit, SIGNAL(textActivated(QString)), this, SLOT(OnStacktraceThreadChanged(QString)));
     }
     m_stacktraceModel->setHorizontalHeaderItem(0, new QStandardItem("Binary"));
-    m_stacktraceModel->setHorizontalHeaderItem(2, new QStandardItem("Line"));
-    m_stacktraceModel->setHorizontalHeaderItem(3, new QStandardItem("Function"));
+    m_stacktraceModel->setHorizontalHeaderItem(1, new QStandardItem("Line"));
+    m_stacktraceModel->setHorizontalHeaderItem(2, new QStandardItem("Function"));
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeMode::ResizeToContents);
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeMode::ResizeToContents);
+
+//    for(int idx = 0; idx<30;idx++)
+//    {
+//        QList<QStandardItem*> rowData;
+//        rowData << new QStandardItem("aaaaaaaaaaaaa");
+//        rowData << new QStandardItem("bbbbbbbbbbbbbbbbbbbbbbbbbbbb:1000");
+//        rowData << new QStandardItem("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+//        m_stacktraceModel->appendRow(rowData);
+//    }
 }
 
 void MainWindow::OnSyncCrashlogsClicked()

@@ -133,7 +133,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->pidEdit
                    << ui->privateKeyEdit
                    << ui->provisionEdit
-                   << ui->bundleEdit);
+                   << ui->bundleEdit
+                   << ui->threadEdit);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);

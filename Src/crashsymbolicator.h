@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QObject>
+#include <QThread>
 
 using namespace MachO;
 
@@ -61,6 +62,11 @@ private:
     static CrashSymbolicator *m_instance;
     CMachOCrashLogW* m_crashlog;
     CMachODSymW* m_dsym;
+    QThread *m_thread;
+    QString m_crashlogPath, m_dsymPath;
+
+private slots:
+    void doWork();
 
 signals:
     void SymbolicateResult(QString messages, bool error = false);

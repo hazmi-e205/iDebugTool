@@ -32,140 +32,201 @@ void CrashSymbolicator::Destroy()
 }
 
 CrashSymbolicator::CrashSymbolicator()
+    : m_thread(new QThread())
 {
+    connect(m_thread, SIGNAL(started()), SLOT(doWork()));
+    moveToThread(m_thread);
 }
 
 void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
 {
-    AsyncManager::Get()->StartAsyncRequest([&, crashlogPath, dsymDir](){
-        SymbolicatedData data;
-        QString out;
-        QString oldstyle = ConvertToOldStyle(crashlogPath);
-        if (!oldstyle.isEmpty())
-        {
-            Process(oldstyle, dsymDir);
-            return;
-        }
+    if (m_thread->isRunning()) {
+        m_thread->quit();
+        m_thread->wait();
+    }
+    m_crashlogPath = crashlogPath;
+    m_dsymPath = dsymDir;
+    m_thread->start();
+}
 
-        bool result = CSearchMachO::Search(crashlogPath.toStdWString().c_str(), *this);
-        if (!result)
-        {
-            data.rawString = "Crashlog not found!";
-            emit SymbolicateResult(data.rawString, true);
-            emit SymbolicateResult2(data, true);
-            return;
-        }
+void CrashSymbolicator::doWork()
+{
+    SymbolicatedData data;
+    QString out;
+    QString oldstyle = ConvertToOldStyle(m_crashlogPath);
+    if (!oldstyle.isEmpty())
+    {
+        m_crashlogPath = oldstyle;
+    }
 
-        if (QFileInfo(dsymDir).isFile())
-        {
-            m_dsym = new CMachODSymW(CMachODSym(dsymDir.toStdWString(), dsymDir.toStdWString()));
-            result = true;
-        }
-        else
-        {
-            result = CSearchMachO::Search(dsymDir.toStdWString().c_str(), *this);
-        }
-        if (!result)
-        {
-            data.rawString = "Crashlog not found!";
-            emit SymbolicateResult(data.rawString, true);
-            emit SymbolicateResult2(data, true);
-            return;
-        }
+    bool result = CSearchMachO::Search(m_crashlogPath.toStdWString().c_str(), *this);
+    if (!result)
+    {
+        data.rawString = "Crashlog not found!";
+        emit SymbolicateResult(data.rawString, true);
+        emit SymbolicateResult2(data, true);
+        m_thread->quit();
+        m_thread->wait();
+        return;
+    }
 
-        bool inlining = false;
-        std::map<std::wstring, std::wstring> linkNameOfLibWithUUID = m_crashlog->GetLinkMap();
-        QString line = "";
-        QString name = QString::fromStdWString(m_dsym->GetName());
+    if (QFileInfo(m_dsymPath).isFile())
+    {
+        m_dsym = new CMachODSymW(CMachODSym(m_dsymPath.toStdWString(), m_dsymPath.toStdWString()));
+        result = true;
+    }
+    else
+    {
+        result = CSearchMachO::Search(m_dsymPath.toStdWString().c_str(), *this);
+    }
+    if (!result)
+    {
+        data.rawString = "Crashlog not found!";
+        emit SymbolicateResult(data.rawString, true);
+        emit SymbolicateResult2(data, true);
+        m_thread->quit();
+        m_thread->wait();
+        return;
+    }
 
-        CMachOW* crashed_macho = NULL;
-        try {
-            crashed_macho = m_dsym->GetMachO(m_crashlog->GetUUID());
-        } catch (const char* messages) {
-            data.rawString = QString("Crashlog invalid! (%1)\n"
-                                     "Please check your crashlog and dsym or try to symbolicate or debug it in xcode...\n"
-                                     "\nLast crashlog: %2\n"
-                                     "\nLast dsym: %3\n").arg(messages).arg(crashlogPath).arg(dsymDir);
-            emit SymbolicateResult(data.rawString, true);
-            emit SymbolicateResult2(data, true);
-            return;
-        }
-        std::ifstream infile(crashlogPath.toStdString());
-        std::string cline;
-        StackTrace stacktrace;
-        while (std::getline(infile, cline))
+    bool inlining = false;
+    std::map<std::wstring, std::wstring> linkNameOfLibWithUUID = m_crashlog->GetLinkMap();
+    QString line = "";
+    QString name = QString::fromStdWString(m_dsym->GetName());
+
+    CMachOW* crashed_macho = NULL;
+    try {
+        crashed_macho = m_dsym->GetMachO(m_crashlog->GetUUID());
+    } catch (const char* messages) {
+        data.rawString = QString("Crashlog invalid! (%1)\n"
+                                 "Please check your crashlog and dsym or try to symbolicate or debug it in xcode...\n"
+                                 "\nLast crashlog: %2\n"
+                                 "\nLast dsym: %3\n").arg(messages).arg(m_crashlogPath).arg(m_dsymPath);
+        emit SymbolicateResult(data.rawString, true);
+        emit SymbolicateResult2(data, true);
+        m_thread->quit();
+        m_thread->wait();
+        return;
+    }
+    std::ifstream infile(m_crashlogPath.toStdString());
+    std::string cline;
+    StackTrace stacktrace;
+    while (std::getline(infile, cline))
+    {
+        line = QString(cline.c_str());
+        if (!line.isNull())
         {
-            line = QString(cline.c_str());
-            if (!line.isNull())
+            QString threadname = FindRegex(line, "Thread [0-9]+ name:");
+            if (!threadname.isEmpty())
+                threadname = line.trimmed();
+            else
+                threadname = FindRegex(line, "Thread [0-9]+");
+
+            if (!threadname.isEmpty() && !stacktrace.threadName.contains(threadname, Qt::CaseInsensitive))
             {
-                QString threadname = FindRegex(line, "Thread [0-9]+ name:");
-                if (!threadname.isEmpty())
-                    threadname = line.trimmed();
-                else
-                    threadname = FindRegex(line, "Thread [0-9]+");
+                if (!stacktrace.threadName.isEmpty() && !stacktrace.threadName.contains(threadname, Qt::CaseInsensitive))
+                    data.stackTraces.append(stacktrace);
 
-                if (!threadname.isEmpty() && !stacktrace.threadName.contains(threadname, Qt::CaseInsensitive))
+                stacktrace = StackTrace();
+                stacktrace.threadName = threadname;
+            }
+
+            if (IsUnsymbolicatedLine(line))
+            {
+                StackLine stackline;
+                QString symbol = "<invalid>";
+
+                uint64_t addr64 = 0;
+                int replace_start = (line.indexOf(kSPACE_TAB_SEPARATOR) + 2);
+                replace_start = (line.indexOf(kSPACE, replace_start) + 1);
+                int replace_end = line.length();
+                int start = line.indexOf(kPLUS_SPACE_SEPARATOR);
+                if (replace_start >= 0 && start > replace_start && replace_end > start)
                 {
-                    if (!stacktrace.threadName.isEmpty() && !stacktrace.threadName.contains(threadname, Qt::CaseInsensitive))
-                        data.stackTraces.append(stacktrace);
-
-                    stacktrace = StackTrace();
-                    stacktrace.threadName = threadname;
+                    QString address = line.mid(start + 2, (replace_end - start) - 2);
+                    addr64 = address.toULongLong();
                 }
 
-                if (IsUnsymbolicatedLine(line))
+                if (line.indexOf(name) >= 0)
                 {
-                    StackLine stackline;
-                    QString symbol = "<invalid>";
-
-                    uint64_t addr64 = 0;
-                    int replace_start = (line.indexOf(kSPACE_TAB_SEPARATOR) + 2);
-                    replace_start = (line.indexOf(kSPACE, replace_start) + 1);
-                    int replace_end = line.length();
-                    int start = line.indexOf(kPLUS_SPACE_SEPARATOR);
-                    if (replace_start >= 0 && start > replace_start && replace_end > start)
+                    if (inlining)
                     {
-                        QString address = line.mid(start + 2, (replace_end - start) - 2);
-                        addr64 = address.toULongLong();
-                    }
-
-                    if (line.indexOf(name) >= 0)
-                    {
-                        if (inlining)
-                        {
-                            symbol = QString::fromStdWString(crashed_macho->GetInliningInfo(addr64));
-                        }
-                        else
-                        {
-                            symbol = QString::fromStdWString(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64));
-                        }
-                        line = line.mid(0, replace_start) + " " + symbol + " " + line.mid(replace_end);
-                        stackline.binary = name;
+                        symbol = QString::fromStdWString(crashed_macho->GetInliningInfo(addr64));
                     }
                     else
                     {
-                        stackline.binary = line.split(QRegularExpression("\\s+")).at(1);
-                        symbol = line.mid(replace_start);
-                        for (const auto& linkname : linkNameOfLibWithUUID)
+                        symbol = QString::fromStdWString(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64));
+                    }
+                    line = line.mid(0, replace_start) + " " + symbol + " " + line.mid(replace_end);
+                    stackline.binary = name;
+                }
+                else
+                {
+                    stackline.binary = line.split(QRegularExpression("\\s+")).at(1);
+                    symbol = line.mid(replace_start);
+                    for (const auto& linkname : linkNameOfLibWithUUID)
+                    {
+                        if(GetSystemSymbols() != nullptr)
                         {
-                            if(GetSystemSymbols() != nullptr)
+                            //CMachOW* macho = m_dsym->GetMachO(m_crashlog->GetUUID());
+                            QString systemSymbol = QString::fromStdWString(GetSystemSymbols()->GetSymbolNameAt(linkname.second, addr64));
+                            if (!(systemSymbol.isNull() || systemSymbol.isEmpty()))
                             {
-                                //CMachOW* macho = m_dsym->GetMachO(m_crashlog->GetUUID());
-                                QString systemSymbol = QString::fromStdWString(GetSystemSymbols()->GetSymbolNameAt(linkname.second, addr64));
-                                if (!(systemSymbol.isNull() || systemSymbol.isEmpty()))
-                                {
-                                    line = line.mid(0, replace_start) + " " + systemSymbol + " " + line.mid(replace_end);
-                                    stackline.binary = QString::fromStdWString(linkname.first);
-                                    symbol = systemSymbol;
-                                }
+                                line = line.mid(0, replace_start) + " " + systemSymbol + " " + line.mid(replace_end);
+                                stackline.binary = QString::fromStdWString(linkname.first);
+                                symbol = systemSymbol;
                             }
                         }
                     }
+                }
 
+                QString symbol_line = FindRegex(symbol, "\\([\\S]*:[0-9]+\\)");
+                if (symbol_line.isEmpty())
+                {
+                    stackline.function = symbol;
+                }
+                else
+                {
+                    stackline.line = symbol_line.remove("(").remove(")");
+                    stackline.function = symbol.remove(symbol_line).trimmed();
+                }
+                stacktrace.lines.append(stackline);
+            }
+            else if (IsExceptionBacktrace(line))
+            {
+                stacktrace = StackTrace();
+                stacktrace.threadName = "Last Exception Backtrace";
+
+                QString result = "";
+                QString addresses_str = line.mid(1, line.length() - 2);
+                QStringList addresses = addresses_str.split(kSPACE);
+                for (int i = 0; i < addresses.length(); ++i)
+                {
+                    StackLine stackline;
+                    uint64_t addr64 = addresses[i].toULongLong(nullptr, 16);
+                    QString hexvalue = QString("0x%1").arg(addr64, 8, 16, QLatin1Char( '0' ));
+                    QString symbol = "<unresolved>", image = "<unresolved>", _template = "";
+
+                    if (addr64 >= m_crashlog->Start() && addr64 < m_crashlog->End())
+                    {
+                        if (inlining)
+                        {
+                            symbol = QString::fromStdWString(crashed_macho->GetInliningInfo(addr64 - m_crashlog->Start()));
+                        }
+                        else
+                        {
+                            symbol = QString::fromStdWString(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64 - m_crashlog->Start()));
+                        }
+                        image = QString::fromStdWString(m_crashlog->GetImageName());
+                    }
+                    _template = QString("%1%2\t%3 %4").arg(i, -4).arg(image).arg(hexvalue).arg(symbol);
+                    result += _template + "\n";
+
+                    stackline.binary = image;
                     QString symbol_line = FindRegex(symbol, "\\([\\S]*:[0-9]+\\)");
                     if (symbol_line.isEmpty())
                     {
-                        stackline.function = symbol;
+                        stackline.line = symbol;
                     }
                     else
                     {
@@ -174,59 +235,31 @@ void CrashSymbolicator::Process(QString crashlogPath, QString dsymDir)
                     }
                     stacktrace.lines.append(stackline);
                 }
-                else if (IsExceptionBacktrace(line))
+                line = result;
+            }
+            else
+            {
+                int replace_start = (line.indexOf(kSPACE_TAB_SEPARATOR) + 2);
+                replace_start = (line.indexOf(kSPACE, replace_start) + 1);
+                int replace_end = line.length();
+                int start = line.indexOf(kPLUS_SPACE_SEPARATOR);
+                if (replace_start >= 0 && start > replace_start && replace_end > start)
                 {
-                    stacktrace = StackTrace();
-                    stacktrace.threadName = "Last Exception Backtrace";
-
-                    QString result = "";
-                    QString addresses_str = line.mid(1, line.length() - 2);
-                    QStringList addresses = addresses_str.split(kSPACE);
-                    for (int i = 0; i < addresses.length(); ++i)
-                    {
-                        StackLine stackline;
-                        uint64_t addr64 = addresses[i].toULongLong(nullptr, 16);
-                        QString hexvalue = QString("0x%1").arg(addr64, 8, 16, QLatin1Char( '0' ));
-                        QString symbol = "<unresolved>", image = "<unresolved>", _template = "";
-
-                        if (addr64 >= m_crashlog->Start() && addr64 < m_crashlog->End())
-                        {
-                            if (inlining)
-                            {
-                                symbol = QString::fromStdWString(crashed_macho->GetInliningInfo(addr64 - m_crashlog->Start()));
-                            }
-                            else
-                            {
-                                symbol = QString::fromStdWString(m_dsym->GetSymbolNameAt(m_crashlog->GetUUID(), addr64 - m_crashlog->Start()));
-                            }
-                            image = QString::fromStdWString(m_crashlog->GetImageName());
-                        }
-                        _template = QString("%1%2\t%3 %4").arg(i, -4).arg(image).arg(hexvalue).arg(symbol);
-                        result += _template + "\n";
-
-                        stackline.binary = image;
-                        QString symbol_line = FindRegex(symbol, "\\([\\S]*:[0-9]+\\)");
-                        if (symbol_line.isEmpty())
-                        {
-                            stackline.line = symbol;
-                        }
-                        else
-                        {
-                            stackline.line = symbol_line.remove("(").remove(")");
-                            stackline.function = symbol.remove(symbol_line).trimmed();
-                        }
-                        stacktrace.lines.append(stackline);
-                    }
-                    line = result;
+                    StackLine stackline;
+                    stackline.binary = line.split(QRegularExpression("\\s+")).at(1);
+                    stackline.function = line.mid(replace_start);
+                    stacktrace.lines.append(stackline);
                 }
             }
-            out.append(line + "\n");
         }
-        crashed_macho->CleanUpInliningInfo();
-        emit SymbolicateResult(out);
-        data.rawString = out;
-        emit SymbolicateResult2(data);
-    });
+        out.append(line + "\n");
+    }
+    crashed_macho->CleanUpInliningInfo();
+    emit SymbolicateResult(out);
+    data.rawString = out;
+    emit SymbolicateResult2(data);
+    m_thread->quit();
+    m_thread->wait();
 }
 
 QString CrashSymbolicator::ConvertToOldStyle(QString crashlogPath)
