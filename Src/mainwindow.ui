@@ -308,7 +308,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="dashboardTab">
             <attribute name="title">
@@ -2008,9 +2008,9 @@ background-color: rgb(4, 111, 182);</string>
                 <property name="geometry">
                  <rect>
                   <x>0</x>
-                  <y>0</y>
+                  <y>-24</y>
                   <width>893</width>
-                  <height>483</height>
+                  <height>433</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_29">
@@ -2263,30 +2263,19 @@ color: rgb(255, 255, 255);</string>
                                </property>
                               </widget>
                              </item>
-                            </layout>
-                           </widget>
-                          </item>
-                          <item>
-                           <widget class="QWidget" name="widget_72" native="true">
-                            <property name="sizePolicy">
-                             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                              <horstretch>0</horstretch>
-                              <verstretch>0</verstretch>
-                             </sizepolicy>
-                            </property>
-                            <layout class="QHBoxLayout" name="horizontalLayout_42">
-                             <property name="leftMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="topMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="rightMargin">
-                              <number>0</number>
-                             </property>
-                             <property name="bottomMargin">
-                              <number>0</number>
-                             </property>
+                             <item>
+                              <widget class="QPushButton" name="symbolicateBtn">
+                               <property name="sizePolicy">
+                                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                                 <horstretch>0</horstretch>
+                                 <verstretch>0</verstretch>
+                                </sizepolicy>
+                               </property>
+                               <property name="text">
+                                <string>Symbolicate!</string>
+                               </property>
+                              </widget>
+                             </item>
                             </layout>
                            </widget>
                           </item>
@@ -2317,19 +2306,6 @@ color: rgb(255, 255, 255);</string>
                              <property name="bottomMargin">
                               <number>0</number>
                              </property>
-                             <item>
-                              <widget class="QPushButton" name="symbolicateBtn">
-                               <property name="sizePolicy">
-                                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                 <horstretch>0</horstretch>
-                                 <verstretch>0</verstretch>
-                                </sizepolicy>
-                               </property>
-                               <property name="text">
-                                <string>Symbolicate!</string>
-                               </property>
-                              </widget>
-                             </item>
                             </layout>
                            </widget>
                           </item>
@@ -2397,7 +2373,7 @@ color: rgb(255, 255, 255);</string>
                                    </sizepolicy>
                                   </property>
                                   <property name="editable">
-                                   <bool>true</bool>
+                                   <bool>false</bool>
                                   </property>
                                  </widget>
                                 </item>
@@ -2438,6 +2414,150 @@ color: rgb(255, 255, 255);</string>
                                  <verstretch>0</verstretch>
                                 </sizepolicy>
                                </property>
+                               <property name="styleSheet">
+                                <string notr="true">QWidget {
+    background-color: rgba(255, 255, 255, 100);
+    color: rgb(68, 68, 68);
+    padding: 0px
+}
+QTableView {
+    border: 0px solid &quot;#222&quot;;
+    padding: 0px;
+    font-family: &quot;Segoe UI&quot;;
+    font-size: 13px;
+    alternate-background-color:  rgb(227, 129, 0);
+}
+QTableView::item:selected {
+    background-color:  rgb(227, 129, 0);
+}
+QTableView QTableCornerButton::section {
+    background-color: rgb(227, 129, 0);
+    border: 0px;
+    padding: 0px
+}
+QHeaderView, QHeaderView::section {
+    background-color: rgb(227, 129, 0);
+    color: &quot;#eee&quot;;
+    font-size: 13px;
+    border: 0px;
+    padding: 0px
+}
+
+QScrollBar:vertical {
+	background-color: rgba(227, 129, 0, 120);
+	width: 15px;
+	margin: 15px 3px 15px 3px;
+	border: 1px transparent #2A2929;
+	border-radius: 4px;
+}
+QScrollBar::handle:vertical {
+	background-color: rgba(227, 129, 0, 255);
+	min-height: 5px;
+	border-radius: 4px;
+}
+QScrollBar::sub-line:vertical {
+	margin: 3px 0px 3px 0px;
+	border-image: url(:/res/Assets/arrow-up-disabled.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: top;
+	subcontrol-origin: margin;
+}
+QScrollBar::add-line:vertical {
+	margin: 3px 0px 3px 0px;
+	border-image: url(:/res/Assets/arrow-down-disabled.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: bottom;
+	subcontrol-origin: margin;
+}
+QScrollBar::sub-line:vertical:hover,QScrollBar::sub-line:vertical:on {
+	border-image: url(:/res/Assets/arrow-up.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: top;
+	subcontrol-origin: margin;
+}
+QScrollBar::add-line:vertical:hover, QScrollBar::add-line:vertical:on {
+	border-image: url(:/res/Assets/arrow-down.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: bottom;
+	subcontrol-origin: margin;
+}
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+	background: none;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+	background: none;
+}
+
+QScrollBar:horizontal
+{
+	height: 15px;
+	margin: 3px 15px 3px 15px;
+	border: 1px transparent #2A2929;
+	border-radius: 4px;
+	background-color: rgba(227, 129, 0, 120);
+}
+
+QScrollBar::handle:horizontal
+{
+	background-color: rgba(227, 129, 0, 255);
+	min-width: 5px;
+	border-radius: 4px;
+}
+
+QScrollBar::add-line:horizontal
+{
+	margin: 0px 3px 0px 3px;
+	border-image: url(:/res/Assets/arrow-right-disabled.png);
+	width: 10px;
+	height: 10px;
+	subcontrol-position: right;
+	subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal
+{
+	margin: 0px 3px 0px 3px;
+	border-image: url(:/res/Assets/arrow-left-disabled.png);        /* # &lt;-------- */ 
+	height: 10px;
+	width: 10px;
+	subcontrol-position: left;
+	subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:horizontal:hover,QScrollBar::add-line:horizontal:on
+{
+	border-image: url(:/res/Assets/arrow-right.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: right;
+	subcontrol-origin: margin;
+}
+
+
+QScrollBar::sub-line:horizontal:hover, QScrollBar::sub-line:horizontal:on
+{
+	border-image: url(:/res/Assets/arrow-left.png);
+	height: 10px;
+	width: 10px;
+	subcontrol-position: left;
+	subcontrol-origin: margin;
+}
+
+QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal
+{
+	background: none;
+}
+
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
+{
+	background: none;
+}</string>
+                               </property>
                               </widget>
                              </item>
                             </layout>
@@ -2447,37 +2567,6 @@ color: rgb(255, 255, 255);</string>
                         </widget>
                        </item>
                       </layout>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QLabel" name="label_40">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="minimumSize">
-                       <size>
-                        <width>0</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                      <property name="font">
-                       <font>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">background-color: rgb(227, 129, 0);
-color: rgb(255, 255, 255);</string>
-                      </property>
-                      <property name="text">
-                       <string>Crashlog Symbolicator</string>
-                      </property>
-                      <property name="alignment">
-                       <set>Qt::AlignCenter</set>
-                      </property>
                      </widget>
                     </item>
                    </layout>

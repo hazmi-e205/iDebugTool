@@ -12,8 +12,12 @@ void MainWindow::SetupCrashlogsUI()
         m_stacktraceModel = new QStandardItemModel();
         ui->stacktraceTable->setModel(m_stacktraceModel);
         ui->stacktraceTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-        ui->stacktraceTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
         ui->stacktraceTable->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+        ui->stacktraceTable->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+        ui->stacktraceTable->setHorizontalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
+        ui->stacktraceTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+        ui->stacktraceTable->setSelectionMode(QAbstractItemView::SelectionMode::ExtendedSelection);
+        ui->stacktraceTable->setShowGrid(false);
 
         connect(ui->syncCrashlogsBtn, SIGNAL(pressed()), this, SLOT(OnSyncCrashlogsClicked()));
         connect(DeviceBridge::Get(), SIGNAL(CrashlogsStatusChanged(QString)), this, SLOT(OnCrashlogsStatusChanged(QString)));
@@ -32,15 +36,7 @@ void MainWindow::SetupCrashlogsUI()
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeMode::ResizeToContents);
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeMode::ResizeToContents);
     ui->stacktraceTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeMode::ResizeToContents);
-
-//    for(int idx = 0; idx<30;idx++)
-//    {
-//        QList<QStandardItem*> rowData;
-//        rowData << new QStandardItem("aaaaaaaaaaaaa");
-//        rowData << new QStandardItem("bbbbbbbbbbbbbbbbbbbbbbbbbbbb:1000");
-//        rowData << new QStandardItem("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
-//        m_stacktraceModel->appendRow(rowData);
-//    }
+    ui->stacktraceTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
 }
 
 void MainWindow::OnSyncCrashlogsClicked()
@@ -86,7 +82,10 @@ void MainWindow::OnSymbolicateClicked()
     QString crashpath = ui->crashlogEdit->text();
     QString dsympath = ui->dsymEdit->text();
     CrashSymbolicator::Get()->Process(crashpath, dsympath);
-    ui->bottomWidget->setCurrentIndex(1);
+
+    m_stacktraceModel->clear();
+    ui->threadEdit->clear();
+    SetupCrashlogsUI();
 }
 
 void MainWindow::OnSaveSymbolicatedClicked()
@@ -130,9 +129,6 @@ void MainWindow::OnStacktraceThreadChanged(QString threadName)
 
 void MainWindow::OnSymbolicateResult2(SymbolicatedData data, bool error)
 {
-    m_stacktraceModel->clear();
-    SetupCrashlogsUI();
-
     if (error)
     {
         QMessageBox::critical(this, "Error", data.rawString, QMessageBox::Ok);
@@ -141,10 +137,10 @@ void MainWindow::OnSymbolicateResult2(SymbolicatedData data, bool error)
     else
     {
         ui->statusbar->showMessage("Symbolication success!");
-        ui->threadEdit->clear();
         m_lastStacktrace = data;
         foreach (auto& stack, data.stackTraces) {
             ui->threadEdit->addItem(stack.threadName);
         }
+        OnStacktraceThreadChanged(ui->threadEdit->currentText());
     }
 }
