@@ -69,8 +69,7 @@ private slots:
     void doWork();
 
 signals:
-    void SymbolicateResult(QString messages, bool error = false);
-    void SymbolicateResult2(SymbolicatedData data, bool error = false);
+    void SymbolicateResult2(unsigned int progress, SymbolicatedData data, bool error = false);
 };
 
 #endif // CRASHSYMBOLICATOR_H

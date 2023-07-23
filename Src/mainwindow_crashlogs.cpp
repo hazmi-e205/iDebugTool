@@ -27,7 +27,7 @@ void MainWindow::SetupCrashlogsUI()
         connect(ui->dwarfBtn, SIGNAL(pressed()), this, SLOT(OnDwarfClicked()));
         connect(ui->symbolicateBtn, SIGNAL(pressed()), this, SLOT(OnSymbolicateClicked()));
         connect(ui->saveSymbolicatedBtn, SIGNAL(pressed()), this, SLOT(OnSaveSymbolicatedClicked()));
-        connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult2(SymbolicatedData,bool)), this, SLOT(OnSymbolicateResult2(SymbolicatedData,bool)));
+        connect(CrashSymbolicator::Get(), SIGNAL(SymbolicateResult2(unsigned int,SymbolicatedData,bool)), this, SLOT(OnSymbolicateResult2(unsigned int,SymbolicatedData,bool)));
         connect(ui->threadEdit, SIGNAL(textActivated(QString)), this, SLOT(OnStacktraceThreadChanged(QString)));
     }
     m_stacktraceModel->setHorizontalHeaderItem(0, new QStandardItem("Binary"));
@@ -127,7 +127,7 @@ void MainWindow::OnStacktraceThreadChanged(QString threadName)
     }
 }
 
-void MainWindow::OnSymbolicateResult2(SymbolicatedData data, bool error)
+void MainWindow::OnSymbolicateResult2(unsigned int progress, SymbolicatedData data, bool error)
 {
     if (error)
     {
@@ -136,11 +136,21 @@ void MainWindow::OnSymbolicateResult2(SymbolicatedData data, bool error)
     }
     else
     {
-        ui->statusbar->showMessage("Symbolication success!");
-        m_lastStacktrace = data;
-        foreach (auto& stack, data.stackTraces) {
-            ui->threadEdit->addItem(stack.threadName);
+        if (progress == 100)
+        {
+            ui->statusbar->showMessage("Symbolication success!");
+            m_lastStacktrace = data;
+            foreach (auto& stack, data.stackTraces) {
+                ui->threadEdit->addItem(stack.threadName);
+            }
+            OnStacktraceThreadChanged(ui->threadEdit->currentText());
+            m_loading->close();
         }
-        OnStacktraceThreadChanged(ui->threadEdit->currentText());
+        else
+        {
+            if (!m_loading->isActiveWindow())
+                m_loading->ShowProgress("Symbolicate crashlog...");
+            m_loading->SetProgress(progress, "Processing...");
+        }
     }
 }

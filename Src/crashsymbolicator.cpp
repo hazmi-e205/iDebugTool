@@ -6,7 +6,6 @@
 #include <QDir>
 #include <fstream>
 #include "utility/CDirectory.h"
-#include "asyncmanager.h"
 #include "utils.h"
 #include "CMachOW.h"
 
@@ -63,8 +62,7 @@ void CrashSymbolicator::doWork()
     if (!result)
     {
         data.rawString = "Crashlog not found!";
-        emit SymbolicateResult(data.rawString, true);
-        emit SymbolicateResult2(data, true);
+        emit SymbolicateResult2(100, data, true);
         m_thread->quit();
         m_thread->wait();
         return;
@@ -82,8 +80,7 @@ void CrashSymbolicator::doWork()
     if (!result)
     {
         data.rawString = "Crashlog not found!";
-        emit SymbolicateResult(data.rawString, true);
-        emit SymbolicateResult2(data, true);
+        emit SymbolicateResult2(100, data, true);
         m_thread->quit();
         m_thread->wait();
         return;
@@ -102,15 +99,17 @@ void CrashSymbolicator::doWork()
                                  "Please check your crashlog and dsym or try to symbolicate or debug it in xcode...\n"
                                  "\nLast crashlog: %2\n"
                                  "\nLast dsym: %3\n").arg(messages).arg(m_crashlogPath).arg(m_dsymPath);
-        emit SymbolicateResult(data.rawString, true);
-        emit SymbolicateResult2(data, true);
+        emit SymbolicateResult2(100, data, true);
         m_thread->quit();
         m_thread->wait();
         return;
     }
     std::ifstream infile(m_crashlogPath.toStdString());
+    quint64 lineTotal = std::count(std::istreambuf_iterator<char>(infile), std::istreambuf_iterator<char>(), '\n');
+    quint64 lineCount = 0;
     std::string cline;
     StackTrace stacktrace;
+    infile.seekg(0);
     while (std::getline(infile, cline))
     {
         line = QString(cline.c_str());
@@ -253,11 +252,13 @@ void CrashSymbolicator::doWork()
             }
         }
         out.append(line + "\n");
+        lineCount += 1;
+        qDebug() << "Percentage: " << (lineCount * 100) / lineTotal;
+        emit SymbolicateResult2((lineCount * 100) / lineTotal, SymbolicatedData());
     }
     crashed_macho->CleanUpInliningInfo();
-    emit SymbolicateResult(out);
     data.rawString = out;
-    emit SymbolicateResult2(data);
+    emit SymbolicateResult2(100, data);
     m_thread->quit();
     m_thread->wait();
 }

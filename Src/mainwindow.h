@@ -134,7 +134,7 @@ private slots:
     void OnSymbolicateClicked();
     void OnSaveSymbolicatedClicked();
     void OnStacktraceThreadChanged(QString threadName);
-    void OnSymbolicateResult2(SymbolicatedData data, bool error);
+    void OnSymbolicateResult2(unsigned int progress, SymbolicatedData data, bool error);
 
     //Toolbox UI
 private:
