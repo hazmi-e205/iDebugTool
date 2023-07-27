@@ -253,7 +253,6 @@ void CrashSymbolicator::doWork()
         }
         out.append(line + "\n");
         lineCount += 1;
-        qDebug() << "Percentage: " << (lineCount * 100) / lineTotal;
         emit SymbolicateResult2((lineCount * 100) / lineTotal, SymbolicatedData());
     }
     crashed_macho->CleanUpInliningInfo();
