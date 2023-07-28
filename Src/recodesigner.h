@@ -18,6 +18,8 @@ public:
         QString PrivateKey;
         QString PrivateKeyPassword;
         QString Provision;
+        QString ProvisionExt1;
+        QString ProvisionExt2;
         QString NewBundleId;
         QString NewBundleVersion;
         QString NewDisplayName;

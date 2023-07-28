@@ -52,6 +52,12 @@ void MainWindow::OnCodesignClicked()
     params.PrivateKey = ui->privateKeyEdit->currentText();
     params.PrivateKeyPassword = ui->privateKeyPasswordEdit->text();
     params.Provision = ui->provisionEdit->currentText();
+    params.ProvisionExt1 = ui->provisionExt1Edit->currentText();
+    params.ProvisionExt2 = ui->provisionExt2Edit->currentText();
+    params.NewBundleId = ui->newBundleIdEdit->text();
+    params.NewBundleVersion = ui->newBundleVersionEdit->text();
+    params.NewDisplayName = ui->newDisplayNameEdit->text();
+    params.NewEntitlements = ui->newEntitlementEdit->text();
     params.OriginalBuild = ui->originalBuildEdit->text();
     params.DoUnpack = ui->UnpackCheck->isChecked();
     params.DoCodesign = ui->CodesignCheck->isChecked();
