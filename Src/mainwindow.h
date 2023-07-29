@@ -115,6 +115,9 @@ private slots:
     void OnOriginalBuildClicked();
     void OnPrivateKeyClicked();
     void OnProvisionClicked();
+    void OnProvisionExt1Clicked();
+    void OnProvisionExt2Clicked();
+    void OnEntitlementClicked();
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
     void OnSigningResult(Recodesigner::SigningStatus status, QString messages);

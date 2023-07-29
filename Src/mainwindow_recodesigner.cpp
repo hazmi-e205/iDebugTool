@@ -10,6 +10,9 @@ void MainWindow::SetupRecodesignerUI()
     connect(ui->privateKeyBtn, SIGNAL(pressed()), this, SLOT(OnPrivateKeyClicked()));
     connect(ui->privateKeyEdit, SIGNAL(currentTextChanged(QString)), this, SLOT(OnPrivateKeyChanged(QString)));
     connect(ui->provisionBtn, SIGNAL(pressed()), this, SLOT(OnProvisionClicked()));
+    connect(ui->provisionExt1Btn, SIGNAL(pressed()), this, SLOT(OnProvisionExt1Clicked()));
+    connect(ui->provisionExt2Btn, SIGNAL(pressed()), this, SLOT(OnProvisionExt2Clicked()));
+    connect(ui->entitlementBtn, SIGNAL(pressed()), this, SLOT(OnEntitlementClicked()));
     connect(ui->codesignBtn, SIGNAL(pressed()), this, SLOT(OnCodesignClicked()));
     connect(Recodesigner::Get(), SIGNAL(SigningResult(Recodesigner::SigningStatus,QString)), this, SLOT(OnSigningResult(Recodesigner::SigningStatus,QString)));
     RefreshPrivateKeyList();
@@ -26,6 +29,16 @@ void MainWindow::RefreshPrivateKeyList()
     QStringList provisions = UserConfigs::Get()->GetData("Provision", QStringList());
     foreach (const QString& provname, provisions)
         ui->provisionEdit->addItem(provname);
+
+    ui->provisionEdit->clear();
+    provisions = UserConfigs::Get()->GetData("ProvisionExt1", QStringList());
+    foreach (const QString& provname, provisions)
+        ui->provisionExt1Edit->addItem(provname);
+
+    ui->provisionEdit->clear();
+    provisions = UserConfigs::Get()->GetData("ProvisionExt2", QStringList());
+    foreach (const QString& provname, provisions)
+        ui->provisionExt2Edit->addItem(provname);
 }
 
 void MainWindow::OnOriginalBuildClicked()
@@ -44,6 +57,24 @@ void MainWindow::OnProvisionClicked()
 {
     QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Provision", this);
     ui->provisionEdit->setEditText(filepath);
+}
+
+void MainWindow::OnProvisionExt1Clicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "ProvisionExt1", this);
+    ui->provisionExt1Edit->setEditText(filepath);
+}
+
+void MainWindow::OnProvisionExt2Clicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "ProvisionExt2", this);
+    ui->provisionExt2Edit->setEditText(filepath);
+}
+
+void MainWindow::OnEntitlementClicked()
+{
+    QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Entitlement", this);
+    ui->newEntitlementEdit->setText(filepath);
 }
 
 void MainWindow::OnCodesignClicked()
@@ -82,6 +113,26 @@ void MainWindow::OnCodesignClicked()
             provisions.append(params.Provision);
         }
         UserConfigs::Get()->SaveData("Provision", provisions);
+    }
+
+    if (!params.ProvisionExt1.isEmpty())
+    {
+        QStringList provisions = UserConfigs::Get()->GetData("ProvisionExt1", QStringList());
+        if (!provisions.contains(params.ProvisionExt1, Qt::CaseInsensitive)) {
+            ui->provisionExt1Edit->addItem(params.ProvisionExt1);
+            provisions.append(params.ProvisionExt1);
+        }
+        UserConfigs::Get()->SaveData("ProvisionExt1", provisions);
+    }
+
+    if (!params.ProvisionExt2.isEmpty())
+    {
+        QStringList provisions = UserConfigs::Get()->GetData("ProvisionExt2", QStringList());
+        if (!provisions.contains(params.ProvisionExt2, Qt::CaseInsensitive)) {
+            ui->provisionExt2Edit->addItem(params.ProvisionExt2);
+            provisions.append(params.ProvisionExt2);
+        }
+        UserConfigs::Get()->SaveData("ProvisionExt2", provisions);
     }
 
     ui->codesignBtn->setEnabled(false);

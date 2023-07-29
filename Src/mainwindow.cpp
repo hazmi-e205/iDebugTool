@@ -101,6 +101,9 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->originalBuildBtn
                    << ui->privateKeyBtn
                    << ui->provisionBtn
+                   << ui->provisionExt1Btn
+                   << ui->provisionExt2Btn
+                   << ui->entitlementBtn
                    << ui->codesignBtn
                    << ui->clearOutputBtn
                    << ui->saveOutputBtn
@@ -121,7 +124,10 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->excludeEdit
                    << ui->originalBuildEdit
                    << ui->privateKeyPasswordEdit
-                   << ui->provisionEdit
+                   << ui->newBundleIdEdit
+                   << ui->newBundleVersionEdit
+                   << ui->newDisplayNameEdit
+                   << ui->newEntitlementEdit
                    << ui->searchDbgEdit
                    << ui->excludeDbgEdit
                    << ui->envEdit
@@ -133,6 +139,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->pidEdit
                    << ui->privateKeyEdit
                    << ui->provisionEdit
+                   << ui->provisionExt1Edit
+                   << ui->provisionExt2Edit
                    << ui->bundleEdit
                    << ui->threadEdit);
 

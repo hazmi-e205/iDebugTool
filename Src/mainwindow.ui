@@ -2885,7 +2885,7 @@ color: rgb(255, 255, 255);</string>
                           <item>
                            <widget class="QGroupBox" name="groupBox_4">
                             <property name="title">
-                             <string>Optional</string>
+                             <string>Optional : Leave it empty if you don't need it</string>
                             </property>
                             <layout class="QVBoxLayout" name="verticalLayout_32">
                              <item>
@@ -2945,7 +2945,7 @@ color: rgb(255, 255, 255);</string>
                                  </widget>
                                 </item>
                                 <item>
-                                 <widget class="QPushButton" name="provisionBtn_2">
+                                 <widget class="QPushButton" name="provisionExt1Btn">
                                   <property name="sizePolicy">
                                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                     <horstretch>0</horstretch>
@@ -3017,7 +3017,7 @@ color: rgb(255, 255, 255);</string>
                                  </widget>
                                 </item>
                                 <item>
-                                 <widget class="QPushButton" name="provisionBtn_3">
+                                 <widget class="QPushButton" name="provisionExt2Btn">
                                   <property name="sizePolicy">
                                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                     <horstretch>0</horstretch>
@@ -3095,7 +3095,7 @@ color: rgb(255, 255, 255);</string>
                                  </widget>
                                 </item>
                                 <item>
-                                 <widget class="QPushButton" name="originalBuildBtn_2">
+                                 <widget class="QPushButton" name="entitlementBtn">
                                   <property name="sizePolicy">
                                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                                     <horstretch>0</horstretch>
