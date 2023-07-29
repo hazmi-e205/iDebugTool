@@ -19,6 +19,7 @@ public:
     void SetProgress(int percentage, QString text);
 
 private:
+    QString m_lastText;
     Ui::LoadingDialog *ui;
 };
 

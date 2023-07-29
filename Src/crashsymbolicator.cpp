@@ -290,7 +290,8 @@ QString CrashSymbolicator::ConvertToOldStyle(QString crashlogPath)
     if (error.error != QJsonParseError::NoError) return "";
 
     QFileInfo info(crashlogPath);
-    QString filepath = info.absolutePath() + "/" + info.baseName() + "_old." + info.completeSuffix();
+    QDir().mkpath(GetDirectory(DIRECTORY_TYPE::TEMP));
+    QString filepath = GetDirectory(DIRECTORY_TYPE::TEMP) + "/" + info.baseName() + "_legacy." + info.completeSuffix();
     QString oldStyle = header + "\n" + ConvertToOldStyle(headerDoc, contentDoc);
     QFile f(filepath);
     if (f.open(QIODevice::ReadWrite))

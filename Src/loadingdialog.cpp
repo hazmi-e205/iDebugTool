@@ -33,9 +33,13 @@ void LoadingDialog::ShowProgress(QString title, bool withClose)
 
 void LoadingDialog::SetProgress(int percentage, QString text)
 {
-    ui->status_txt->setText(text);
-    ui->log_txt->append(text);
     ui->progress_bar->setValue(percentage);
+    if (m_lastText != text)
+    {
+        ui->status_txt->setText(text);
+        ui->log_txt->append(text);
+        m_lastText = text;
+    }
     if (percentage >= 100)
     {
         ui->done_btn->setEnabled(true);
