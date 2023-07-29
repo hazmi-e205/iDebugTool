@@ -120,7 +120,7 @@ private slots:
     void OnEntitlementClicked();
     void OnCodesignClicked();
     void OnPrivateKeyChanged(QString key);
-    void OnSigningResult(Recodesigner::SigningStatus status, QString messages);
+    void OnSigningResult(Recodesigner::SigningStatus status, float percentage, QString messages);
 
     //Crashlogs UI
 private:

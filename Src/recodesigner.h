@@ -46,7 +46,7 @@ public:
     Q_ENUM(SigningStatus);
 
 signals:
-    void SigningResult(Recodesigner::SigningStatus status, QString messages);
+    void SigningResult(Recodesigner::SigningStatus status, float percentage, QString messages);
 };
 
 #endif // RECODESIGNER_H

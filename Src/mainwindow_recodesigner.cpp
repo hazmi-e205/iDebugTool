@@ -14,7 +14,7 @@ void MainWindow::SetupRecodesignerUI()
     connect(ui->provisionExt2Btn, SIGNAL(pressed()), this, SLOT(OnProvisionExt2Clicked()));
     connect(ui->entitlementBtn, SIGNAL(pressed()), this, SLOT(OnEntitlementClicked()));
     connect(ui->codesignBtn, SIGNAL(pressed()), this, SLOT(OnCodesignClicked()));
-    connect(Recodesigner::Get(), SIGNAL(SigningResult(Recodesigner::SigningStatus,QString)), this, SLOT(OnSigningResult(Recodesigner::SigningStatus,QString)));
+    connect(Recodesigner::Get(), SIGNAL(SigningResult(Recodesigner::SigningStatus,float,QString)), this, SLOT(OnSigningResult(Recodesigner::SigningStatus,float,QString)));
     RefreshPrivateKeyList();
 }
 
@@ -30,12 +30,12 @@ void MainWindow::RefreshPrivateKeyList()
     foreach (const QString& provname, provisions)
         ui->provisionEdit->addItem(provname);
 
-    ui->provisionEdit->clear();
+    ui->provisionExt1Edit->clear();
     provisions = UserConfigs::Get()->GetData("ProvisionExt1", QStringList());
     foreach (const QString& provname, provisions)
         ui->provisionExt1Edit->addItem(provname);
 
-    ui->provisionEdit->clear();
+    ui->provisionExt2Edit->clear();
     provisions = UserConfigs::Get()->GetData("ProvisionExt2", QStringList());
     foreach (const QString& provname, provisions)
         ui->provisionExt2Edit->addItem(provname);
@@ -146,11 +146,11 @@ void MainWindow::OnPrivateKeyChanged(QString key)
         ui->privateKeyPasswordEdit->setText(privatekeys[key].toString());
 }
 
-void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString messages)
+void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, float percentage, QString messages)
 {
-    ui->outputEdit->appendPlainText(messages);
     if (status == Recodesigner::SigningStatus::FAILED || status == Recodesigner::SigningStatus::SUCCESS || status == Recodesigner::SigningStatus::INSTALL)
     {
+        ui->outputEdit->appendPlainText(messages);
         ui->codesignBtn->setEnabled(true);
         if (status == Recodesigner::SigningStatus::INSTALL)
         {
@@ -165,5 +165,12 @@ void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, QString mes
                 ui->installBtn->click();
             }
         }
+        m_loading->close();
+    }
+    else if (status == Recodesigner::SigningStatus::PROCESS)
+    {
+        if (!m_loading->isActiveWindow())
+            m_loading->ShowProgress("Re-codesign-ing...");
+        m_loading->SetProgress(percentage, messages);
     }
 }
