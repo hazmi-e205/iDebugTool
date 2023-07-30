@@ -1,3 +1,102 @@
+diff --git a/bundle.cpp b/bundle.cpp
+index 337750b..6f62060 100644
+--- a/bundle.cpp
++++ b/bundle.cpp
+@@ -7,6 +7,7 @@
+ 
+ ZAppBundle::ZAppBundle()
+ {
++    m_pSignAssets = NULL;
+ 	m_pSignAsset = NULL;
+ 	m_bForceSign = false;
+ 	m_bWeakInject = false;
+@@ -435,6 +436,27 @@ bool ZAppBundle::SignNode(JValue &jvNode)
+ 		macho.InjectDyLib(m_bWeakInject, m_strDyLibPath.c_str(), bForceSign);
+ 	}
+ 
++    if (m_pSignAssets)
++    {
++        function<bool(string,string)> endsWith = [](const string& str, const string& suffix) {
++            return str.size() >= suffix.size() && 0 == str.compare(str.size()-suffix.size(), suffix.size(), suffix);
++        };
++
++        for (std::list<ZSignAsset>::reverse_iterator it = (*m_pSignAssets).rbegin(); it != (*m_pSignAssets).rend(); ++it)
++        {
++            m_pSignAsset = &(*it);
++            if (endsWith(m_pSignAsset->m_strApplicationId, strBundleId))
++            {
++                if (!WriteFile(m_pSignAsset->m_strProvisionData, "%s/%s/embedded.mobileprovision", m_strAppFolder.c_str(), strFolder.c_str()))
++                {   //embedded.mobileprovision
++                    ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
++                    return false;
++                }
++                break;
++            }
++        }
++    }
++
+ 	if (!macho.Sign(m_pSignAsset, bForceSign, strBundleId, strInfoPlistSHA1, strInfoPlistSHA256, strCodeResData))
+ 	{
+ 		return false;
+@@ -595,12 +617,6 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
+ 		}
+ 	}
+ 
+-	if (!WriteFile(pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision", m_strAppFolder.c_str()))
+-	{ //embedded.mobileprovision
+-		ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
+-		return false;
+-	}
+-
+ 	if (!strDyLibFile.empty())
+ 	{ //inject dylib
+ 		string strDyLibData;
+@@ -663,3 +679,17 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
+ 
+ 	return false;
+ }
++
++bool ZAppBundle::SignFolder(std::list<ZSignAsset> *pSignAssets
++                            , const string &strFolder
++                            , const string &strBundleID
++                            , const string &strBundleVersion
++                            , const string &strDisplayName
++                            , const string &strDyLibFile
++                            , bool bForce
++                            , bool bWeakInject
++                            , bool bEnableCache)
++{
++    m_pSignAssets = pSignAssets;
++    return SignFolder(&m_pSignAssets->front(), strFolder, strBundleID, strBundleVersion, strDisplayName, strDyLibFile, bForce, bWeakInject, bEnableCache);
++}
+diff --git a/bundle.h b/bundle.h
+index b082eb7..4e2194c 100644
+--- a/bundle.h
++++ b/bundle.h
+@@ -2,6 +2,7 @@
+ #include "common/common.h"
+ #include "common/json.h"
+ #include "openssl.h"
++#include <list>
+ 
+ class ZAppBundle
+ {
+@@ -10,6 +11,7 @@ public:
+ 
+ public:
+ 	bool SignFolder(ZSignAsset *pSignAsset, const string &strFolder, const string &strBundleID, const string &strBundleVersion, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache);
++    bool SignFolder(std::list<ZSignAsset> *pSignAssets, const string &strFolder, const string &strBundleID, const string &strBundleVersion, const string &strDisplayName, const string &strDyLibFile, bool bForce, bool bWeakInject, bool bEnableCache);
+ 
+ private:
+ 	bool SignNode(JValue &jvNode);
+@@ -31,6 +33,7 @@ private:
+ 	bool m_bWeakInject;
+ 	string m_strDyLibPath;
+ 	ZSignAsset *m_pSignAsset;
++    list<ZSignAsset> *m_pSignAssets;
+ 
+ public:
+ 	string m_strAppFolder;
 diff --git a/common/common.cpp b/common/common.cpp
 index b25dadc..645084c 100644
 --- a/common/common.cpp
@@ -107,7 +206,7 @@ index b25dadc..645084c 100644
  }
  
 diff --git a/common/common.h b/common/common.h
-index 0e1592b..2f7572e 100644
+index 0e1592b..211525b 100644
 --- a/common/common.h
 +++ b/common/common.h
 @@ -24,6 +24,7 @@
@@ -126,18 +225,19 @@ index 0e1592b..2f7572e 100644
      static bool IsDebug();
      static void Print(const char *szLog);
      static void PrintV(const char *szFormatArgs, ...);
-@@ -157,4 +159,4 @@ public:
- 
- private:
-     static int g_nLogLevel;
--};
-\ No newline at end of file
-+};
 diff --git a/openssl.cpp b/openssl.cpp
-index 2f7e86c..fe77759 100644
+index 2f7e86c..c736ea6 100644
 --- a/openssl.cpp
 +++ b/openssl.cpp
-@@ -695,6 +695,12 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
+@@ -667,6 +667,7 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
+ 	{
+ 		if (jvProv.readPList(strProvContent))
+ 		{
++            m_strApplicationId = jvProv["Entitlements"]["application-identifier"].asCString();
+ 			m_strTeamId = jvProv["TeamIdentifier"][0].asCString();
+ 			if (m_strEntitlementsData.empty())
+ 			{
+@@ -695,6 +696,12 @@ bool ZSignAsset::Init(const string &strSignerCertFile, const string &strSignerPK
  			{
  				BIO_reset(bioPKey);
  				PKCS12 *p12 = d2i_PKCS12_bio(bioPKey, NULL);
@@ -150,3 +250,15 @@ index 2f7e86c..fe77759 100644
  				if (NULL != p12)
  				{
  					if (0 == PKCS12_parse(p12, strPassword.c_str(), &evpPKey, &x509Cert, NULL))
+diff --git a/openssl.h b/openssl.h
+index 8e4b183..74c17f5 100644
+--- a/openssl.h
++++ b/openssl.h
+@@ -20,6 +20,7 @@ public:
+ 	string m_strSubjectCN;
+ 	string m_strProvisionData;
+ 	string m_strEntitlementsData;
++    string m_strApplicationId;
+ 
+ private:
+ 	void *m_evpPKey;

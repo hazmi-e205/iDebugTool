@@ -46,24 +46,30 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         }
 
         emit SigningResult(SigningStatus::PROCESS, 0.f, "Loading the certificate and provision...");
-        ZSignAsset zSignAsset, zSignAssetExt1, zSignAssetExt2;
-        if (!zSignAsset.Init("", params.PrivateKey.toStdString(), params.Provision.toStdString(), params.NewEntitlements.toStdString(), params.PrivateKeyPassword.toStdString()))
+        std::list<ZSignAsset> zSignAssets;
+        zSignAssets.push_back(ZSignAsset());
+        if (!zSignAssets.back().Init("", params.PrivateKey.toStdString(), params.Provision.toStdString(), params.NewEntitlements.toStdString(), params.PrivateKeyPassword.toStdString()))
         {
+            zSignAssets.pop_back();
             emit SigningResult(SigningStatus::FAILED, 100.f, "ERROR: Load certificate and provision failed!");
             return;
         }
         if (!params.ProvisionExt1.isEmpty())
         {
-            if (!zSignAsset.Init("", params.PrivateKey.toStdString(), params.ProvisionExt1.toStdString(), "", params.PrivateKeyPassword.toStdString()))
+            zSignAssets.push_back(ZSignAsset());
+            if (!zSignAssets.back().Init("", params.PrivateKey.toStdString(), params.ProvisionExt1.toStdString(), "", params.PrivateKeyPassword.toStdString()))
             {
+                zSignAssets.pop_back();
                 emit SigningResult(SigningStatus::FAILED, 100.f, "ERROR: Load certificate and provision extension 1 failed!");
                 return;
             }
         }
         if (!params.ProvisionExt2.isEmpty())
         {
-            if (!zSignAsset.Init("", params.PrivateKey.toStdString(), params.ProvisionExt2.toStdString(), "", params.PrivateKeyPassword.toStdString()))
+            zSignAssets.push_back(ZSignAsset());
+            if (!zSignAssets.back().Init("", params.PrivateKey.toStdString(), params.ProvisionExt2.toStdString(), "", params.PrivateKeyPassword.toStdString()))
             {
+                zSignAssets.pop_back();
                 emit SigningResult(SigningStatus::FAILED, 100.f, "ERROR: Load certificate and provision extension 2 failed!");
                 return;
             }
@@ -115,7 +121,7 @@ void Recodesigner::Process(const Recodesigner::Params& params)
         {
             emit SigningResult(SigningStatus::PROCESS, 50.f, "Re-codesign-ing...");
             ZAppBundle bundle;
-            if(!bundle.SignFolder(&zSignAsset,
+            if(!bundle.SignFolder(&zSignAssets,
                                   extract_dir.toStdString(),
                                   params.NewBundleId.toStdString(),
                                   params.NewBundleVersion.toStdString(),

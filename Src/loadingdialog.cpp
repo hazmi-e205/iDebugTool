@@ -43,6 +43,7 @@ void LoadingDialog::SetProgress(int percentage, QString text)
     if (percentage >= 100)
     {
         ui->done_btn->setEnabled(true);
-        QTimer::singleShot(1000, this, &QWidget::close);
+        if (!(ui->log_txt->toPlainText().contains("failed", Qt::CaseInsensitive) || ui->log_txt->toPlainText().contains("error", Qt::CaseInsensitive)))
+            QTimer::singleShot(1000, this, &QWidget::close);
     }
 }

@@ -165,12 +165,11 @@ void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, float perce
                 ui->installBtn->click();
             }
         }
-        m_loading->close();
     }
     else if (status == Recodesigner::SigningStatus::PROCESS)
     {
-        if (!m_loading->isActiveWindow())
+        if (!m_loading->isVisible())
             m_loading->ShowProgress("Re-codesign-ing...");
-        m_loading->SetProgress(percentage, messages);
     }
+    m_loading->SetProgress(percentage, messages);
 }
