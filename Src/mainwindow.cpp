@@ -119,6 +119,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->maxShownLogs
                    << ui->scrollInterval
                    << ui->installPath
+                   << ui->AppName
+                   << ui->AppVersion
                    << ui->AppSigner
                    << ui->crashlogEdit
                    << ui->dsymEdit
