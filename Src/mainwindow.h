@@ -65,7 +65,7 @@ private slots:
 
     //Device UI
 private:
-    LoadingDialog *m_loading;
+    LoadingDialog *m_loadingDevice;
     QStandardItemModel *m_devicesModel;
     void SetupDevicesUI();
     void UpdateInfoWidget();
@@ -109,6 +109,7 @@ private slots:
 
     //Recodesigner UI
 private:
+    LoadingDialog *m_loadingCodesign;
     void SetupRecodesignerUI();
     void RefreshPrivateKeyList();
 private slots:
@@ -124,6 +125,7 @@ private slots:
 
     //Crashlogs UI
 private:
+    LoadingDialog *m_loadingSymbolicate;
     QStandardItemModel *m_stacktraceModel;
     SymbolicatedData m_lastStacktrace;
     void SetupCrashlogsUI();

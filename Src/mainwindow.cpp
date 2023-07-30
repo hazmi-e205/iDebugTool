@@ -23,9 +23,11 @@ MainWindow::MainWindow(QWidget *parent)
     , m_textDialog(new TextViewer(this))
     , m_proxyDialog(new ProxyDialog(this))
     , m_aboutDialog(new AboutDialog(&m_appInfo, this))
-    , m_loading(new LoadingDialog(this))
+    , m_loadingDevice(new LoadingDialog(this))
     , m_devicesModel(nullptr)
     , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
+    , m_loadingCodesign(new LoadingDialog(this))
+    , m_loadingSymbolicate(new LoadingDialog(this))
     , m_stacktraceModel(nullptr)
     , m_imageMounter(new ImageMounter(this))
 {
@@ -164,7 +166,9 @@ MainWindow::~MainWindow()
     delete m_imageMounter;
     delete m_proxyDialog;
     delete m_aboutDialog;
-    delete m_loading;
+    delete m_loadingDevice;
+    delete m_loadingCodesign;
+    delete m_loadingSymbolicate;
     AsyncManager::Destroy();
     delete ui;
 }

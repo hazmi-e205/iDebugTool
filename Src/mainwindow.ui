@@ -2578,9 +2578,9 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
              </item>
             </layout>
            </widget>
-           <widget class="QWidget" name="recodesignerTab">
+           <widget class="QWidget" name="codesignTab">
             <attribute name="title">
-             <string>Recodesigner</string>
+             <string>Codesign</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_28">
              <item>

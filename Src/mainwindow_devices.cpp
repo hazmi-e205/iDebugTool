@@ -13,7 +13,7 @@ void MainWindow::SetupDevicesUI()
         ui->deviceTable->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
         ui->deviceTable->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
         ui->deviceTable->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
-        m_loading->close();
+        m_loadingDevice->close();
 
         connect(ui->deviceTable, SIGNAL(clicked(QModelIndex)), this, SLOT(OnDevicesTableClicked(QModelIndex)));
         connect(ui->refreshBtn, SIGNAL(pressed()), this, SLOT(OnRefreshClicked()));
@@ -165,10 +165,10 @@ void MainWindow::RefreshSocketList()
 
 void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 {
-    if (!m_loading->isActiveWindow())
-        m_loading->ShowProgress("Connect to device...");
+    if (!m_loadingDevice->isVisible())
+        m_loadingDevice->ShowProgress("Connect to device...");
 
-    m_loading->SetProgress(percentage, message);
+    m_loadingDevice->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
     if (percentage == 100) {
         RefreshPIDandBundleID();

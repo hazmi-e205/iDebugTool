@@ -168,8 +168,8 @@ void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, float perce
     }
     else if (status == Recodesigner::SigningStatus::PROCESS)
     {
-        if (!m_loading->isVisible())
-            m_loading->ShowProgress("Re-codesign-ing...");
+        if (!m_loadingCodesign->isVisible())
+            m_loadingCodesign->ShowProgress("Re-codesign-ing...");
     }
-    m_loading->SetProgress(percentage, messages);
+    m_loadingCodesign->SetProgress(percentage, messages);
 }

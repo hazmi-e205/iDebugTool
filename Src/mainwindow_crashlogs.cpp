@@ -144,13 +144,13 @@ void MainWindow::OnSymbolicateResult2(unsigned int progress, SymbolicatedData da
                 ui->threadEdit->addItem(stack.threadName);
             }
             OnStacktraceThreadChanged(ui->threadEdit->currentText());
-            m_loading->close();
+            m_loadingSymbolicate->close();
         }
         else
         {
-            if (!m_loading->isActiveWindow())
-                m_loading->ShowProgress("Symbolicate crashlog...");
-            m_loading->SetProgress(progress, "Processing...");
+            if (!m_loadingSymbolicate->isVisible())
+                m_loadingSymbolicate->ShowProgress("Symbolicate crashlog...");
+            m_loadingSymbolicate->SetProgress(progress, "Processing...");
         }
     }
 }
