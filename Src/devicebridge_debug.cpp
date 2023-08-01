@@ -170,7 +170,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         }
 
         /* set arguments and run app */
-        printf("Setting argv...");
+        qDebug() << "Setting argv...";
         QString path = m_installedApps[bundleId]["Path"].toString() + "/" + m_installedApps[bundleId]["CFBundleExecutable"].toString();
         QStringList args = QStringList() << path << arguments.split(" ");
         char **app_argv = (char**)malloc(sizeof(char*) * (args.count() + 1));
