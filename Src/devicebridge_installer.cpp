@@ -309,7 +309,6 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     emit InstallerStatusChanged(pCommand, pBundleId, percentage, pMessage);
     if (percentage == 100) {
         ConnectToDevice(m_currentUdid);
-        m_installedApps = GetInstalledApps(true);
     }
 }
 
