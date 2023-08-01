@@ -308,20 +308,9 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     }
     emit InstallerStatusChanged(pCommand, pBundleId, percentage, pMessage);
     if (percentage == 100) {
-        RestartInstaller();
+        ConnectToDevice(m_currentUdid);
         m_installedApps = GetInstalledApps(true);
     }
-}
-
-void DeviceBridge::RestartInstaller()
-{
-    m_installer = nullptr;
-    QStringList serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
-    StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
-        if (err != INSTPROXY_E_SUCCESS)
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-    });
 }
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)

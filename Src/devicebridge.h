@@ -127,7 +127,6 @@ signals:
  private:
      static void InstallerCallback(plist_t command, plist_t status, void *unused);
      void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
-     void RestartInstaller();
      instproxy_client_t m_installer;
      QMap<QString, QJsonDocument> m_installedApps;
  signals:
