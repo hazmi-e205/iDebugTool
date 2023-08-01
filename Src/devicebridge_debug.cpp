@@ -248,7 +248,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             }
 
             if (response) {
-                qDebug() << QString::asprintf("response: %s", response);
+                //qDebug() << QString::asprintf("response: %s", response);
                 if (strncmp(response, "OK", 2) != 0) {
                     dres = DebugServerHandleResponse(m_debugger, &response, &res);
                     if (dres != DEBUGSERVER_E_SUCCESS) {
