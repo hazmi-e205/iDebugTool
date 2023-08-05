@@ -36,6 +36,22 @@
             "use_submodules": false
         },
         {
+            "project": "libidevice",
+            "url": "https://github.com/sandin/libidevice",
+            "branch": "master",
+            "revision": "ed003cd84dd207de7377b6ce60fc8b0fecf92cf9",
+            "path": "Externals/libidevice",
+            "use_submodules": false
+        },
+        {
+            "project": "libnskeyedarchiver",
+            "url": "https://github.com/sandin/libnskeyedarchiver",
+            "branch": "master",
+            "revision": "afa50c85fdaff9a2cc988bb7572bb09f143b2415",
+            "path": "Externals/libnskeyedarchiver",
+            "use_submodules": false
+        },
+        {
             "project": "MachOLib",
             "url": "https://github.com/hazmi-e205/MachOLib",
             "branch": "main",

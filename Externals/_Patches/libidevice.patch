@@ -1,0 +1,38 @@
+diff --git a/include/idevice/common/macro_def.h b/include/idevice/common/macro_def.h
+index 085a5b8..1c3765b 100644
+--- a/include/idevice/common/macro_def.h
++++ b/include/idevice/common/macro_def.h
+@@ -47,7 +47,7 @@
+ #define IDEVICE_MEM_ALIGN(v, a) (((v) + (a)-1) & ~((a)-1))
+ 
+ // ASSERT
+-#define IDEVICE_ASSERT(exp, fmt, ...) if (!(exp)) { IDEVICE_LOG_E(fmt, ##__VA_ARGS__); } assert(exp)
++#define IDEVICE_ASSERT(exp, fmt, ...) //if (!(exp)) { IDEVICE_LOG_E(fmt, ##__VA_ARGS__); } assert(exp)
+ 
+ // HELPER
+ #define IDEVICE_ATOMIC_SET_MAX(atomic_value, max_value) \
+diff --git a/include/idevice/instrument/dtxmessenger.h b/include/idevice/instrument/dtxmessenger.h
+index f377299..209fa7e 100644
+--- a/include/idevice/instrument/dtxmessenger.h
++++ b/include/idevice/instrument/dtxmessenger.h
+@@ -2,6 +2,7 @@
+ #define IDEVICE_INSTRUMENT_DTXMESSENGER_H
+ 
+ #include <functional>
++#include <memory>
+ 
+ namespace idevice {
+ 
+diff --git a/include/idevice/instrument/dtxtransport.h b/include/idevice/instrument/dtxtransport.h
+index b1fa9b4..07f4897 100644
+--- a/include/idevice/instrument/dtxtransport.h
++++ b/include/idevice/instrument/dtxtransport.h
+@@ -220,7 +220,7 @@ class BufferedDTXTransport {
+    */
+   bool Flush() {
+     if (buffer_used_ == 0) {
+-      return;  // nothing to do
++      return false;  // nothing to do
+     }
+     uint32_t actual_size = 0;
+     bool ret = transport_->Send(buffer_, buffer_used_, &actual_size);

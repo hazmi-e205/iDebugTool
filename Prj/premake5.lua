@@ -8,6 +8,7 @@ solution "iDebugTool"
     include "libusbmuxd.lua"
     include "libimobiledevice.lua"
     include "libimobiledevice-glue.lua"
+    include "libidevice.lua"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
@@ -76,6 +77,8 @@ project "iDebugTool"
         "../Externals/MachOLib",
         "../Externals/zsign",
         "../Externals/bit7z/include",
+        "../Externals/libidevice/include",
+        "../Externals/libnskeyedarchiver/include",
     }
 
     links
@@ -92,6 +95,8 @@ project "iDebugTool"
         "minizip",
         "zsign",
         "bit7z",
+        "libnskeyedarchiver",
+        "libidevice",
     }
 
     libdirs
