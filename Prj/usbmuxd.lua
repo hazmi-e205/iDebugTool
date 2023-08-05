@@ -38,6 +38,7 @@ if IsWindows() then
         includedirs
         {
             "../Externals/libusb-win32/libusb/src",
+            "../Externals/libusb-win32/libusb/src/driver",
         }
         
     project "usbmuxd-win32"
