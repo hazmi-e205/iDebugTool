@@ -1,13 +1,13 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "alpha7",
+    "status": "alpha8",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "860ffb707af3af94467d2ece4ad258dda957c6cd",
+            "revision": "6fc41f57fc607df9b07446ca45bdf754225c9bd9",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -15,7 +15,7 @@
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
-            "revision": "f47c36f5bd2a653a3bd7fb1cf1d2c50b0e6193fb",
+            "revision": "8d30a559cf0585625d9d05dc8ce0dd495b1de4f4",
             "path": "Externals/libusbmuxd",
             "use_submodules": false
         },
@@ -31,7 +31,7 @@
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "f28cf0f1e51c7554d590cbec56abac46b4a44b4e",
+            "revision": "2d8d7ef272db06783989f77ba1ed80aa0f4d2dfd",
             "path": "Externals/libplist",
             "use_submodules": false
         },
@@ -47,7 +47,7 @@
             "project": "zsign",
             "url": "https://github.com/zhlynn/zsign",
             "branch": "master",
-            "revision": "b7103a84f4b4c29b8523111ee159407796e6af5a",
+            "revision": "ee985e67943285fd94b9995bc4b1f87dece23440",
             "path": "Externals/zsign",
             "use_submodules": false
         },
