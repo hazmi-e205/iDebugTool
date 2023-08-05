@@ -6,6 +6,7 @@ solution "iDebugTool"
     include "zlib.lua"
     include "libplist.lua"
     include "libusbmuxd.lua"
+    include "usbmuxd.lua"
     include "libimobiledevice.lua"
     include "libimobiledevice-glue.lua"
     include "macholib.lua"
@@ -85,7 +86,7 @@ project "iDebugTool"
         "cnary",
         "plist",
         "imobiledevice-glue",
-        "usbmuxd",
+        "usbmuxdlib",
         "imobiledevice",
         "zlib",
         "MachOLib",
@@ -116,6 +117,9 @@ project "iDebugTool"
             "Dbghelp",
             "exchndl",
             "mingw-patch",
+            "usb-win32",
+            "usb",
+            "usbmuxd-win32",
         }
         libdirs
         {
@@ -123,6 +127,9 @@ project "iDebugTool"
         }
         includedirs
         {
+            "../Externals/libusb/libusb",
+            "../Externals/libusb-win32/libusb/src",
+            "../Externals/usbmuxd-win32/src",
             "../Prebuilt/drmingw-win64/include",
             "../Externals/mingw-patch",
         }

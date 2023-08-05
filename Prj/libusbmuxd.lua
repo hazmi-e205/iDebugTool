@@ -1,6 +1,6 @@
 include "common.lua"
 
-project "usbmuxd"
+project "usbmuxdlib"
     kind "StaticLib"
     QtConfigs {"force_debug_info"}
 

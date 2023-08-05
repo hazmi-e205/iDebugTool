@@ -36,6 +36,14 @@
             "use_submodules": false
         },
         {
+            "project": "usbmuxd-win32",
+            "url": "https://github.com/libimobiledevice-win32/usbmuxd",
+            "branch": "master-msvc",
+            "revision": "f1329e742825c93fd080bdb8253d710ef8b6f751",
+            "path": "Externals/usbmuxd-win32",
+            "use_submodules": false
+        },
+        {
             "project": "MachOLib",
             "url": "https://github.com/hazmi-e205/MachOLib",
             "branch": "main",
@@ -57,6 +65,21 @@
             "branch": "master",
             "revision": "8dd2794d3d66e7b5ad498e38fc8f4064588188b7",
             "path": "Externals/mingw-patch",
+            "use_submodules": false
+        },
+        {
+            "project": "libusb-win32",
+            "url": "https://github.com/mcuee/libusb-win32",
+            "branch": "master",
+            "revision": "71d928a6e9e8016c1ad7270332cabf69b9d9e42f",
+            "path": "Externals/libusb-win32",
+            "use_submodules": false
+        },
+        {
+            "project": "libusb",
+            "url": "https://github.com/libusb/libusb",
+            "branch": "v1.0.26",
+            "path": "Externals/libusb",
             "use_submodules": false
         },
         {

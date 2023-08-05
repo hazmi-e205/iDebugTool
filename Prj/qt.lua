@@ -352,6 +352,7 @@ function qt.project_pro(prj)
     if #links["Release"] > 0 or #links["Debug"] > 0 or #links["Common"] > 0 then
         _p('LIBS += -Wl,--end-group')
     end
+    _p('LIBS += -Wl,--allow-multiple-definition')
     if is_one_targetname then
         _p('TARGET = ' .. qt.get_targetname(prj))
     end
