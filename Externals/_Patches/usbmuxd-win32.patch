@@ -1,7 +1,16 @@
 diff --git a/src/main.c b/src/main.c
-index 29bc852..bf24a56 100644
+index 29bc852..fdb621c 100644
 --- a/src/main.c
 +++ b/src/main.c
+@@ -673,7 +673,7 @@ static void parse_opts(int argc, char **argv)
+ 	}
+ }
+ 
+-int main(int argc, char *argv[])
++int StartUsbmuxd(int argc, char *argv[])
+ {
+ 	int listenfd;
+ 	int res = 0;
 @@ -721,7 +721,7 @@ int main(int argc, char *argv[])
  	}
  
