@@ -23,6 +23,13 @@
 #include "asyncmanager.h"
 #include "qmutex.h"
 
+#include "idevice/instrument/dtxchannel.h"
+#include "idevice/instrument/dtxconnection.h"
+#include "idevice/instrument/dtxtransport.h"
+#include "idevice/instrument/dtxmessage.h"
+#include "nskeyedarchiver/kamap.hpp"
+using namespace idevice;
+
 #define TOOL_NAME                       "idebugtool"
 #define ITUNES_METADATA_PLIST_FILENAME  "iTunesMetadata.plist"
 #define PKG_PATH                        "PublicStaging"
@@ -172,6 +179,16 @@ private:
 signals:
      void DebuggerReceived(QString messages, bool stopped = false);
      void DebuggerFilterStatus(bool isfiltering);
+
+     //
+ public:
+     void StartMonitor();
+     void StopMonitor();
+ private:
+     DTXTransport* m_transport;
+     DTXConnection* m_connection;
+     std::shared_ptr<DTXChannel> m_channel;
+ signals:
 };
 
 #endif // DEVICEBRIDGE_H

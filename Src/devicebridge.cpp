@@ -6,12 +6,6 @@
 #include <QDir>
 #include <QSaveFile>
 
-#include "idevice/instrument/dtxchannel.h"
-#include "idevice/instrument/dtxconnection.h"
-#include "idevice/instrument/dtxtransport.h"
-#include "idevice/instrument/dtxmessage.h"
-using namespace idevice;
-
 bool DeviceBridge::m_destroyed = false;
 DeviceBridge *DeviceBridge::m_instance = nullptr;
 DeviceBridge *DeviceBridge::Get()
@@ -287,18 +281,6 @@ void DeviceBridge::StartServices()
             return;
         }
     });
-
-    DTXTransport* transport = new DTXTransport(m_device);
-    DTXConnection* connection = new DTXConnection(transport);
-    connection->Connect();
-
-    std::shared_ptr<DTXChannel> channel = connection->MakeChannelWithIdentifier(
-        "com.apple.instruments.server.services.deviceinfo");
-    std::shared_ptr<DTXMessage> message = DTXMessage::CreateWithSelector("runningProcesses");
-    auto response = channel->SendMessageSync(message);
-    qDebug() << "response:";
-    qDebug() << response->PayloadObject()->ToJson().c_str();
-    channel->Cancel();
 }
 
 void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
