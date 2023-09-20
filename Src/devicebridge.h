@@ -180,14 +180,22 @@ signals:
      void DebuggerReceived(QString messages, bool stopped = false);
      void DebuggerFilterStatus(bool isfiltering);
 
-     //
+     // Instruments
  public:
-     void StartMonitor();
+     enum class AttrType {
+         SYSTEM,
+         PROCESS
+     };
+     QStringList GetAttributes(AttrType type);
+     void StartMonitor(unsigned int interval_ms, QStringList system_attr, QStringList process_attr);
      void StopMonitor();
+     void GetProcessList();
+     void StartFPS(unsigned int interval_ms);
+     void StopFPS();
  private:
      DTXTransport* m_transport;
      DTXConnection* m_connection;
-     std::shared_ptr<DTXChannel> m_channel;
+     std::shared_ptr<DTXChannel> m_sysmontapChannel, m_openglChannel;
  signals:
 };
 
