@@ -1,0 +1,40 @@
+diff --git a/src/internal/csymlinkinstream.cpp b/src/internal/csymlinkinstream.cpp
+index 2541327..c61252b 100644
+--- a/src/internal/csymlinkinstream.cpp
++++ b/src/internal/csymlinkinstream.cpp
+@@ -17,7 +17,7 @@ namespace bit7z {
+ 
+ auto read_symlink_as_string( const fs::path& symlinkPath ) noexcept -> std::string {
+     std::error_code error;
+-    return fs::read_symlink( symlinkPath, error ).u8string();
++    return fs::read_symlink( symlinkPath, error ).string();
+ }
+ 
+ CSymlinkInStream::CSymlinkInStream( const fs::path& symlinkPath )
+@@ -34,4 +34,4 @@ STDMETHODIMP CSymlinkInStream::Seek( Int64 offset, UInt32 seekOrigin, UInt64* ne
+     return mSymlinkStream->Seek( offset, seekOrigin, newPosition );
+ }
+ 
+-} // namespace bit7z
+\ No newline at end of file
++} // namespace bit7z
+diff --git a/src/internal/fileextractcallback.cpp b/src/internal/fileextractcallback.cpp
+index 06d7ce3..ed6b26c 100644
+--- a/src/internal/fileextractcallback.cpp
++++ b/src/internal/fileextractcallback.cpp
+@@ -91,7 +91,7 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
+ #if defined( BIT7Z_USE_NATIVE_STRING )
+             const auto& filePathString = filePath.native();
+ #elif !defined( BIT7Z_USE_SYSTEM_CODEPAGE )
+-            const auto filePathString = filePath.u8string();
++            const auto filePathString = filePath.string();
+ #else
+             const auto& nativePath = filePath.native();
+             const auto filePathString = narrow( nativePath.c_str(), nativePath.size() );
+@@ -138,4 +138,4 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
+     return S_OK;
+ }
+ 
+-} // namespace bit7z
+\ No newline at end of file
++} // namespace bit7z
