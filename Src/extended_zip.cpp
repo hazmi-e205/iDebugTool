@@ -8,10 +8,13 @@
 #include <bit7z/bitfilecompressor.hpp>
 #include <QSaveFile>
 #include "utils.h"
+#include "zip/src/zip.h"
+#include <fstream>
 using namespace bit7z;
 
 bool ZipGetContents(QString zip_file, QString inside_path, std::vector<char>& data_out)
 {
+#ifdef USE_BIT7Z
     try
     {
 #if defined(WIN32) && defined(NDEBUG)
@@ -39,10 +42,28 @@ bool ZipGetContents(QString zip_file, QString inside_path, std::vector<char>& da
         qDebug() << ex.what();
     }
     return false;
+#else
+    void *buf = NULL;
+    size_t bufsize;
+    struct zip_t *zip = zip_open(zip_file.toStdString().c_str(), 0, 'r');
+    {
+        zip_entry_open(zip, inside_path.toStdString().c_str());
+        {
+            zip_entry_read(zip, &buf, &bufsize);
+            char *charBuf = (char*)buf;
+            data_out = std::vector<char>(charBuf, charBuf + bufsize);
+        }
+        zip_entry_close(zip);
+    }
+    zip_close(zip);
+    free(buf);
+    return true;
+#endif
 }
 
 bool ZipGetAppDirectory(QString zip_file, QString &path_out)
 {
+#ifdef USE_BIT7Z
     try
     {
 #if defined(WIN32) && defined(NDEBUG)
@@ -72,10 +93,30 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
         qDebug() << ex.what();
     }
     return false;
+#else
+    struct zip_t *zip = zip_open(zip_file.toStdString().c_str(), 0, 'r');
+    int i, n = zip_entries_total(zip);
+    for (i = 0; i < n; ++i) {
+        zip_entry_openbyindex(zip, i);
+        {
+            QString path_in = zip_entry_name(zip);
+            if (path_in.contains(".app", Qt::CaseInsensitive))
+            {
+                qsizetype idx = path_in.indexOf(".app",Qt::CaseInsensitive);
+                path_out = path_in.mid(0, idx + 4);
+                return true;
+            }
+        }
+        zip_entry_close(zip);
+    }
+    zip_close(zip);
+    return false;
+#endif
 }
 
 bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (float, QString)> callback)
 {
+#ifdef USE_BIT7Z
     QString status = "";
     quint64 progress = 0, total = 0;
     try
@@ -116,11 +157,32 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (fl
         callback(percentage, ex.what());
         return false;
     }
+#else
+    QDir().mkpath(output_dir);
+    struct zip_t *zip = zip_open(input_zip.toStdString().c_str(), 0, 'r');
+    int i, n = zip_entries_total(zip);
+    for (i = 0; i < n; ++i) {
+        zip_entry_openbyindex(zip, i);
+        {
+            QString target = output_dir + "/" + QString(zip_entry_name(zip));
+            if (zip_entry_isdir(zip)) {
+                callback(float(i + 1) * 100.f / n, QString("Creating `%1'...").arg(target));
+                QDir().mkpath(target);
+            } else {
+                callback(float(i + 1) * 100.f / n, QString("Extracting `%1'...").arg(target));
+                zip_entry_fread(zip, target.toStdString().c_str());
+            }
+        }
+        zip_entry_close(zip);
+    }
+    zip_close(zip);
+#endif
     return true;
 }
 
 bool ZipDirectory(QString input_dir, QString output_filename, std::function<void (float, QString)> callback)
 {
+#ifdef USE_BIT7Z
     QString status = "";
     quint64 progress = 0, total = 0;
     QString basedir = GetBaseDirectory(output_filename);
@@ -174,5 +236,44 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
         callback(percentage, ex.what());
         return false;
     }
+#else
+    std::unordered_map<std::string, std::string> files;
+    QDir dir(input_dir);
+    QDirIterator it_file(input_dir, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it_file.hasNext())
+    {
+        QString filepath = it_file.next();
+        QString relativepath = dir.relativeFilePath(filepath);
+        files[filepath.toStdString()] = relativepath.toStdString();
+    }
+
+    QDir().mkpath(GetBaseDirectory(output_filename));
+    struct zip_t *zip = zip_open(output_filename.toStdString().c_str(), 0, 'w');
+    {
+        size_t count = 0;
+        for (auto const& x : files)
+        {
+            count += 1;
+            float percentage = ((float) count/ (float)files.size()) * 100.f;
+            callback(percentage, QString("(%1 of %2) Packing %3 to archive...").arg(count).arg(files.size()).arg(x.second.c_str()));
+
+            int aaa = zip_entry_open(zip, x.second.c_str());
+            std::ifstream ifile;
+            ifile.open(x.first, std::ios::binary | std::ios::in | std::ios::ate);
+            if(ifile.good()){
+                char *buffer;
+                long size;
+                std::ifstream file(x.first, std::ios::in | std::ios::binary | std::ios::ate);
+                size = file.tellg();
+                file.seekg(0, std::ios::beg);
+                buffer = new char[size];
+                file.read(buffer, size);
+                aaa = zip_entry_write(zip, buffer, size);
+            }
+            aaa = zip_entry_close(zip);
+        }
+    }
+    zip_close(zip);
+#endif
     return true;
 }

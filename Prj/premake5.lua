@@ -12,6 +12,7 @@ solution "iDebugTool"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
+    include "zip.lua"
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -66,6 +67,7 @@ project "iDebugTool"
 
     includedirs
     {
+        "../Externals",
         "../Externals/libimobiledevice",
         "../Externals/libimobiledevice/include",
         "../Externals/libimobiledevice-glue/include",
@@ -77,6 +79,7 @@ project "iDebugTool"
         "../Externals/MachOLib",
         "../Externals/zsign",
         "../Externals/bit7z/include",
+        "../Externals/zip/src",
         "../Externals/libidevice/include",
         "../Externals/libnskeyedarchiver/include",
     }
@@ -95,6 +98,7 @@ project "iDebugTool"
         "minizip",
         "zsign",
         "bit7z",
+        "zip",
         "libnskeyedarchiver",
         "libidevice",
     }

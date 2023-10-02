@@ -76,6 +76,14 @@
             "use_submodules": false
         },
         {
+            "project": "zip",
+            "url": "https://github.com/kuba--/zip",
+            "branch": "master",
+            "revision": "604d14200b4ce8d206113f1304d869a3838b2eaa",
+            "path": "Externals/zip",
+            "use_submodules": false
+        },
+        {
             "project": "openssl",
             "url": "https://github.com/openssl/openssl",
             "branch": "OpenSSL_1_1_1m",
