@@ -90,6 +90,13 @@
             "use_submodules": true
         },
         {
+            "project": "7zip",
+            "url": "https://github.com/rikyoz/7-Zip",
+            "branch": "v23.01",
+            "path": "Externals/7zip",
+            "use_submodules": true
+        },
+        {
             "project": "zlib",
             "url": "https://github.com/madler/zlib",
             "branch": "v1.2.11",
