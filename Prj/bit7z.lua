@@ -69,6 +69,7 @@ project "7z"
         "_LARGEFILE_SOURCE",
         "UNICODE",
         "_UNICODE",
+        "BIT7Z_USE_STANDARD_FILESYSTEM",
     }
     
     if IsWindows() then
