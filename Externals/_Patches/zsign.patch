@@ -1,5 +1,5 @@
 diff --git a/bundle.cpp b/bundle.cpp
-index 337750b..6f62060 100644
+index 337750b..c7df4ab 100644
 --- a/bundle.cpp
 +++ b/bundle.cpp
 @@ -7,6 +7,7 @@
@@ -10,8 +10,8 @@ index 337750b..6f62060 100644
  	m_pSignAsset = NULL;
  	m_bForceSign = false;
  	m_bWeakInject = false;
-@@ -435,6 +436,27 @@ bool ZAppBundle::SignNode(JValue &jvNode)
- 		macho.InjectDyLib(m_bWeakInject, m_strDyLibPath.c_str(), bForceSign);
+@@ -376,6 +377,27 @@ bool ZAppBundle::SignNode(JValue &jvNode)
+ 		return false;
  	}
  
 +    if (m_pSignAssets)
@@ -25,7 +25,7 @@ index 337750b..6f62060 100644
 +            m_pSignAsset = &(*it);
 +            if (endsWith(m_pSignAsset->m_strApplicationId, strBundleId))
 +            {
-+                if (!WriteFile(m_pSignAsset->m_strProvisionData, "%s/%s/embedded.mobileprovision", m_strAppFolder.c_str(), strFolder.c_str()))
++                if (!WriteFile(m_pSignAsset->m_strProvisionData, "%s/embedded.mobileprovision", strBaseFolder.c_str()))
 +                {   //embedded.mobileprovision
 +                    ZLog::ErrorV(">>> Can't Write embedded.mobileprovision!\n");
 +                    return false;
@@ -35,9 +35,9 @@ index 337750b..6f62060 100644
 +        }
 +    }
 +
- 	if (!macho.Sign(m_pSignAsset, bForceSign, strBundleId, strInfoPlistSHA1, strInfoPlistSHA256, strCodeResData))
- 	{
- 		return false;
+ 	CreateFolderV("%s/_CodeSignature", strBaseFolder.c_str());
+ 	string strCodeResFile = strBaseFolder + "/_CodeSignature/CodeResources";
+ 
 @@ -595,12 +617,6 @@ bool ZAppBundle::SignFolder(ZSignAsset *pSignAsset,
  		}
  	}
