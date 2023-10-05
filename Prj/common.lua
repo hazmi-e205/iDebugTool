@@ -60,7 +60,7 @@ if IsQt() then
     system "Windows"
 	language "C++"
 
-	QtConfigs {"c++20"}
+	QtConfigs {"c++17"}
 	filter {"kind:ConsoleApp"}
 		QtConfigs {"console"}
 	filter {"kind:StaticLib"}
