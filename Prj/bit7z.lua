@@ -113,7 +113,6 @@ project "7z"
 project "bit7z"
     kind "StaticLib"
     QtConfigs {"force_debug_info"}
-    defines {"BIT7Z_USE_STANDARD_FILESYSTEM"}
 
     files
     {
