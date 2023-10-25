@@ -19,10 +19,10 @@ index 2541327..c61252b 100644
 \ No newline at end of file
 +} // namespace bit7z
 diff --git a/src/internal/fileextractcallback.cpp b/src/internal/fileextractcallback.cpp
-index 06d7ce3..ed6b26c 100644
+index a34b81a..cede3ca 100644
 --- a/src/internal/fileextractcallback.cpp
 +++ b/src/internal/fileextractcallback.cpp
-@@ -91,7 +91,7 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
+@@ -94,7 +94,7 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
  #if defined( BIT7Z_USE_NATIVE_STRING )
              const auto& filePathString = filePath.native();
  #elif !defined( BIT7Z_USE_SYSTEM_CODEPAGE )
@@ -31,10 +31,23 @@ index 06d7ce3..ed6b26c 100644
  #else
              const auto& nativePath = filePath.native();
              const auto filePathString = narrow( nativePath.c_str(), nativePath.size() );
-@@ -138,4 +138,4 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
+@@ -141,4 +141,4 @@ auto FileExtractCallback::getOutStream( uint32_t index, ISequentialOutStream** o
      return S_OK;
  }
  
 -} // namespace bit7z
 \ No newline at end of file
 +} // namespace bit7z
+diff --git a/src/internal/stringutil.hpp b/src/internal/stringutil.hpp
+index 2ac190b..5a21215 100644
+--- a/src/internal/stringutil.hpp
++++ b/src/internal/stringutil.hpp
+@@ -40,7 +40,7 @@ inline auto path_to_tstring( const fs::path& path ) -> tstring {
+     const auto& native_path = path.native();
+     return narrow( native_path.c_str(), native_path.size() );
+ #else
+-    return path.u8string();
++    return path.string();
+ #endif
+ }
+ 

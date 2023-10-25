@@ -23,16 +23,3 @@ index f377299..209fa7e 100644
  
  namespace idevice {
  
-diff --git a/include/idevice/instrument/dtxtransport.h b/include/idevice/instrument/dtxtransport.h
-index b1fa9b4..07f4897 100644
---- a/include/idevice/instrument/dtxtransport.h
-+++ b/include/idevice/instrument/dtxtransport.h
-@@ -220,7 +220,7 @@ class BufferedDTXTransport {
-    */
-   bool Flush() {
-     if (buffer_used_ == 0) {
--      return;  // nothing to do
-+      return false;  // nothing to do
-     }
-     uint32_t actual_size = 0;
-     bool ret = transport_->Send(buffer_, buffer_used_, &actual_size);
