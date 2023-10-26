@@ -16,6 +16,7 @@ public:
     ~LogFilterThread();
 
     inline void CaptureSystemLogs(bool enable) { m_processLogs = enable; }
+    inline bool IsSystemLogsCaptured() { return m_processLogs; }
     inline void SetMaxCachedLogs(qsizetype number) { m_maxCachedLogs = number; }
     void ClearCachedLogs();
     void LogsFilterByString(QString text_or_regex);

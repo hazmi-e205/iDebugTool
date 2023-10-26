@@ -66,6 +66,11 @@ void DeviceBridge::CaptureSystemLogs(bool enable)
     m_logHandler->CaptureSystemLogs(enable);
 }
 
+bool DeviceBridge::IsSystemLogsCaptured()
+{
+    return m_logHandler->IsSystemLogsCaptured();
+}
+
 void DeviceBridge::ClearCachedLogs()
 {
     m_logHandler->ClearCachedLogs();

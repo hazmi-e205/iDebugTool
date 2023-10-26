@@ -143,6 +143,7 @@ signals:
  public:
      void ClearCachedLogs();
      void CaptureSystemLogs(bool enable);
+     bool IsSystemLogsCaptured();
      void SetMaxCachedLogs(qsizetype number);
      void LogsFilterByString(QString text_or_regex);
      void LogsExcludeByString(QString exclude_text);

@@ -87,7 +87,7 @@ private slots:
     void OnSyslogSliderMoved(int value);
     void OnClearClicked();
     void OnSaveClicked();
-    void OnStopChecked(int state);
+    void OnStartLogging();
     void OnSystemLogsReceived2(QString logs);
     void OnFilterStatusChanged(bool isfiltering);
     void OnTextFilterChanged(QString text);

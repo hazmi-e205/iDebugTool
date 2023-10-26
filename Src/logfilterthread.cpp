@@ -5,7 +5,7 @@ LogFilterThread::LogFilterThread()
     , m_paddings({0,0,0,0})
     , m_terminateFilter(false)
     , m_thread(new QThread())
-    , m_processLogs(true)
+    , m_processLogs(false)
 {
     connect(m_thread, SIGNAL(started()), SLOT(doWork()));
     moveToThread(m_thread);

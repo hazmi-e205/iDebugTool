@@ -21,9 +21,9 @@ void MainWindow::SetupSyslogUI()
     connect(ui->searchEdit, SIGNAL(textChanged(QString)), this, SLOT(OnTextFilterChanged(QString)));
     connect(ui->pidEdit, SIGNAL(currentTextChanged(QString)), this, SLOT(OnPidFilterChanged(QString)));
     connect(ui->excludeEdit, SIGNAL(textChanged(QString)), this, SLOT(OnExcludeFilterChanged(QString)));
-    connect(ui->stopCheck, SIGNAL(stateChanged(int)), this, SLOT(OnStopChecked(int)));
     connect(ui->clearBtn, SIGNAL(pressed()), this, SLOT(OnClearClicked()));
     connect(ui->saveBtn, SIGNAL(pressed()), this, SLOT(OnSaveClicked()));
+    connect(ui->startLogBtn, SIGNAL(pressed()), this, SLOT(OnStartLogging()));
     connect(ui->syslogEdit->verticalScrollBar(), SIGNAL(sliderMoved(int)), this, SLOT(OnSyslogSliderMoved(int)));
 
     DeviceBridge::Get()->SetMaxCachedLogs(m_maxCachedLogs);
@@ -81,27 +81,21 @@ void MainWindow::OnExcludeFilterChanged(QString text)
     DeviceBridge::Get()->LogsExcludeByString(text);
 }
 
-void MainWindow::OnStopChecked(int state)
-{
-    bool isStop = state == 0 ? false : true;
-    DeviceBridge::Get()->CaptureSystemLogs(!isStop);
-}
-
 void MainWindow::OnClearClicked()
 {
-    bool is_stop = ui->stopCheck->isChecked();
-    ui->stopCheck->setChecked(true);
+    bool is_capture = DeviceBridge::Get()->IsSystemLogsCaptured();
+    DeviceBridge::Get()->CaptureSystemLogs(false);
 
     ui->syslogEdit->clear();
     DeviceBridge::Get()->ClearCachedLogs();
 
-    ui->stopCheck->setChecked(is_stop);
+    DeviceBridge::Get()->CaptureSystemLogs(is_capture);
 }
 
 void MainWindow::OnSaveClicked()
 {
-    bool is_stop = ui->stopCheck->isChecked();
-    ui->stopCheck->setChecked(true);
+    bool is_capture = DeviceBridge::Get()->IsSystemLogsCaptured();
+    DeviceBridge::Get()->CaptureSystemLogs(false);
 
     QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
     if (!filepath.isEmpty()) {
@@ -112,5 +106,20 @@ void MainWindow::OnSaveClicked()
             f.close();
         }
     }
-    ui->stopCheck->setChecked(is_stop);
+
+    DeviceBridge::Get()->CaptureSystemLogs(is_capture);
+}
+
+void MainWindow::OnStartLogging()
+{
+    if (ui->startLogBtn->text().contains("start", Qt::CaseInsensitive))
+    {
+        DeviceBridge::Get()->CaptureSystemLogs(true);
+        ui->startLogBtn->setText("Stop Logging");
+    }
+    else
+    {
+        DeviceBridge::Get()->CaptureSystemLogs(false);
+        ui->startLogBtn->setText("Start Logging");
+    }
 }

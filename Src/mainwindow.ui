@@ -3643,9 +3643,9 @@ color: rgb(255, 255, 255);</string>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="stopCheck">
+                <widget class="QPushButton" name="startLogBtn">
                  <property name="text">
-                  <string>Stop</string>
+                  <string>Start Logging</string>
                  </property>
                 </widget>
                </item>

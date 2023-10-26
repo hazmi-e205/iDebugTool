@@ -109,6 +109,7 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->codesignBtn
                    << ui->clearOutputBtn
                    << ui->saveOutputBtn
+                   << ui->startLogBtn
                    << ui->startDebugBtn
                    << ui->saveDebugBtn
                    << ui->clearDebugBtn
