@@ -36,11 +36,21 @@ jobs:
       - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
 
 workflows:
-  my-workflow:
+  Nightly:
     jobs:
-      - Qt
       - Checkout
-      - Dependencies
-      - Patch
-      - Premake
-      - Build
+      - Qt:
+          requires:
+            - Checkout
+      - Dependencies:
+          requires:
+            - Qt
+      - Patch:
+          requires:
+            - Dependencies
+      - Premake:
+          requires:
+            - Patch
+      - Build:
+          requires:
+            - Premake
