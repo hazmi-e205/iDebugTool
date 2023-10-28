@@ -2,53 +2,30 @@ version: 2.1
 orbs:
   win: circleci/windows@5.0
 jobs:
-  Checkout:
-    executor: win/server-2022
-    steps:
-      - run: git lfs install
-      - checkout
-
-  Dependencies:
-    executor: win/server-2022
-    steps:
-      - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
-
-  Patch:
-    executor: win/server-2022
-    steps:
-      - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --patch
-
-  Premake:
-    executor: win/server-2022
-    steps:
-      - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
-
-  Qt:
-    executor: win/server-2022
-    steps:
-      - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
-
   Build:
     executor: win/server-2022
     steps:
-      - run: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
+      - run:
+          name: LFS Install
+          command: git lfs install
+      - checkout
+      - run:
+          name: Qt Install
+          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+      - run:
+          name: Checkout Deps
+          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
+      - run:
+          name: Patch Deps
+          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --patch
+      - run:
+          name: Premake
+          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
+      - run:
+          name: Build
+          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
 
 workflows:
   Nightly:
     jobs:
-      - Checkout
-      - Qt:
-          requires:
-            - Checkout
-      - Dependencies:
-          requires:
-            - Qt
-      - Patch:
-          requires:
-            - Dependencies
-      - Premake:
-          requires:
-            - Patch
-      - Build:
-          requires:
-            - Premake
+      - Build
