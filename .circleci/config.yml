@@ -5,7 +5,7 @@ jobs:
   Build:
     executor:
       name: win/default
-      size: 2xlarge
+      size: large
     steps:
       - run:
           name: LFS Install
