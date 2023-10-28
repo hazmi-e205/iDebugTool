@@ -12,19 +12,19 @@ jobs:
       - checkout
       - run:
           name: Qt Install
-          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+          command: python ${CIRCLE_WORKING_DIRECTORY}/Scripts/make.py --aqt=6.5.3
       - run:
           name: Checkout Deps
-          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
+          command: python ${CIRCLE_WORKING_DIRECTORY}/Scripts/make.py --checkout
       - run:
           name: Patch Deps
-          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --patch
+          command: python ${CIRCLE_WORKING_DIRECTORY}/Scripts/make.py --patch
       - run:
           name: Premake
-          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
+          command: python ${CIRCLE_WORKING_DIRECTORY}/Scripts/make.py --premake
       - run:
           name: Build
-          command: python $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
+          command: python ${CIRCLE_WORKING_DIRECTORY}/Scripts/make.py --aqt=6.5.3 --build
 
 workflows:
   Nightly:
