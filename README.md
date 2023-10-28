@@ -2,6 +2,7 @@
 > **Supported OS:** Windows and Linux (64 bit)
 
 [![CircleCI](https://dl.circleci.com/insights-snapshot/gh/hazmi-e205/iDebugTool/main/Nightly/badge.svg?window=30d)](https://app.circleci.com/insights/github/hazmi-e205/iDebugTool/workflows/Nightly/overview?branch=main&reporting-window=last-30-days&insights-snapshot=true)
+
 [![CircleCI](https://circleci.com/gh/hazmi-e205/iDebugTool/tree/main.svg?style=svg)](https://circleci.com/gh/hazmi-e205/iDebugTool/?branch=main)
 
 ## Short Description
