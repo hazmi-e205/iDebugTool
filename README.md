@@ -1,7 +1,8 @@
 # iDebugTool (IOS Debugging Tool Cross-platform)
 > **Supported OS:** Windows and Linux (64 bit)
 
-![Nightly Workflow](https://github.com/hazmi-e205/iDebugTool/actions/workflows/windows_nightly.yml/badge.svg)
+[![CircleCI](https://dl.circleci.com/insights-snapshot/gh/hazmi-e205/iDebugTool/main/Nightly/badge.svg?window=30d)](https://app.circleci.com/insights/github/hazmi-e205/iDebugTool/workflows/Nightly/overview?branch=main&reporting-window=last-30-days&insights-snapshot=true)
+[![CircleCI](https://circleci.com/gh/hazmi-e205/iDebugTool/tree/main.svg?style=svg)](https://circleci.com/gh/hazmi-e205/iDebugTool/?branch=main)
 
 ## Short Description
 Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that written in C++ with Qt Framework. This tool is wrapper of iMobileDevice and maybe we'll be add more useful IOS development tool that can work cross platform here. Inspired from Console app on MacOS for debugging Apple Development, why don't we bring them to "isekai" since more of app developer out there working remotely (using MacOS device just for build machine).
