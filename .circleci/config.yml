@@ -1,0 +1,31 @@
+version: 2.1
+orbs:
+  win: circleci/windows@5.0
+jobs:
+  Build:
+    executor: win/server-2022
+    steps:
+      - run:
+          name: LFS Install
+          command: git lfs install
+      - checkout
+      - run:
+          name: Qt Install
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+      - run:
+          name: Checkout Deps
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
+      - run:
+          name: Patch Deps
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --patch
+      - run:
+          name: Premake
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
+      - run:
+          name: Build
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
+
+workflows:
+  Nightly:
+    jobs:
+      - Build
