@@ -1,14 +1,12 @@
 version: 2.1
 orbs:
   win: circleci/windows@5.0
-  advanced-checkout: vsco/advanced-checkout@1.1.0
 jobs:
   Checkout:
     executor: win/server-2022
     steps:
-      - advanced-checkout/shallow-checkout:
-          fetch_lfs: true
-          fetch_submodules: true
+      - run: git lfs install
+      - checkout
 
   Dependencies:
     executor: win/server-2022
