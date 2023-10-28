@@ -3,7 +3,9 @@ orbs:
   win: circleci/windows@5.0
 jobs:
   Build:
-    executor: win/server-2022
+    executor:
+      name: win/server-2022
+      size: 2xlarge
     steps:
       - run:
           name: LFS Install
