@@ -30,7 +30,7 @@ jobs:
           name: Archive
           command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --archive
       - store_artifacts:
-          path: $Env:CIRCLE_WORKING_DIRECTORY/*.zip
+          path: ./*.zip
 
 workflows:
   Nightly:
