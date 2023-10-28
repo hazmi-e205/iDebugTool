@@ -4,7 +4,6 @@ orbs:
 jobs:
   Build:
     executor: win/server-2022
-    working_directory: ~/test-workflows
     steps:
       - run:
           name: LFS Install
