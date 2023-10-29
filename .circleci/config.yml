@@ -30,7 +30,7 @@ jobs:
           name: Archive
           command: |
             python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --archive
-            mv *.zip Archive
+            mv *.zip Archive\
       - store_artifacts:
           path: ./Archive
 
