@@ -29,7 +29,7 @@ jobs:
       - run:
           name: Archive
           command: |
-            python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --archive
+            python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive
             mkdir Archive
             xcopy *.zip Archive\
       - store_artifacts:
