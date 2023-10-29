@@ -26,11 +26,9 @@ jobs:
       - run:
           name: Build
           command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
-      - run:
-          name: Archive
-          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --archive
       - store_artifacts:
-          path: ./*.zip
+          name: nightly-build
+          path: ./Build/Qt-windows/bin
 
 workflows:
   Nightly:
