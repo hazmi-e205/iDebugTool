@@ -42,7 +42,9 @@ jobs:
     steps:
       - run:
           name: LFS Install
-          command: git lfs install
+          command: |
+            apt install -y git-lfs
+            git lfs install
       - checkout
       - run:
           name: Qt Install
