@@ -43,7 +43,7 @@ jobs:
       - run:
           name: LFS Install
           command: |
-            sudo apt install --allow git-lfs
+            sudo apt install -y git-lfs
             git lfs install
       - checkout
       - run:
