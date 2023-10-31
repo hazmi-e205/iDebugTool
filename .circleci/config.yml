@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   win: circleci/windows@5.0
 jobs:
-  Build:
+  Windows x64:
     executor:
       name: win/default
       size: large
@@ -34,8 +34,34 @@ jobs:
             xcopy *.zip Archive\
       - store_artifacts:
           path: ./Archive
+          
+  Linux x64:
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: large
+    steps:
+      - run:
+          name: LFS Install
+          command: git lfs install
+      - checkout
+      - run:
+          name: Qt Install
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+      - run:
+          name: Checkout Deps
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
+      - run:
+          name: Patch Deps
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --patch
+      - run:
+          name: Premake
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
+      - run:
+          name: Build
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
 
 workflows:
   Nightly:
     jobs:
-      - Build
+      - Windows x64
+      - Linux x64
