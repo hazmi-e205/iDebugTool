@@ -51,7 +51,7 @@ jobs:
       - run:
           name: Qt Install
           command: |
-            sudo apt install -y p7zip-full
+            sudo apt install -y p7zip-full libgl1-mesa-dev
             python3 -m pip install --upgrade pip
             python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
       - run:
