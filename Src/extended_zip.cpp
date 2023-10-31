@@ -19,7 +19,7 @@ bool ZipGetContents(QString zip_file, QString inside_path, std::vector<char>& da
 #elif defined(WIN32) && defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.dll" };
 #elif defined(NDEBUG)
-        Bit7zLibrary lib{ "7z.so" };)
+        Bit7zLibrary lib{ "7z.so" };
 #elif defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
@@ -50,7 +50,7 @@ bool ZipGetAppDirectory(QString zip_file, QString &path_out)
 #elif defined(WIN32) && defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.dll" };
 #elif defined(NDEBUG)
-        Bit7zLibrary lib{ "7z.so" };)
+        Bit7zLibrary lib{ "7z.so" };
 #elif defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
@@ -85,7 +85,7 @@ bool ZipExtractAll(QString input_zip, QString output_dir, std::function<void (fl
 #elif defined(WIN32) && defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.dll" };
 #elif defined(NDEBUG)
-        Bit7zLibrary lib{ "7z.so" };)
+        Bit7zLibrary lib{ "7z.so" };
 #elif defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
@@ -133,7 +133,7 @@ bool ZipDirectory(QString input_dir, QString output_filename, std::function<void
 #elif defined(WIN32) && defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.dll" };
 #elif defined(NDEBUG)
-        Bit7zLibrary lib{ "7z.so" };)
+        Bit7zLibrary lib{ "7z.so" };
 #elif defined(DEBUG)
         Bit7zLibrary lib{ "7z_d.so" };
 #endif
