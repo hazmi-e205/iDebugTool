@@ -148,9 +148,9 @@ void MainWindow::OnPrivateKeyChanged(QString key)
 
 void MainWindow::OnSigningResult(Recodesigner::SigningStatus status, float percentage, QString messages)
 {
+    ui->outputEdit->appendPlainText(messages);
     if (status == Recodesigner::SigningStatus::FAILED || status == Recodesigner::SigningStatus::SUCCESS || status == Recodesigner::SigningStatus::INSTALL)
     {
-        ui->outputEdit->appendPlainText(messages);
         ui->codesignBtn->setEnabled(true);
         if (status == Recodesigner::SigningStatus::INSTALL)
         {
