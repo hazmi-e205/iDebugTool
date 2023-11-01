@@ -20,9 +20,8 @@ build_dir       = os.path.abspath(base_dir + "/Build/")
 external_dir    = os.path.abspath(base_dir + "/Externals/")
 patch_dir       = os.path.abspath(base_dir + "/Externals/_Patches/")
 info_path       = os.path.abspath(base_dir + "/info.json")
-premake_path    = os.path.abspath(script_dir + "/premake5")
-if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys":
-    premake_path = premake_path + ".exe"
+exe_ext         = ".exe" if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys" else ""
+premake_path    = os.path.abspath(script_dir + "/premake5") + exe_ext
 
 #compiler
 qt_dir           = "C:/Qt"
@@ -34,6 +33,7 @@ compiler_version = "11.2.0"
 compiler_arch    = "64"
 platform_var     = "win"
 prj_name         = "iDebugTool"
+prj_type         = "Qt-linux" if "linux" in sys.platform else "Qt-windows"
 
 #flags
 is_checkout     = False
@@ -222,18 +222,11 @@ def InstallAQT():
 
 
 def Build():
-    prj_type      = "Qt-windows"
-    exe_ext       = ".exe"
-    if "linux" in sys.platform:
-        prj_type  = "Qt-linux"
-        exe_ext   = ""
-    
     cprint("Build '"+ prj_type + "' started...", 'yellow', attrs=['reverse', 'blink'])
     prj_path      = prj_dir + "/" + prj_type + "/" + prj_name + ".pro"
     build_cache   = prj_dir + "/" + prj_type + "_Release/"
     makefile_path = build_cache + "/Makefile"
     qmake_path    = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/qmake" + exe_ext
-    deploy_path   = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/windeployqt" + exe_ext
     nodotversion  = compiler_version
     compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
     make_path     = ("make" if "linux" in sys.platform else (compiler_dir + "mingw32-make")) + exe_ext
@@ -251,14 +244,24 @@ def Build():
     cprint("Build app...", 'yellow', attrs=['reverse', 'blink'])
     utils.call([make_path, "-j8"], build_cache)
 
-    cprint("Deploy app...", 'yellow', attrs=['reverse', 'blink'])
     build_exe = build_final + prj_name + exe_ext
     if os.path.exists(build_exe):
-        utils.call([deploy_path, build_exe, "--no-opengl-sw", "--no-translations", "--no-system-d3d-compiler"], build_final)
+        Deploy()
     else:
         sys.exit("Build failed!")
 
     cprint("Build success!", 'yellow', attrs=['reverse', 'blink'])
+
+
+def Deploy():
+    cprint("Deploy app...", 'yellow', attrs=['reverse', 'blink'])
+    build_final   = build_dir + "/" + prj_type + "/bin/"
+    build_exe = build_final + prj_name + exe_ext
+    if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys":
+        deploy_path   = qt_dir + "/" + qt_version + "/" + compiler_name + "_" + compiler_arch + "/bin/windeployqt" + exe_ext
+        utils.call([deploy_path, build_exe, "--no-opengl-sw", "--no-translations", "--no-system-d3d-compiler"], build_final)
+    else:
+        print("Skip this for now...")
 
 
 def Archive():
@@ -266,7 +269,6 @@ def Archive():
     platform_str   = platform_var + compiler_arch
     version_str    = "v" + project_info["version"]
     subversion_str = project_info["status"]
-    prj_type       = "Qt-windows"
     if is_nightly:
         version_str = "nightly"
         now = datetime.datetime.now()
