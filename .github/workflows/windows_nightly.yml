@@ -48,10 +48,12 @@ jobs:
         python ${{ env.SOURCE_DIR }}/Scripts/make.py --build --aqt=${{ env.QT_VERSION }}
               
     - name: Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARCHIVE_NAME }}
         path: ${{ env.BUILD_DIR }}/**
+        if-no-files-found: error
+        compression-level: 9
         
 
 

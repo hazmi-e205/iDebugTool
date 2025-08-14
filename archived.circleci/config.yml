@@ -39,7 +39,7 @@ jobs:
           
   Linux x64:
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2004:current
     resource_class: large
     steps:
       - run:
