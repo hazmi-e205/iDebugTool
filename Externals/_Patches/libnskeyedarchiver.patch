@@ -1,0 +1,12 @@
+diff --git a/include/nskeyedarchiver/base64.hpp b/include/nskeyedarchiver/base64.hpp
+index 7221d03..c23dd7a 100644
+--- a/include/nskeyedarchiver/base64.hpp
++++ b/include/nskeyedarchiver/base64.hpp
+@@ -2,6 +2,7 @@
+ #define NSKEYEDARCHIVER_BASE64_H
+ 
+ #include <string>
++#include <cstdint>
+ 
+ namespace nskeyedarchiver {
+ 
