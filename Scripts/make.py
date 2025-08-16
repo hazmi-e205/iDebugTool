@@ -22,6 +22,7 @@ patch_dir       = os.path.abspath(base_dir + "/Externals/_Patches/")
 info_path       = os.path.abspath(base_dir + "/info.json")
 exe_ext         = ".exe" if sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys" else ""
 premake_path    = os.path.abspath(script_dir + "/premake5") + exe_ext
+premake_tag     = "v5.0.0-beta1"
 
 #compiler
 qt_dir           = "C:/Qt"
@@ -53,7 +54,10 @@ is_nightly      = True
 def DownloadPremake():
     request_releases = urlopen("https://api.github.com/repos/Premake/premake-core/releases").read()
     premake_releases = json.loads(request_releases)
-    premake_latest   = premake_releases[0]["assets"]
+    filtered = [release for release in premake_releases if release['tag_name'] == premake_tag]
+    if len(filtered) == 0:
+        sys.exit("Release with tag name '{}' not found!".format(premake_tag))
+    premake_latest   = filtered[0]["assets"]
     premake_download = False
     for asset in premake_latest:
         if "windows" in asset["name"] and (sys.platform == "win32" or sys.platform == "cygwin" or sys.platform == "msys"):
