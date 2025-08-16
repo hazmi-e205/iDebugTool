@@ -43,10 +43,10 @@ assert.log
 **~
 /obj
 /lib
-/prj/android_fastbuild/**
-/prj/vs**
-/prj/xcode4/**
-/prj/Qt**
-/prj/build**
+/Prj/android_fastbuild/**
+/Prj/vs**
+/Prj/xcode4/**
+/Prj/Qt**
+/Prj/Build**
 /Scripts/premake5**
-/Qt
+/Qt**
