@@ -118,22 +118,35 @@ project "iDebugTool"
             "Iphlpapi",
             "Ws2_32",
             "Ole32",
-            "Dbghelp",
-            "exchndl",
             "mingw-patch",
-        }
-        libdirs
-        {
-            "../Prebuilt/drmingw-win64/lib",
         }
         includedirs
         {
-            "../Prebuilt/drmingw-win64/include",
             "../Externals/mingw-patch",
         }
-        local drmingw = "$$PWD/../../../Prebuilt/drmingw-win64/bin"
-        prelinkcommands {"python " .. copyext .. " mgwhelp.dll " .. drmingw .. " " .. copydst}
-        prelinkcommands {"python " .. copyext .. " exchndl.dll " .. drmingw .. " " .. copydst}
+
+        filter {"Release*"}
+            defines
+            {
+                "MINGW_REPORTER",
+            }
+            links
+            {
+                "Dbghelp",
+                "exchndl",
+            }
+            libdirs
+            {
+                "../Prebuilt/drmingw-win64/lib",
+            }
+            includedirs
+            {
+                "../Prebuilt/drmingw-win64/include",
+            }
+            local drmingw = "$$PWD/../../../Prebuilt/drmingw-win64/bin"
+            prelinkcommands {"python " .. copyext .. " mgwhelp.dll " .. drmingw .. " " .. copydst}
+            prelinkcommands {"python " .. copyext .. " exchndl.dll " .. drmingw .. " " .. copydst}
+        filter {}
     else
         links
         {

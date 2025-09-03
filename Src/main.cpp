@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include <QMessageBox>
-#if defined(WIN32)
+#if defined(MINGW_REPORTER)
 #include "exchndl.h"
 #include "utils.h"
 #endif
@@ -9,7 +9,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-#if defined(WIN32)
+#if defined(MINGW_REPORTER)
     QString filename = QCoreApplication::applicationName() + "_CrashReports.txt";
     CheckDrMinGWReports(filename, [](QString filepath, int count){
         QString  message = QString("Sorry, %1 has crashed in %2 time(s). A log file was written to:\n\n%3\n\n").arg(QCoreApplication::applicationName()).arg(count).arg(filepath);

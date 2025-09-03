@@ -118,6 +118,16 @@ function qt.parse_links(prj)
             table.insert(links["Common"], link)
         end
     end
+    
+    -- for precompiled
+    for cfg in project.eachconfig(prj) do
+        local filtered_links = qt.remove_item_by_list(cfg.links, prj.links)
+        if #filtered_links > 0 then
+            for _,link in ipairs(filtered_links) do
+                table.insert(links[cfg.buildcfg], link)
+            end
+        end
+    end
 end
 
 function qt.add_links(tab, datatable)
@@ -137,11 +147,13 @@ function qt.add_libdirs(tab, datatable, prj)
     if #datatable > 0 then
         _p(tab, 'LIBS += \\')
         for k,v in ipairs(datatable) do
-            local relative_str = path.getrelative(prj.location .. "/" .. prj.name, v)
+            -- Currently, qmake  unstable for libdirs using relative path
+            local relative_str = v -- path.getrelative(prj.location .. "/" .. prj.name, v)
             if k ~= #datatable then
                 relative_str = relative_str .. ' \\'
             end
             _p(tab + 1, '-L' .. relative_str)
+
         end
         _p('')
     end
@@ -149,7 +161,8 @@ end
 
 function qt.add_targetdir(tab, prj)
     if prj.targetdir then
-        local relative_str = path.getrelative(prj.location .. "/" .. prj.name, prj.targetdir)
+        -- unstable relative path beetween ide and cli
+        local relative_str = prj.targetdir -- path.getrelative(prj.location .. "/" .. prj.name, prj.targetdir)
         _p(tab, 'DESTDIR = ' .. relative_str)
     end
 end
@@ -166,6 +179,19 @@ function qt.get_targetname(prj)
         outname = outname .. prj.targetsuffix
     end
     return outname
+end
+
+function qt.add_commands(tab, flagname, datatable)
+    if #datatable > 0 then
+        _p(tab, flagname .. ' += \\')
+        for k,v in ipairs(datatable) do
+            if k ~= #datatable then
+                v = v .. ' && \\'
+            end
+            _p(tab + 1, v)
+        end
+        _p('')
+    end
 end
 
 function qt.remove_item_by_list(full_table, remove_list)
@@ -285,28 +311,9 @@ function qt.project_pro(prj)
         end
         _p('')
     end
-
-    if #prj.prelinkcommands > 0 then
-        _p('QMAKE_PRE_LINK += \\')
-        for k,v in ipairs(prj.prelinkcommands) do
-            if k ~= #prj.prelinkcommands then
-                v = v .. ' &&\\'
-            end
-            _p(1, v)
-        end
-        _p('')
-    end
-
-    if #prj.postbuildcommands > 0 then
-        _p('QMAKE_POST_LINK += \\')
-        for k,v in ipairs(prj.postbuildcommands) do
-            if k ~= #prj.postbuildcommands then
-                v = v .. ' \\'
-            end
-            _p(1, v)
-        end
-        _p('')
-    end
+    
+    qt.add_commands(0, 'QMAKE_PRE_LINK', prj.prelinkcommands)
+    qt.add_commands(0, 'QMAKE_POST_LINK', prj.postbuildcommands)
 
     -- links
     qt.parse_links(prj)
@@ -346,6 +353,12 @@ function qt.project_pro(prj)
 
         local includedirs = qt.remove_item_by_list(cfg.includedirs, prj.includedirs)
         qt.add_includedirs(1, includedirs, cfg)
+
+        local prelinkcommands = qt.remove_item_by_list(cfg.prelinkcommands, prj.prelinkcommands)
+        qt.add_commands(1, 'QMAKE_PRE_LINK', prelinkcommands)
+
+        local postbuildcommands = qt.remove_item_by_list(cfg.postbuildcommands, prj.postbuildcommands)
+        qt.add_commands(1, 'QMAKE_POST_LINK', postbuildcommands)
         _p('}')
         _p('')
     end

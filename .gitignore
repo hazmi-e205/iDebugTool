@@ -49,4 +49,5 @@ assert.log
 /Prj/Qt**
 /Prj/Build**
 /Scripts/premake5**
+/Qt
 /Qt**

@@ -206,7 +206,7 @@ def Premake():
 def InstallAQT():
     global qt_dir
     qt_platform = "linux" if "linux" in sys.platform else "windows"
-    qt_dir = os.path.abspath(base_dir + "/Qt/")
+    qt_dir = os.path.abspath("{}/Qt_{}/".format(base_dir, qt_platform))
     qt_list = os.listdir(qt_dir) if os.path.exists(qt_dir) else {}
     if qt_version not in qt_list:
         utils.call([sys.executable, "-m", "pip", "install", "aqtinstall"], base_dir)
@@ -220,9 +220,17 @@ def InstallAQT():
     if (compiler_name + nodotversion.replace(".","") + "_" + compiler_arch) not in qt_list and "linux" not in sys.platform:
         utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", aqt_compiler, "--outputdir", qt_dir], base_dir)
     if is_aqtcreator and "QtCreator" not in qt_list:
-        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir], base_dir)
+        qtcreator_dir = os.path.abspath(qt_dir + "/Tools/QtCreator/")
+        utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools." + aqt_creator, "--outputdir", qt_dir if "linux" in sys.platform else qtcreator_dir], base_dir)
         if "linux" not in sys.platform:
             utils.call([sys.executable, "-m", "aqt", "install-tool", qt_platform, "desktop", "tools_" + aqt_creator, "qt.tools.qtcreatorcdbext", "--outputdir", qt_dir], base_dir)
+
+
+def SetupBuildEnvironment():
+    nodotversion  = compiler_version
+    compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
+    split = [ x for x in os.environ["PATH"].split(os.pathsep) if "mingw" not in x ]
+    os.environ["PATH"] = os.pathsep.join(split) + os.pathsep + os.pathsep.join([os.path.abspath(compiler_dir)])
 
 
 def Build():
@@ -235,7 +243,7 @@ def Build():
     compiler_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin/"
     make_path     = ("make" if "linux" in sys.platform else (compiler_dir + "mingw32-make")) + exe_ext
     build_final   = build_dir + "/" + prj_type + "/bin/"
-    os.environ["PATH"] += os.pathsep + os.pathsep.join([compiler_dir])
+    SetupBuildEnvironment()
     
     cprint("Generate makefile from qmake...", 'yellow', attrs=['reverse', 'blink'])
     if not os.path.exists(build_cache):
@@ -301,7 +309,8 @@ def OpenCreator():
     nodotversion  = compiler_version
     mingw_dir  = qt_dir + "/Tools/" + compiler_name + nodotversion.replace(".","") + "_" + compiler_arch + "/bin"
     os.environ["PATH"] += os.pathsep + os.pathsep.join([mingw_dir])
-    
+
+    SetupBuildEnvironment()
     utils.call([CreatorPath, prj_path], base_dir)
 
 
