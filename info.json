@@ -7,7 +7,7 @@
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "04c023317f616b4b9588cce8c2da3174a7d2086b",
+            "revision": "c4f111800d2b08d6c65ec075ad49c4a60e9e4309",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -15,7 +15,7 @@
             "project": "libusbmuxd",
             "url": "https://github.com/libimobiledevice/libusbmuxd",
             "branch": "master",
-            "revision": "30e678d4e76a9f4f8a550c34457dab73909bdd92",
+            "revision": "93eb168bf6b07472d17781328c21df0c60300524",
             "path": "Externals/libusbmuxd",
             "use_submodules": false
         },
@@ -23,7 +23,7 @@
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "214bafdde6a1434ead87357afe6cb41b32318495",
+            "revision": "da770a7687f35fbb981db4d7b47b1b032cd5c2c7",
             "path": "Externals/libimobiledevice-glue",
             "use_submodules": false
         },
@@ -31,7 +31,7 @@
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "2cd858c679d25633077ca78b67182a9b77653816",
+            "revision": "15164ebe870590376b2286b09dc97890a07dd373",
             "path": "Externals/libplist",
             "use_submodules": false
         },
@@ -39,7 +39,7 @@
             "project": "libidevice",
             "url": "https://github.com/sandin/libidevice",
             "branch": "master",
-            "revision": "6b594c2eece25baea2757ed04f45febc2069697a",
+            "revision": "3844974cfaf8f70b36f281bd9c491e625012a4ba",
             "path": "Externals/libidevice",
             "use_submodules": false
         },
@@ -47,7 +47,7 @@
             "project": "libnskeyedarchiver",
             "url": "https://github.com/sandin/libnskeyedarchiver",
             "branch": "master",
-            "revision": "283f5d00c3caaed5feefd7cbe4bf9e08fa3816d3",
+            "revision": "212c21a3f0f32abb65921cb2d1b8a42dcda221a5",
             "path": "Externals/libnskeyedarchiver",
             "use_submodules": false
         },

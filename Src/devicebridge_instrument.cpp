@@ -12,7 +12,7 @@ QStringList DeviceBridge::GetAttributes(AttrType type)
 {
     QStringList list;
     if (!m_connection) {
-        m_transport = new DTXTransport(m_device);
+        m_transport = new DTXTransport(m_device, false);
         m_connection = new DTXConnection(m_transport);
         m_connection->Connect();
     }
@@ -33,7 +33,7 @@ QStringList DeviceBridge::GetAttributes(AttrType type)
 void DeviceBridge::StartMonitor(unsigned int interval_ms, QStringList system_attr, QStringList process_attr)
 {
     if (!m_connection) {
-        m_transport = new DTXTransport(m_device);
+        m_transport = new DTXTransport(m_device, false);
         m_connection = new DTXConnection(m_transport);
         m_connection->Connect();
     }
@@ -83,7 +83,7 @@ void DeviceBridge::StopMonitor()
 void DeviceBridge::GetProcessList()
 {
     if (!m_connection) {
-        m_transport = new DTXTransport(m_device);
+        m_transport = new DTXTransport(m_device, false);
         m_connection = new DTXConnection(m_transport);
         m_connection->Connect();
     }
@@ -100,7 +100,7 @@ void DeviceBridge::GetProcessList()
 void DeviceBridge::StartFPS(unsigned int interval_ms)
 {
     if (!m_connection) {
-        m_transport = new DTXTransport(m_device);
+        m_transport = new DTXTransport(m_device, false);
         m_connection = new DTXConnection(m_transport);
         m_connection->Connect();
     }

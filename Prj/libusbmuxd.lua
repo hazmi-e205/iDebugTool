@@ -23,7 +23,10 @@ project "usbmuxd"
     defines
     {
         "HAVE_CONFIG_H",
+        "LIBIMOBILEDEVICE_STATIC",
+        "LIBUSBMUXD_STATIC",
         "LIBPLIST_STATIC",
+        "LIMD_GLUE_STATIC",
     }
 
     buildoptions

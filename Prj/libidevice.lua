@@ -1,6 +1,6 @@
 include "common.lua"
 
-project "libnskeyedarchiver"
+project "nskeyedarchiver"
     kind "StaticLib"
     QtConfigs {"force_debug_info"}
 
@@ -21,7 +21,7 @@ project "libnskeyedarchiver"
         "LIBPLIST_STATIC",
     }
 
-project "libidevice"
+project "idevice"
     kind "StaticLib"
     QtConfigs {"force_debug_info"}
 
@@ -41,5 +41,8 @@ project "libidevice"
 
     defines
     {
+        "LIBIMOBILEDEVICE_STATIC",
         "LIBPLIST_STATIC",
+        "LIBUSBMUXD_STATIC",
+        "LIMD_GLUE_STATIC",
     }

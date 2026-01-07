@@ -1,10 +1,10 @@
 diff --git a/include/usbmuxd.h b/include/usbmuxd.h
-index f08a653..a337139 100644
+index 859fccd..bb8e88c 100644
 --- a/include/usbmuxd.h
 +++ b/include/usbmuxd.h
-@@ -324,6 +324,14 @@ void libusbmuxd_set_use_inotify(int set);
- 
- void libusbmuxd_set_debug_level(int level);
+@@ -341,6 +341,14 @@ USBMUXD_API void libusbmuxd_set_debug_level(int level);
+  */
+ USBMUXD_API const char* libusbmuxd_version();
  
 +/**
 + * Connect to remote device
@@ -18,10 +18,10 @@ index f08a653..a337139 100644
  }
  #endif
 diff --git a/src/libusbmuxd.c b/src/libusbmuxd.c
-index b16936a..9ae76e5 100644
+index 6b7d220..dfa74fd 100644
 --- a/src/libusbmuxd.c
 +++ b/src/libusbmuxd.c
-@@ -137,6 +137,24 @@ static struct collection listeners;
+@@ -142,6 +142,24 @@ static struct collection listeners;
  thread_once_t listener_init_once = THREAD_ONCE_INIT;
  mutex_t listener_mutex;
  
@@ -46,7 +46,7 @@ index b16936a..9ae76e5 100644
  /**
   * Finds a device info record by its handle.
   * if the record is not found, NULL is returned.
-@@ -218,6 +236,9 @@ static int connect_usbmuxd_socket()
+@@ -223,6 +241,9 @@ static int connect_usbmuxd_socket()
  #else
  	res = socket_connect_unix(USBMUXD_SOCKET_FILE);
  #endif

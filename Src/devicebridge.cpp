@@ -397,7 +397,7 @@ bool DeviceBridge::IsImageMounted()
 void DeviceBridge::MountImage(QString image_path, QString signature_path)
 {
     AsyncManager::Get()->StartAsyncRequest([this, image_path, signature_path]() {
-        char sig[8192];
+        unsigned char *sig = NULL;
         size_t sig_length = 0;
         size_t image_size = 0;
         mobile_image_mounter_error_t err = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
@@ -421,16 +421,16 @@ void DeviceBridge::MountImage(QString image_path, QString signature_path)
             return;
         }
 
-        struct stat fst;
-        if (stat(image_path.toUtf8().data(), &fst) != 0) {
-            emit MounterStatusChanged("Error: stat: '" + image_path + "' : " + strerror(errno));
-            return;
-        }
-        image_size = fst.st_size;
-        if (stat(signature_path.toUtf8().data(), &fst) != 0) {
-            emit MounterStatusChanged("Error: stat: '" + signature_path + "' : " + strerror(errno));
-            return;
-        }
+        // struct stat fst;
+        // if (stat(image_path.toUtf8().data(), &fst) != 0) {
+        //     emit MounterStatusChanged("Error: stat: '" + image_path + "' : " + strerror(errno));
+        //     return;
+        // }
+        // image_size = fst.st_size;
+        // if (stat(signature_path.toUtf8().data(), &fst) != 0) {
+        //     emit MounterStatusChanged("Error: stat: '" + signature_path + "' : " + strerror(errno));
+        //     return;
+        // }
 
         QString targetname = QString(PKG_PATH) + "/staging.dimage";
         QString mountname = QString(PATH_PREFIX) + "/" + targetname;

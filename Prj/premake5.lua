@@ -95,8 +95,8 @@ project "iDebugTool"
         "minizip",
         "zsign",
         "bit7z",
-        "libnskeyedarchiver",
-        "libidevice",
+        "nskeyedarchiver",
+        "idevice",
     }
 
     libdirs
@@ -106,7 +106,10 @@ project "iDebugTool"
 
     defines
     {
+        "LIBIMOBILEDEVICE_STATIC",
+        "LIBUSBMUXD_STATIC",
         "LIBPLIST_STATIC",
+        "LIMD_GLUE_STATIC",
     }
 
     local copyext = "$$PWD/../../../Scripts/copyext.py"
