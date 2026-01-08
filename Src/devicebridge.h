@@ -17,6 +17,7 @@
 #include <libimobiledevice/screenshotr.h>
 #include <libimobiledevice/service.h>
 #include <libimobiledevice/debugserver.h>
+#include <libimobiledevice/house_arrest.h>
 #include "debuggerfilterthread.h"
 #include "logpacket.h"
 #include "logfilterthread.h"
@@ -115,15 +116,27 @@ signals:
      //AFCUtils
  public:
      void SyncCrashlogs(QString path);
+
+     struct FileProperty {
+         bool isDirectory = false;
+         quint64 sizeInBytes = 0;
+     };
+     void GetAccessibleStorage(QString startPath = "/", QString bundleId = "");
+
  private:
      int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
+     void afc_traverse_recursive(afc_client_t afc, const char* path);
      afc_client_t m_afc;
      afc_client_t m_crashlog;
+     afc_client_t m_fileManager;
+     house_arrest_client_t m_houseArrest;
      QString m_crashlogTargetDir;
+     QMap<QString, FileProperty> m_accessibleStorage;
  signals:
      void CrashlogsStatusChanged(QString messages);
+     void AccessibleStorageReceived(QMap<QString, FileProperty> contents);
 
      //InstallerBridge
  public:

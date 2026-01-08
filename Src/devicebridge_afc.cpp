@@ -16,6 +16,51 @@
 #include <string.h>
 #include "utils.h"
 
+
+void DeviceBridge::SyncCrashlogs(QString path)
+{
+    AsyncManager::Get()->StartAsyncRequest([this, path]() {
+        QDir().mkpath(path);
+        int result = afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data());
+        emit CrashlogsStatusChanged(QString::asprintf("Done, error code: %d", result));
+    });
+}
+
+void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
+{
+    AsyncManager::Get()->StartAsyncRequest([this, startPath, bundleId]() {
+        m_accessibleStorage.clear();
+
+        if (!bundleId.isEmpty()) {
+            QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
+            StartLockdown(!m_houseArrest, serviceIds, [this, bundleId](QString& service_id, lockdownd_service_descriptor_t& service){
+                house_arrest_error_t err = house_arrest_client_new(m_device, service, &m_houseArrest);
+                if (err != HOUSE_ARREST_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+
+                err = house_arrest_send_command(m_houseArrest, "VendContainer", bundleId.toUtf8().data());
+                if (err != HOUSE_ARREST_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
+
+                afc_error_t aerr = afc_client_new_from_house_arrest_client(m_houseArrest, &m_fileManager);
+                if (aerr != AFC_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + service_id + " client! " + QString::number(aerr));
+            });
+        } else {
+            QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
+            StartLockdown(!m_fileManager, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+                afc_error_t aerr = afc_client_new(m_device, service, &m_fileManager);
+                if (aerr != AFC_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
+            });
+        }
+
+        afc_traverse_recursive(m_fileManager, startPath.toStdString().c_str());
+
+        emit AccessibleStorageReceived(m_accessibleStorage);
+    });
+}
+
 int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
 {
     FILE *f = NULL;
@@ -317,4 +362,55 @@ int DeviceBridge::afc_copy_crash_reports(afc_client_t &afc, const char* device_d
             res = 0;
 
         return res;
+}
+
+void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
+{
+    char **file_list = NULL;
+
+    if (afc_read_directory(afc, path, &file_list) != AFC_E_SUCCESS || !file_list) {
+        return;
+    }
+
+    for (int i = 0; file_list[i]; i++) {
+        if (strcmp(file_list[i], ".") == 0 || strcmp(file_list[i], "..") == 0) continue;
+
+        char full_path[2048];
+        if (strcmp(path, "/") == 0) {
+            snprintf(full_path, sizeof(full_path), "/%s", file_list[i]);
+        } else {
+            snprintf(full_path, sizeof(full_path), "%s/%s", path, file_list[i]);
+        }
+
+        char **info = NULL;
+        bool is_dir = false;
+        quint64 size_bytes = 0;
+
+        if (afc_get_file_info(afc, full_path, &info) == AFC_E_SUCCESS && info) {
+
+            for (int j = 0; info[j]; j += 2) {
+                if (std::strcmp(info[j], "st_ifmt") == 0 && std::strcmp(info[j + 1], "S_IFDIR") == 0) {
+                    is_dir = true;
+                }
+                if (std::strcmp(info[j], "st_size") == 0) {
+                    // Convert string to uint64_t
+                    try {
+                        size_bytes = std::stoull(info[j + 1]);
+                    } catch (...) {
+                        size_bytes = 0;
+                    }
+                }
+            }
+
+            m_accessibleStorage[QString(full_path)] = FileProperty(is_dir, size_bytes);
+            qDebug() << QString(full_path) << " | " << is_dir << " | " << size_bytes;
+
+            afc_dictionary_free(info);
+        }
+
+        if (is_dir) {
+            afc_traverse_recursive(afc, full_path);
+        }
+    }
+    afc_dictionary_free(file_list);
 }

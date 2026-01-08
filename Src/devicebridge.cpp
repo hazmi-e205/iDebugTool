@@ -30,6 +30,8 @@ DeviceBridge::DeviceBridge()
     , m_screenshot(nullptr)
     , m_afc(nullptr)
     , m_crashlog(nullptr)
+    , m_fileManager(nullptr)
+    , m_houseArrest(nullptr)
     , m_installer(nullptr)
     , m_syslog(nullptr)
     , m_logHandler(new LogFilterThread())
@@ -108,6 +110,18 @@ void DeviceBridge::ResetConnection()
     {
         afc_client_free(m_crashlog);
         m_crashlog = nullptr;
+    }
+
+    if (m_fileManager)
+    {
+        afc_client_free(m_fileManager);
+        m_fileManager = nullptr;
+    }
+
+    if (m_houseArrest)
+    {
+        house_arrest_client_free(m_houseArrest);
+        m_houseArrest = nullptr;
     }
 
     if (m_installer)
@@ -281,6 +295,9 @@ void DeviceBridge::StartServices()
             return;
         }
     });
+
+    // For testing only
+    GetAccessibleStorage("/", "com.gameloft.asphalt9");
 }
 
 void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
@@ -556,15 +573,6 @@ void DeviceBridge::Screenshot(QString path)
         {
             emit MessagesReceived(MessagesType::MSG_ERROR, "Error: screenshotr_take_screenshot returned " + QString::number(error));
         }
-    });
-}
-
-void DeviceBridge::SyncCrashlogs(QString path)
-{
-    AsyncManager::Get()->StartAsyncRequest([this, path]() {
-        QDir().mkpath(path);
-        int result = afc_copy_crash_reports(m_crashlog, ".", path.toUtf8().data(), path.toUtf8().data());
-        emit CrashlogsStatusChanged(QString::asprintf("Done, error code: %d", result));
     });
 }
 
