@@ -297,6 +297,16 @@ void DeviceBridge::StartServices()
     });
 
     // For testing only
+    qDebug() << "FileManager :: Inital";
+    GetAccessibleStorage("/", "com.gameloft.asphalt9");
+
+    qDebug() << "FileManager :: Upload";
+    UploadToStorage("C:\\Users\\hazmi\\Documents\\SimpleEntra.zip", "/Documents/SimpleUpload.zip", "com.gameloft.asphalt9");
+    GetAccessibleStorage("/", "com.gameloft.asphalt9");
+    DownloadFromStorage("/Documents/SimpleUpload.zip", "C:\\Users\\hazmi\\Documents\\SimpleDownload.zip", "com.gameloft.asphalt9");
+
+    qDebug() << "FileManager :: Delete";
+    DeleteFromStorage("/Documents/SimpleUpload.zip", "com.gameloft.asphalt9");
     GetAccessibleStorage("/", "com.gameloft.asphalt9");
 }
 

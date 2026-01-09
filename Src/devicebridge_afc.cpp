@@ -28,37 +28,92 @@ void DeviceBridge::SyncCrashlogs(QString path)
 
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
 {
-    AsyncManager::Get()->StartAsyncRequest([this, startPath, bundleId]() {
+    afc_filemanager_action([&, this](afc_client_t& afc){
         m_accessibleStorage.clear();
+        afc_traverse_recursive(afc, startPath.toStdString().c_str());
+        emit AccessibleStorageReceived(m_accessibleStorage);
+    }, bundleId);
+}
 
-        if (!bundleId.isEmpty()) {
-            QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
-            StartLockdown(!m_houseArrest, serviceIds, [this, bundleId](QString& service_id, lockdownd_service_descriptor_t& service){
-                house_arrest_error_t err = house_arrest_client_new(m_device, service, &m_houseArrest);
-                if (err != HOUSE_ARREST_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+void DeviceBridge::UploadToStorage(QString localPath, QString devicePath, QString bundleId)
+{
+    afc_filemanager_action([&, this](afc_client_t& afc){
+        int percentage = 0;
+        auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
+        {
+            percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, percentage, devicePath);
+        };
+        int result = afc_upload_file(afc, localPath, devicePath, callback);
+        emit FileManagerChanged(result == 0 ? GenericStatus::UPLOADED : GenericStatus::FAILED, percentage, devicePath);
+    }, bundleId);
+}
 
-                err = house_arrest_send_command(m_houseArrest, "VendContainer", bundleId.toUtf8().data());
-                if (err != HOUSE_ARREST_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
-
-                afc_error_t aerr = afc_client_new_from_house_arrest_client(m_houseArrest, &m_fileManager);
-                if (aerr != AFC_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + service_id + " client! " + QString::number(aerr));
-            });
-        } else {
-            QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
-            StartLockdown(!m_fileManager, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-                afc_error_t aerr = afc_client_new(m_device, service, &m_fileManager);
-                if (aerr != AFC_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
-            });
+void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QString bundleId)
+{
+    afc_filemanager_action([&, this](afc_client_t& afc){
+        int percentage = 0;
+        int CHUNK_SIZE = 8192;
+        uint64_t handle = 0;
+        afc_error_t err = afc_file_open(afc, devicePath.toUtf8().data(), AFC_FOPEN_RDONLY, &handle);
+        if (err != AFC_E_SUCCESS) {
+            emit FileManagerChanged(GenericStatus::FAILED, percentage, devicePath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open remote file: " + devicePath + "! " + QString::number(err));
+            return;
         }
 
-        afc_traverse_recursive(m_fileManager, startPath.toStdString().c_str());
+        FILE *f = fopen(localPath.toUtf8().data(), "wb");
+        if (!f) {
+            afc_file_close(afc, handle);
+            emit FileManagerChanged(GenericStatus::FAILED, percentage, devicePath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open local file for writing: " + localPath + "! " + QString::number(err));
+            return;
+        }
 
-        emit AccessibleStorageReceived(m_accessibleStorage);
-    });
+        char **info = NULL;
+        quint64 size_bytes = 0;
+        if (afc_get_file_info(afc, devicePath.toUtf8().data(), &info) == AFC_E_SUCCESS && info)
+        {
+            for (int j = 0; info[j]; j += 2) {
+                if (std::strcmp(info[j], "st_size") == 0) {
+                    // Convert string to uint64_t
+                    try {
+                        size_bytes = std::stoull(info[j + 1]);
+                    } catch (...) {
+                        size_bytes = 0;
+                    }
+                }
+            }
+            afc_dictionary_free(info);
+        }
+
+        quint64 written_bytes = 0;
+        uint32_t bytes_read = 0;
+        char buffer[CHUNK_SIZE];
+        while (afc_file_read(afc, handle, buffer, CHUNK_SIZE, &bytes_read) == AFC_E_SUCCESS && bytes_read > 0) {
+            fwrite(buffer, 1, bytes_read, f);
+            written_bytes += bytes_read;
+            percentage = int((float(written_bytes) / (float(size_bytes) * 2.f)) * 100.f);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, percentage, devicePath);
+        }
+
+        fclose(f);
+        afc_file_close(afc, handle);
+        emit FileManagerChanged(GenericStatus::DOWNLOADED, percentage, devicePath);
+    }, bundleId);
+}
+
+void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
+{
+    afc_filemanager_action([&, this](afc_client_t& afc){
+        afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
+        if (err == AFC_E_SUCCESS) {
+            emit FileManagerChanged(GenericStatus::DELETED, 100, devicePath);
+        } else {
+            emit FileManagerChanged(GenericStatus::FAILED, 100, devicePath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to delete: " + devicePath + "! " + QString::number(err));
+        }
+    }, bundleId);
 }
 
 int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
@@ -413,4 +468,47 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
         }
     }
     afc_dictionary_free(file_list);
+}
+
+void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId)
+{
+    //AsyncManager::Get()->StartAsyncRequest([&, this]() {
+        if (!bundleId.isEmpty()) {
+            QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
+            StartLockdown(!m_houseArrest, serviceIds, [this, bundleId](QString& service_id, lockdownd_service_descriptor_t& service){
+                house_arrest_error_t err = house_arrest_client_new(m_device, service, &m_houseArrest);
+                if (err != HOUSE_ARREST_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+
+                err = house_arrest_send_command(m_houseArrest, "VendContainer", bundleId.toUtf8().data());
+                if (err != HOUSE_ARREST_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
+
+                afc_error_t aerr = afc_client_new_from_house_arrest_client(m_houseArrest, &m_fileManager);
+                if (aerr != AFC_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + service_id + " client! " + QString::number(aerr));
+            });
+        } else {
+            QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
+            StartLockdown(!m_fileManager, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+                afc_error_t aerr = afc_client_new(m_device, service, &m_fileManager);
+                if (aerr != AFC_E_SUCCESS)
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
+            });
+        }
+
+        //call function pass from params
+        action(m_fileManager);
+
+        if (m_fileManager)
+        {
+            afc_client_free(m_fileManager);
+            m_fileManager = nullptr;
+        }
+        if (m_houseArrest)
+        {
+            house_arrest_client_free(m_houseArrest);
+            m_houseArrest = nullptr;
+        }
+    //});
 }

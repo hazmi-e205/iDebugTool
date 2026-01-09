@@ -60,6 +60,15 @@ enum MessagesType {
     MSG_WARN
 };
 
+enum GenericStatus {
+    SUCCESS,
+    FAILED,
+    IN_PROGRESS,
+    UPLOADED,
+    DOWNLOADED,
+    DELETED
+};
+
 class DeviceBridge : public QObject
 {
     Q_OBJECT
@@ -122,12 +131,16 @@ signals:
          quint64 sizeInBytes = 0;
      };
      void GetAccessibleStorage(QString startPath = "/", QString bundleId = "");
+     void UploadToStorage(QString localPath, QString devicePath, QString bundleId = "");
+     void DownloadFromStorage(QString devicePath, QString localPath, QString bundleId = "");
+     void DeleteFromStorage(QString devicePath, QString bundleId = "");
 
  private:
      int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
      void afc_traverse_recursive(afc_client_t afc, const char* path);
+     void afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
      afc_client_t m_afc;
      afc_client_t m_crashlog;
      afc_client_t m_fileManager;
@@ -137,6 +150,7 @@ signals:
  signals:
      void CrashlogsStatusChanged(QString messages);
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents);
+     void FileManagerChanged(GenericStatus status, int percentage, QString message);
 
      //InstallerBridge
  public:
