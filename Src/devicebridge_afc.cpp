@@ -460,7 +460,7 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
                 }
             }
 
-            m_accessibleStorage[QString(full_path)] = FileProperty(is_dir, size_bytes);
+            m_accessibleStorage[QString(full_path)] = FileProperty{is_dir, size_bytes};
             qDebug() << QString(full_path) << " | " << is_dir << " | " << size_bytes;
 
             afc_dictionary_free(info);
