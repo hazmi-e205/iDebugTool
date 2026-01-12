@@ -8,9 +8,12 @@
 
 #ifdef WIN32
 #include <windows.h>
+#include <sys/stat.h>
 #define S_IFLNK S_IFREG
 #define S_IFSOCK S_IFREG
 #else
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 #include <string.h>
