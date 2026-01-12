@@ -63,10 +63,15 @@ enum MessagesType {
 enum GenericStatus {
     SUCCESS,
     FAILED,
-    IN_PROGRESS,
-    UPLOADED,
-    DOWNLOADED,
-    DELETED
+    IN_PROGRESS
+};
+
+enum FileOperation {
+    UPLOAD,
+    DOWNLOAD,
+    RENAME,
+    DELETE_OP,
+    MAKE_FOLDER
 };
 
 class DeviceBridge : public QObject
@@ -134,6 +139,8 @@ signals:
      void UploadToStorage(QString localPath, QString devicePath, QString bundleId = "");
      void DownloadFromStorage(QString devicePath, QString localPath, QString bundleId = "");
      void DeleteFromStorage(QString devicePath, QString bundleId = "");
+     void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
+     void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
 
  private:
      int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
@@ -150,7 +157,7 @@ signals:
  signals:
      void CrashlogsStatusChanged(QString messages);
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents);
-     void FileManagerChanged(GenericStatus status, int percentage, QString message);
+     void FileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
 
      //InstallerBridge
  public:

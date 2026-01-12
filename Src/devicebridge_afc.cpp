@@ -45,10 +45,10 @@ void DeviceBridge::UploadToStorage(QString localPath, QString devicePath, QStrin
         auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
         {
             percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
-            emit FileManagerChanged(GenericStatus::IN_PROGRESS, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::UPLOAD, percentage, devicePath);
         };
         int result = afc_upload_file(afc, localPath, devicePath, callback);
-        emit FileManagerChanged(result == 0 ? GenericStatus::UPLOADED : GenericStatus::FAILED, percentage, devicePath);
+        emit FileManagerChanged(result == 0 ? GenericStatus::SUCCESS : GenericStatus::FAILED, FileOperation::UPLOAD, percentage, devicePath);
     }, bundleId);
 }
 
@@ -60,7 +60,7 @@ void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QS
         uint64_t handle = 0;
         afc_error_t err = afc_file_open(afc, devicePath.toUtf8().data(), AFC_FOPEN_RDONLY, &handle);
         if (err != AFC_E_SUCCESS) {
-            emit FileManagerChanged(GenericStatus::FAILED, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DOWNLOAD, percentage, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open remote file: " + devicePath + "! " + QString::number(err));
             return;
         }
@@ -68,7 +68,7 @@ void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QS
         FILE *f = fopen(localPath.toUtf8().data(), "wb");
         if (!f) {
             afc_file_close(afc, handle);
-            emit FileManagerChanged(GenericStatus::FAILED, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DOWNLOAD, percentage, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open local file for writing: " + localPath + "! " + QString::number(err));
             return;
         }
@@ -97,12 +97,12 @@ void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QS
             fwrite(buffer, 1, bytes_read, f);
             written_bytes += bytes_read;
             percentage = int((float(written_bytes) / (float(size_bytes) * 2.f)) * 100.f);
-            emit FileManagerChanged(GenericStatus::IN_PROGRESS, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::DOWNLOAD, percentage, devicePath);
         }
 
         fclose(f);
         afc_file_close(afc, handle);
-        emit FileManagerChanged(GenericStatus::DOWNLOADED, percentage, devicePath);
+        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DOWNLOAD, percentage, devicePath);
     }, bundleId);
 }
 
@@ -111,10 +111,36 @@ void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
     afc_filemanager_action([&, this](afc_client_t& afc){
         afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
-            emit FileManagerChanged(GenericStatus::DELETED, 100, devicePath);
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DELETE_OP, 100, devicePath);
         } else {
-            emit FileManagerChanged(GenericStatus::FAILED, 100, devicePath);
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DELETE_OP, 100, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to delete: " + devicePath + "! " + QString::number(err));
+        }
+    }, bundleId);
+}
+
+void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
+{
+    afc_filemanager_action([&, this](afc_client_t& afc){
+        afc_error_t err = afc_make_directory(afc, devicePath.toUtf8().data());
+        if (err == AFC_E_SUCCESS) {
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::MAKE_FOLDER, 100, devicePath);
+        } else {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::MAKE_FOLDER, 100, devicePath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to make folder: " + devicePath + "! " + QString::number(err));
+        }
+    }, bundleId);
+}
+
+void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bundleId)
+{
+    afc_filemanager_action([&, this](afc_client_t& afc){
+        afc_error_t err = afc_rename_path(afc, oldPath.toUtf8().data(), newPath.toUtf8().data());
+        if (err == AFC_E_SUCCESS) {
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::RENAME, 100, newPath);
+        } else {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::RENAME, 100, newPath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to rename: " + oldPath + " to " + newPath + "! " + QString::number(err));
         }
     }, bundleId);
 }
