@@ -308,7 +308,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>3</number>
            </property>
            <widget class="QWidget" name="dashboardTab">
             <attribute name="title">
@@ -325,7 +325,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>907</width>
+                  <width>982</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -2126,7 +2126,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>893</width>
+                  <width>968</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2710,7 +2710,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>907</width>
+                  <width>982</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -3536,6 +3536,87 @@ color: rgb(255, 255, 255);</string>
                  </item>
                 </layout>
                </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="fileManagerTab">
+            <attribute name="title">
+             <string>File Manager</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_21">
+             <item>
+              <widget class="QWidget" name="widget_32" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_37">
+                <item>
+                 <widget class="QLabel" name="label_19">
+                  <property name="text">
+                   <string>Storage Access</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="storageOption">
+                  <property name="sizeAdjustPolicy">
+                   <enum>QComboBox::AdjustToContents</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_20">
+                  <property name="text">
+                   <string>Search</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="searchFileEdit"/>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="downloadFileBtn">
+                  <property name="text">
+                   <string>Download</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="uploadFileBtn">
+                  <property name="text">
+                   <string>Upload</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="deleteFileBtn">
+                  <property name="text">
+                   <string>Delete</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="renameFileBtn">
+                  <property name="text">
+                   <string>Rename</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="makeFolderBtn">
+                  <property name="text">
+                   <string>Make Folder</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_33" native="true">
+               <layout class="QVBoxLayout" name="verticalLayout_37">
+                <item>
+                 <widget class="QTreeView" name="fileBrowserTree"/>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>

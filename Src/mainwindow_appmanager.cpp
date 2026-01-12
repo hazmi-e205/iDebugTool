@@ -75,6 +75,10 @@ void MainWindow::RefreshPIDandBundleID()
     ui->bundleIds->clear();
     ui->bundleIds->addItems(m_installedApps.keys());
 
+    ui->storageOption->clear();
+    ui->storageOption->addItem("User's Data");
+    ui->storageOption->addItems(m_installedApps.keys());
+
     QString old_string = ui->pidEdit->currentText();
     ui->pidEdit->clear();
     ui->pidEdit->addItems(DeviceBridge::GetPIDOptions(m_installedApps));

@@ -141,6 +141,14 @@ private slots:
     void OnStacktraceThreadChanged(QString threadName);
     void OnSymbolicateResult2(unsigned int progress, SymbolicatedData data, bool error);
 
+    //FileManager UI
+private:
+    void SetupFileManagerUI();
+private slots:
+    void OnStorageChanged(QString storage);
+    void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents);
+    void OnFileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
+
     //Toolbox UI
 private:
     ImageMounter *m_imageMounter;

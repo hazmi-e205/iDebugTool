@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupAppManagerUI();
     SetupRecodesignerUI();
     SetupCrashlogsUI();
+    SetupFileManagerUI();
     SetupToolboxUI();
     SetupDebuggerUI();
 
@@ -234,7 +235,7 @@ void MainWindow::OnClickedEvent(QObject* object)
         ui->installPath->setText(filepath);
     }
 
-    if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName() || object->objectName() == ui->bundleEdit->objectName())
+    if(object->objectName() == ui->bundleIds->objectName() || object->objectName() == ui->pidEdit->objectName() || object->objectName() == ui->bundleEdit->objectName() || object->objectName() == ui->storageOption->objectName())
     {
         RefreshPIDandBundleID();
     }
