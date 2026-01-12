@@ -325,7 +325,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>982</width>
+                  <width>989</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -2126,7 +2126,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>968</width>
+                  <width>975</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2710,7 +2710,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>982</width>
+                  <width>989</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -3544,9 +3544,13 @@ color: rgb(255, 255, 255);</string>
             <attribute name="title">
              <string>File Manager</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_21">
+            <layout class="QVBoxLayout" name="verticalLayout_18">
              <item>
               <widget class="QWidget" name="widget_32" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(7, 148, 255);
+color: rgb(255, 255, 255);</string>
+               </property>
                <layout class="QHBoxLayout" name="horizontalLayout_37">
                 <item>
                  <widget class="QLabel" name="label_19">
@@ -3573,16 +3577,82 @@ color: rgb(255, 255, 255);</string>
                  <widget class="QLineEdit" name="searchFileEdit"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="downloadFileBtn">
+                 <widget class="QPushButton" name="refreshFileBtn">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="text">
-                   <string>Download</string>
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/restart.png</normaloff>:/res/Assets/restart.png</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>18</width>
+                    <height>18</height>
+                   </size>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="makeFolderBtn">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/new_folder.png</normaloff>:/res/Assets/new_folder.png</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>18</width>
+                    <height>18</height>
+                   </size>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="downloadFileBtn">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Pull</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/download.png</normaloff>:/res/Assets/download.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QPushButton" name="uploadFileBtn">
                   <property name="text">
-                   <string>Upload</string>
+                   <string>Push</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/upload.png</normaloff>:/res/Assets/upload.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -3591,6 +3661,13 @@ color: rgb(255, 255, 255);</string>
                   <property name="text">
                    <string>Delete</string>
                   </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/trash.png</normaloff>:/res/Assets/trash.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
                  </widget>
                 </item>
                 <item>
@@ -3598,12 +3675,12 @@ color: rgb(255, 255, 255);</string>
                   <property name="text">
                    <string>Rename</string>
                   </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="makeFolderBtn">
-                  <property name="text">
-                   <string>Make Folder</string>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/modify.png</normaloff>:/res/Assets/modify.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -3611,13 +3688,7 @@ color: rgb(255, 255, 255);</string>
               </widget>
              </item>
              <item>
-              <widget class="QWidget" name="widget_33" native="true">
-               <layout class="QVBoxLayout" name="verticalLayout_37">
-                <item>
-                 <widget class="QTreeView" name="fileBrowserTree"/>
-                </item>
-               </layout>
-              </widget>
+              <widget class="QTreeView" name="fileBrowserTree"/>
              </item>
             </layout>
            </widget>

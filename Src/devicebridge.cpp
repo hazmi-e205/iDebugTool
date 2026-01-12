@@ -295,19 +295,6 @@ void DeviceBridge::StartServices()
             return;
         }
     });
-
-    // For testing only
-    qDebug() << "FileManager :: Inital";
-    GetAccessibleStorage("/", "com.gameloft.asphalt9");
-
-    qDebug() << "FileManager :: Upload";
-    UploadToStorage("C:\\Users\\hazmi\\Documents\\SimpleEntra.zip", "/Documents/SimpleUpload.zip", "com.gameloft.asphalt9");
-    GetAccessibleStorage("/", "com.gameloft.asphalt9");
-    DownloadFromStorage("/Documents/SimpleUpload.zip", "C:\\Users\\hazmi\\Documents\\SimpleDownload.zip", "com.gameloft.asphalt9");
-
-    qDebug() << "FileManager :: Delete";
-    DeleteFromStorage("/Documents/SimpleUpload.zip", "com.gameloft.asphalt9");
-    GetAccessibleStorage("/", "com.gameloft.asphalt9");
 }
 
 void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)

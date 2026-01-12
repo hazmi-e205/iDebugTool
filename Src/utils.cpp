@@ -267,6 +267,25 @@ void MassStylesheet(STYLE_TYPE styleType, QList<QWidget *> widgets)
                 + "}";
         break;
 
+    case STYLE_TYPE::FLAT_BUTTON:
+        stylesheet = QString()
+                     + "QPushButton {"
+                     + "     border: 1px solid rgba(0, 0, 0, 0);"
+                     + "     border-radius: 10px;"
+                     + "     padding: 4px;"
+                     + "     padding-right: 0px;"
+                     + "     padding-left: 0px;"
+                     + "     background-color: rgba(255, 255, 255, 0);"
+                     + "     color: rgb(255, 255, 255);"
+                     + "}"
+                     + "QPushButton:hover {"
+                     + "     border: 1px solid rgb(0, 170, 255);"
+                     + "}"
+                     + "QPushButton:focus {"
+                     + "     border: 1px solid rgb(85, 170, 255);"
+                     + "}";
+        break;
+
     case STYLE_TYPE::ROUNDED_EDIT_LIGHT:
         stylesheet = QString()
                 + "QLineEdit {"

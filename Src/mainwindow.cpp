@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_loadingCodesign(new LoadingDialog(this))
     , m_loadingSymbolicate(new LoadingDialog(this))
     , m_stacktraceModel(nullptr)
+    , m_fileManagerModel(nullptr)
     , m_imageMounter(new ImageMounter(this))
 {
     ui->setupUi(this);
@@ -116,6 +117,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->clearDebugBtn
                    << ui->saveSymbolicatedBtn);
 
+    MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>() << ui->refreshFileBtn << ui->downloadFileBtn << ui->uploadFileBtn << ui->deleteFileBtn << ui->renameFileBtn << ui->makeFolderBtn);
+
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
                    << ui->maxShownLogs
@@ -137,7 +140,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->searchDbgEdit
                    << ui->excludeDbgEdit
                    << ui->envEdit
-                   << ui->argsEdit);
+                   << ui->argsEdit
+                   << ui->searchFileEdit);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT, QList<QWidget*>()
                    << ui->bundleIds
@@ -148,7 +152,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->provisionExt1Edit
                    << ui->provisionExt2Edit
                    << ui->bundleEdit
-                   << ui->threadEdit);
+                   << ui->threadEdit
+                   << ui->storageOption);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
@@ -173,6 +178,9 @@ MainWindow::~MainWindow()
     delete m_loadingDevice;
     delete m_loadingCodesign;
     delete m_loadingSymbolicate;
+    if (m_fileManagerModel)
+        m_fileManagerModel->clear();
+    delete m_fileManagerModel;
     AsyncManager::Destroy();
     delete ui;
 }

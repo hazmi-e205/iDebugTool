@@ -41,7 +41,8 @@ enum STYLE_TYPE
 {
     ROUNDED_BUTTON_LIGHT,
     ROUNDED_EDIT_LIGHT,
-    ROUNDED_COMBOBOX_LIGHT
+    ROUNDED_COMBOBOX_LIGHT,
+    FLAT_BUTTON
 };
 void MassStylesheet(STYLE_TYPE styleType, QList<QWidget*> widgets);
 void DecorateSplitter(QWidget* splitterWidget, int index);
