@@ -51,3 +51,5 @@ assert.log
 /Scripts/premake5**
 /Qt
 /Qt**
+/.venv
+/venv
