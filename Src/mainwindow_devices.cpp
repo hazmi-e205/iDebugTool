@@ -86,16 +86,6 @@ void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
         rowData << new QStandardItem(devices[udid] == idevice_connection_type::CONNECTION_NETWORK ? "network" : "usbmuxd");
         m_devicesModel->appendRow(rowData);
     }
-
-    if (!DeviceBridge::Get()->IsConnected())
-    {
-        ui->statusbar->showMessage("Idle");
-        if (devices.size() > 0)
-        {
-            DeviceBridge::Get()->ConnectToDevice(devices.firstKey());
-        }
-        UpdateInfoWidget();
-    }
 }
 
 void MainWindow::OnDeviceConnected()
