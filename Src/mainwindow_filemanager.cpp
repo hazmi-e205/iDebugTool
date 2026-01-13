@@ -4,19 +4,28 @@
 #include "userconfigs.h"
 #include <QJsonObject>
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QStyle>
 
 void MainWindow::SetupFileManagerUI()
 {
     if (!m_fileManagerModel) {
         m_fileManagerModel = new QStandardItemModel();
-        m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name");
+        m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
         ui->fileBrowserTree->setModel(m_fileManagerModel);
         ui->fileBrowserTree->setSelectionMode(QAbstractItemView::SingleSelection);
         ui->fileBrowserTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->fileBrowserTree->setRootIsDecorated(true);
         ui->fileBrowserTree->setItemsExpandable(true);
         ui->fileBrowserTree->setExpandsOnDoubleClick(true);
+        ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
+        ui->fileBrowserTree->header()->setStretchLastSection(false);
+        int totalWidth = ui->fileBrowserTree->width();
+        if (totalWidth > 0) {
+            int nameWidth = (totalWidth * 3) / 4;
+            ui->fileBrowserTree->header()->resizeSection(0, nameWidth);
+            ui->fileBrowserTree->header()->resizeSection(1, totalWidth - nameWidth);
+        }
     }
     connect(ui->storageOption, SIGNAL(textActivated(QString)), this, SLOT(OnStorageChanged(QString)));
     connect(DeviceBridge::Get(), SIGNAL(AccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty>)), this, SLOT(OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty>)));
@@ -40,16 +49,28 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     if (!m_fileManagerModel)
         SetupFileManagerUI();
 
+    int cachedNameWidth = ui->fileBrowserTree->header()->sectionSize(0);
+    int cachedSizeWidth = ui->fileBrowserTree->header()->sectionSize(1);
+    if (cachedNameWidth > 0 && cachedSizeWidth > 0) {
+        m_fileManagerNameWidth = cachedNameWidth;
+        m_fileManagerSizeWidth = cachedSizeWidth;
+    }
+
     m_fileManagerModel->clear();
-    m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name");
+    m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
 
     QIcon dirIcon = style()->standardIcon(QStyle::SP_DirIcon);
     QIcon fileIcon = style()->standardIcon(QStyle::SP_FileIcon);
+    auto formatSize = [](quint64 bytes) -> QString
+    {
+        return BytesToString(bytes);
+    };
 
     QMap<QString, QStandardItem*> pathMap;
     QStandardItem *rootItem = new QStandardItem(dirIcon, "/");
+    QStandardItem *rootSizeItem = new QStandardItem("");
     rootItem->setData("/", Qt::UserRole);
-    m_fileManagerModel->appendRow(rootItem);
+    m_fileManagerModel->appendRow(QList<QStandardItem*>() << rootItem << rootSizeItem);
     pathMap["/"] = rootItem;
 
     auto ensureDirPath = [&](const QString &path)
@@ -62,8 +83,9 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
             currentPath = (currentPath == "/") ? "/" + parts[i] : currentPath + "/" + parts[i];
             if (!pathMap.contains(currentPath)) {
                 QStandardItem *dirItem = new QStandardItem(dirIcon, parts[i]);
+                QStandardItem *dirSizeItem = new QStandardItem("");
                 dirItem->setData(currentPath, Qt::UserRole);
-                parentItem->appendRow(dirItem);
+                parentItem->appendRow(QList<QStandardItem*>() << dirItem << dirSizeItem);
                 pathMap[currentPath] = dirItem;
             }
             parentItem = pathMap[currentPath];
@@ -94,13 +116,20 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
         if (!pathMap.contains(path)) {
             QStandardItem *parentItem = pathMap.value(parentPath, pathMap["/"]);
             QStandardItem *fileItem = new QStandardItem(fileIcon, QFileInfo(path).fileName());
+            QStandardItem *fileSizeItem = new QStandardItem(formatSize(prop.sizeInBytes));
             fileItem->setData(path, Qt::UserRole);
-            parentItem->appendRow(fileItem);
+            parentItem->appendRow(QList<QStandardItem*>() << fileItem << fileSizeItem);
             pathMap[path] = fileItem;
         }
     }
 
     ui->fileBrowserTree->expandToDepth(0);
+    ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
+    ui->fileBrowserTree->header()->setStretchLastSection(false);
+    if (m_fileManagerNameWidth > 0 && m_fileManagerSizeWidth > 0) {
+        ui->fileBrowserTree->header()->resizeSection(0, m_fileManagerNameWidth);
+        ui->fileBrowserTree->header()->resizeSection(1, m_fileManagerSizeWidth);
+    }
 }
 
 void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message)

@@ -226,7 +226,7 @@ QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidg
     return result;
 }
 
-QString BytesToString(uint32_t bytes)
+QString BytesToString(quint64 bytes)
 {
     float num = (float)bytes;
     QStringList list;

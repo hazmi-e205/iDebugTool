@@ -325,7 +325,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>989</width>
+                  <width>976</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -2126,7 +2126,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>975</width>
+                  <width>962</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2710,7 +2710,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>989</width>
+                  <width>976</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -3564,6 +3564,11 @@ color: rgb(255, 255, 255);</string>
                   <property name="sizeAdjustPolicy">
                    <enum>QComboBox::AdjustToContents</enum>
                   </property>
+                  <item>
+                   <property name="text">
+                    <string>Choose your storage access...</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                 <item>

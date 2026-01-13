@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_loadingSymbolicate(new LoadingDialog(this))
     , m_stacktraceModel(nullptr)
     , m_fileManagerModel(nullptr)
+    , m_fileManagerNameWidth(-1)
+    , m_fileManagerSizeWidth(-1)
     , m_imageMounter(new ImageMounter(this))
 {
     ui->setupUi(this);

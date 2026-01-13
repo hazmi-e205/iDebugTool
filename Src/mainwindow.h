@@ -144,6 +144,8 @@ private slots:
     //FileManager UI
 private:
     QStandardItemModel *m_fileManagerModel;
+    int m_fileManagerNameWidth;
+    int m_fileManagerSizeWidth;
     void SetupFileManagerUI();
 private slots:
     void OnStorageChanged(QString storage);
