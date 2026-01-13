@@ -233,9 +233,12 @@ void MainWindow::OnRenameFileClicked()
 {
     FileManagerAction([this](QString& initialText, QString& storageAccess){
         bool ok;
-        QString text = QInputDialog::getText(this, "Rename", "Current: " + initialText, QLineEdit::Normal, initialText, &ok);
+        QFileInfo fileInfo(initialText);
+        QString folder = fileInfo.dir().absolutePath();
+        QString file = fileInfo.fileName();
+        QString text = QInputDialog::getText(this, "Rename", "Current: " + initialText, QLineEdit::Normal, file, &ok);
         if (ok) {
-            DeviceBridge::Get()->RenameToStorage(initialText, text, storageAccess);
+            DeviceBridge::Get()->RenameToStorage(initialText, folder + "/" + text, storageAccess);
         }
         else {
             m_loadingFileOperation->close();
