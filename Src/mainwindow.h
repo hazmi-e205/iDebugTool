@@ -144,13 +144,23 @@ private slots:
     //FileManager UI
 private:
     QStandardItemModel *m_fileManagerModel;
+    LoadingDialog *m_loadingFileOperation;
+    QMap<QString, DeviceBridge::FileProperty> m_cachedFiles;
     int m_fileManagerNameWidth;
     int m_fileManagerSizeWidth;
     void SetupFileManagerUI();
+    void FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder = true);
 private slots:
     void OnStorageChanged(QString storage);
     void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents);
     void OnFileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
+    void OnRefreshFileBrowserClicked();
+    void OnPullFileClicked();
+    void OnPushFileClicked();
+    void OnDeleteFileClicked();
+    void OnRenameFileClicked();
+    void OnMakeFolderClicked();
+    void OnFileFilterChanged(QString filter);
 
     //Toolbox UI
 private:

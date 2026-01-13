@@ -67,8 +67,9 @@ enum GenericStatus {
 };
 
 enum FileOperation {
-    UPLOAD,
-    DOWNLOAD,
+    FETCH,
+    PUSH,
+    PULL,
     RENAME,
     DELETE_OP,
     MAKE_FOLDER
@@ -136,8 +137,8 @@ signals:
          quint64 sizeInBytes = 0;
      };
      void GetAccessibleStorage(QString startPath = "/", QString bundleId = "");
-     void UploadToStorage(QString localPath, QString devicePath, QString bundleId = "");
-     void DownloadFromStorage(QString devicePath, QString localPath, QString bundleId = "");
+     void PushToStorage(QString localPath, QString devicePath, QString bundleId = "");
+     void PullFromStorage(QString devicePath, QString localPath, QString bundleId = "");
      void DeleteFromStorage(QString devicePath, QString bundleId = "");
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");

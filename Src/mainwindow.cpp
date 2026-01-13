@@ -30,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_loadingSymbolicate(new LoadingDialog(this))
     , m_stacktraceModel(nullptr)
     , m_fileManagerModel(nullptr)
+    , m_loadingFileOperation(new LoadingDialog(this))
     , m_fileManagerNameWidth(-1)
     , m_fileManagerSizeWidth(-1)
     , m_imageMounter(new ImageMounter(this))
@@ -119,7 +120,13 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->clearDebugBtn
                    << ui->saveSymbolicatedBtn);
 
-    MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>() << ui->refreshFileBtn << ui->downloadFileBtn << ui->uploadFileBtn << ui->deleteFileBtn << ui->renameFileBtn << ui->makeFolderBtn);
+    MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>()
+                   << ui->refreshFileBtn
+                   << ui->pullFileBtn
+                   << ui->pushFileBtn
+                   << ui->deleteFileBtn
+                   << ui->renameFileBtn
+                   << ui->makeFolderBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID
@@ -180,6 +187,7 @@ MainWindow::~MainWindow()
     delete m_loadingDevice;
     delete m_loadingCodesign;
     delete m_loadingSymbolicate;
+    delete m_loadingFileOperation;
     if (m_fileManagerModel)
         m_fileManagerModel->clear();
     delete m_fileManagerModel;

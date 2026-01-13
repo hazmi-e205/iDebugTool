@@ -31,36 +31,38 @@ void DeviceBridge::SyncCrashlogs(QString path)
 
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         m_accessibleStorage.clear();
+        emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 50, bundleId);
         afc_traverse_recursive(afc, startPath.toStdString().c_str());
+        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::FETCH, 100, bundleId);
         emit AccessibleStorageReceived(m_accessibleStorage);
     }, bundleId);
 }
 
-void DeviceBridge::UploadToStorage(QString localPath, QString devicePath, QString bundleId)
+void DeviceBridge::PushToStorage(QString localPath, QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         int percentage = 0;
         auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
         {
             percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
-            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::UPLOAD, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH, percentage, devicePath);
         };
         int result = afc_upload_file(afc, localPath, devicePath, callback);
-        emit FileManagerChanged(result == 0 ? GenericStatus::SUCCESS : GenericStatus::FAILED, FileOperation::UPLOAD, percentage, devicePath);
+        emit FileManagerChanged(result == 0 ? GenericStatus::SUCCESS : GenericStatus::FAILED, FileOperation::PUSH, percentage, devicePath);
     }, bundleId);
 }
 
-void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QString bundleId)
+void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         int percentage = 0;
         int CHUNK_SIZE = 8192;
         uint64_t handle = 0;
         afc_error_t err = afc_file_open(afc, devicePath.toUtf8().data(), AFC_FOPEN_RDONLY, &handle);
         if (err != AFC_E_SUCCESS) {
-            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DOWNLOAD, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open remote file: " + devicePath + "! " + QString::number(err));
             return;
         }
@@ -68,7 +70,7 @@ void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QS
         FILE *f = fopen(localPath.toUtf8().data(), "wb");
         if (!f) {
             afc_file_close(afc, handle);
-            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DOWNLOAD, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open local file for writing: " + localPath + "! " + QString::number(err));
             return;
         }
@@ -97,18 +99,18 @@ void DeviceBridge::DownloadFromStorage(QString devicePath, QString localPath, QS
             fwrite(buffer, 1, bytes_read, f);
             written_bytes += bytes_read;
             percentage = int((float(written_bytes) / (float(size_bytes) * 2.f)) * 100.f);
-            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::DOWNLOAD, percentage, devicePath);
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, percentage, devicePath);
         }
 
         fclose(f);
         afc_file_close(afc, handle);
-        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DOWNLOAD, percentage, devicePath);
+        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, percentage, devicePath);
     }, bundleId);
 }
 
 void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DELETE_OP, 100, devicePath);
@@ -121,7 +123,7 @@ void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         afc_error_t err = afc_make_directory(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::MAKE_FOLDER, 100, devicePath);
@@ -134,7 +136,7 @@ void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bundleId)
 {
-    afc_filemanager_action([&, this](afc_client_t& afc){
+    afc_filemanager_action([=, this](afc_client_t& afc){
         afc_error_t err = afc_rename_path(afc, oldPath.toUtf8().data(), newPath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::RENAME, 100, newPath);
@@ -500,7 +502,7 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
 
 void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId)
 {
-    //AsyncManager::Get()->StartAsyncRequest([&, this]() {
+    AsyncManager::Get()->StartAsyncRequest([=, this]() {
         if (!bundleId.isEmpty()) {
             QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
             StartLockdown(!m_houseArrest, serviceIds, [this, bundleId](QString& service_id, lockdownd_service_descriptor_t& service){
@@ -538,5 +540,5 @@ void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)>
             house_arrest_client_free(m_houseArrest);
             m_houseArrest = nullptr;
         }
-    //});
+    });
 }

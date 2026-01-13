@@ -325,7 +325,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>976</width>
+                  <width>1012</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -2126,7 +2126,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>962</width>
+                  <width>998</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2710,7 +2710,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>976</width>
+                  <width>1012</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -3572,16 +3572,6 @@ color: rgb(255, 255, 255);</string>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_20">
-                  <property name="text">
-                   <string>Search</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLineEdit" name="searchFileEdit"/>
-                </item>
-                <item>
                  <widget class="QPushButton" name="refreshFileBtn">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -3628,7 +3618,21 @@ color: rgb(255, 255, 255);</string>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="downloadFileBtn">
+                 <widget class="QPushButton" name="deleteFileBtn">
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/trash.png</normaloff>:/res/Assets/trash.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pullFileBtn">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -3648,27 +3652,13 @@ color: rgb(255, 255, 255);</string>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="uploadFileBtn">
+                 <widget class="QPushButton" name="pushFileBtn">
                   <property name="text">
                    <string>Push</string>
                   </property>
                   <property name="icon">
                    <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
                     <normaloff>:/res/Assets/upload.png</normaloff>:/res/Assets/upload.png</iconset>
-                  </property>
-                  <property name="flat">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="deleteFileBtn">
-                  <property name="text">
-                   <string>Delete</string>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
-                    <normaloff>:/res/Assets/trash.png</normaloff>:/res/Assets/trash.png</iconset>
                   </property>
                   <property name="flat">
                    <bool>true</bool>
@@ -3688,6 +3678,16 @@ color: rgb(255, 255, 255);</string>
                    <bool>true</bool>
                   </property>
                  </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_20">
+                  <property name="text">
+                   <string>Search</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="searchFileEdit"/>
                 </item>
                </layout>
               </widget>
