@@ -227,6 +227,21 @@ void MainWindow::OnPushFileClicked()
 
 void MainWindow::OnDeleteFileClicked()
 {
+    FileManagerAction([this](QString& initialText, QString& storageAccess){
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Delete");
+        msgBox.setText("Are you sure to delete " + initialText + " from device?");
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+
+        int ret = msgBox.exec();
+        if (ret == QMessageBox::Ok) {
+            DeviceBridge::Get()->DeleteFromStorage(initialText, storageAccess);
+        }
+        else {
+            m_loadingFileOperation->close();
+        }
+    }, false);
 }
 
 void MainWindow::OnRenameFileClicked()
