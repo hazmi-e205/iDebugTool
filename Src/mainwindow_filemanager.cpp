@@ -240,7 +240,7 @@ void MainWindow::OnPullFileClicked()
 void MainWindow::OnPushFileClicked()
 {
     FileManagerAction([this](QString& initialText, QString& storageAccess){
-        QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Fush a file to device", this);
+        QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Push a file to device", this);
         if (!filepath.isEmpty()) {
             QFileInfo fileInfo(filepath);
             QString file = fileInfo.fileName();
