@@ -172,6 +172,35 @@ void DeviceBridge::ConnectToDevice(QString udid)
     });
 }
 
+void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
+{
+    AsyncManager::Get()->StartAsyncRequest([=, this]() {
+        emit ProcessStatusChanged(0, "Reset previous connection...");
+        ResetConnection();
+
+        //connect to udid
+        emit ProcessStatusChanged(10, QString::asprintf("Connecting to %s:%d...", ipAddress.toUtf8().data(), port));
+
+        idevice_new_remote(&m_device, ipAddress.toStdString().c_str(), port);
+        if (!m_device) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: No device with %s:%d!", ipAddress.toUtf8().data(), port));
+            return;
+        }
+
+        emit ProcessStatusChanged(15, "Handshaking client...");
+        lockdownd_error_t ret = lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME);
+        if (LOCKDOWN_E_SUCCESS != ret) {
+            idevice_free(m_device);
+            emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: Connecting to %s:%d failed!", ipAddress.toUtf8().data(), port));
+            return;
+        }
+
+        emit ProcessStatusChanged(20, "Getting device info...");
+        UpdateDeviceInfo();
+        emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
+    });
+}
+
 QString DeviceBridge::GetCurrentUdid()
 {
     return m_currentUdid;
@@ -188,6 +217,7 @@ void DeviceBridge::UpdateDeviceInfo()
     if(lockdownd_get_value(m_client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
         if (node) {
             QJsonDocument deviceInfo = PlistToJson(node);
+            m_currentUdid = deviceInfo["UniqueDeviceID"].toString();
             m_deviceInfo[m_currentUdid] = deviceInfo;
             plist_free(node);
             node = nullptr;

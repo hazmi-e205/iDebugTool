@@ -108,11 +108,22 @@ void MainWindow::OnSocketClicked()
 {
     if (ui->socketBtn->text() == "Connect")
     {
-        QString text = FindRegex(ui->socketBox->currentText(), "(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)");
+        QString text = FindRegex(ui->socketBox->currentText(), "(\\S+):(\\d+)");
         QStringList text_split = text.split(":");
         if (text_split.length() == 2)
         {
-            if (usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt()) >= 0)
+            if (ui->remoteType->currentText().contains("sonic", Qt::CaseInsensitive))
+            {
+                ui->socketBtn->setText("Disconnect");
+                QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
+                if (!historyData.contains(text))
+                {
+                    historyData.append(text + ";");
+                    UserConfigs::Get()->SaveData("SocketHistory", historyData);
+                }
+                DeviceBridge::Get()->ConnectToDevice(text_split[0], text_split[1].toUInt());
+            }
+            else if (ui->remoteType->currentText().contains("stf", Qt::CaseInsensitive) && usbmuxd_connect_remote(text_split[0].toUtf8().data(), text_split[1].toUInt()) >= 0)
             {
                 ui->socketBtn->setText("Disconnect");
                 QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
@@ -132,7 +143,8 @@ void MainWindow::OnSocketClicked()
     else
     {
         DeviceBridge::Get()->ResetConnection();
-        usbmuxd_disconnect_remote();
+        if (ui->remoteType->currentText().contains("stf", Qt::CaseInsensitive))
+            usbmuxd_disconnect_remote();
         ui->socketBtn->setText("Connect");
     }
 

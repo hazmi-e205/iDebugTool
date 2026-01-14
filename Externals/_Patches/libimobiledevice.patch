@@ -1,0 +1,419 @@
+diff --git a/include/libimobiledevice/libimobiledevice.h b/include/libimobiledevice/libimobiledevice.h
+index bc57778..65e6ce6 100644
+--- a/include/libimobiledevice/libimobiledevice.h
++++ b/include/libimobiledevice/libimobiledevice.h
+@@ -258,6 +258,22 @@ LIBIMOBILEDEVICE_API idevice_error_t idevice_new(idevice_t *device, const char *
+  */
+ LIBIMOBILEDEVICE_API idevice_error_t idevice_new_with_options(idevice_t *device, const char *udid, enum idevice_options options);
+ 
++/**
++ * Creates an idevice_t structure by connecting to a remote usbmux proxy
++ * (e.g. sonic-gidevice Share server) at the given IP/port.
++ *
++ * @note The resulting idevice_t structure has to be freed with
++ * idevice_free() if it is no longer used.
++ *
++ * @param device Upon calling this function, a pointer to a location of type
++ *  idevice_t. On successful return, this location will be populated.
++ * @param ip_address The IP address of the remote usbmux proxy server.
++ * @param port The TCP port of the remote usbmux proxy server.
++ *
++ * @return IDEVICE_E_SUCCESS if ok, otherwise an error code.
++ */
++LIBIMOBILEDEVICE_API idevice_error_t idevice_new_remote(idevice_t *device, const char *ip_address, uint16_t port);
++
+ /**
+  * Cleans up an idevice structure, then frees the structure itself.
+  *
+diff --git a/src/idevice.c b/src/idevice.c
+index 0af27fd..522c0bb 100644
+--- a/src/idevice.c
++++ b/src/idevice.c
+@@ -40,6 +40,7 @@
+ #endif
+ 
+ #include <usbmuxd.h>
++#include <usbmuxd-proto.h>
+ 
+ #if defined(HAVE_OPENSSL)
+ #include <openssl/err.h>
+@@ -60,6 +61,8 @@
+ #include <libimobiledevice-glue/socket.h>
+ #include <libimobiledevice-glue/thread.h>
+ 
++#include <plist/plist.h>
++
+ #include "idevice.h"
+ #include "lockdown.h"
+ #include "common/userpref.h"
+@@ -422,6 +425,229 @@ void idevice_set_debug_level(int level)
+ 	internal_set_debug_level(level);
+ }
+ 
++static const unsigned char remote_check_magic[11] = {0x61, 0x4F, 0x47, 0x32, 0x77, 0x6F, 0x53, 0x45, 0x45, 0x73, 0x2F};
++static uint32_t remote_tag = 0;
++
++static int socket_send_all(int sfd, const void *data, size_t length)
++{
++	size_t offset = 0;
++	while (offset < length) {
++		int sent = socket_send(sfd, (const char*)data + offset, length - offset);
++		if (sent <= 0) {
++			return (sent == 0) ? -ECONNRESET : sent;
++		}
++		offset += (size_t)sent;
++	}
++	return 0;
++}
++
++static int socket_recv_all(int sfd, void *data, size_t length)
++{
++	size_t offset = 0;
++	while (offset < length) {
++		int received = socket_receive(sfd, (char*)data + offset, length - offset);
++		if (received <= 0) {
++			return (received == 0) ? -ECONNRESET : received;
++		}
++		offset += (size_t)received;
++	}
++	return 0;
++}
++
++static int remote_check_recv_magic(int sfd, int is_prefix)
++{
++	uint32_t len = 0;
++	if (socket_recv_all(sfd, &len, sizeof(len)) < 0) {
++		return -1;
++	}
++
++	size_t expected_len = is_prefix ? 6 : 5;
++	if (len != expected_len) {
++		return -1;
++	}
++
++	unsigned char buf[11];
++	if (socket_recv_all(sfd, buf, len) < 0) {
++		return -1;
++	}
++
++	const unsigned char *expected = is_prefix ? remote_check_magic : remote_check_magic + 6;
++	if (memcmp(buf, expected, expected_len) != 0) {
++		return -1;
++	}
++
++	return 0;
++}
++
++static int remote_client_connect_init(int sfd)
++{
++	uint32_t len = 6;
++	unsigned char buf[4 + 6];
++	memcpy(buf, &len, sizeof(len));
++	memcpy(buf + sizeof(len), remote_check_magic, 6);
++	if (socket_send_all(sfd, buf, sizeof(buf)) < 0) {
++		return -1;
++	}
++	return remote_check_recv_magic(sfd, 0);
++}
++
++static plist_t remote_create_plist_message(const char *message_type)
++{
++	plist_t plist = plist_new_dict();
++	plist_dict_set_item(plist, "MessageType", plist_new_string(message_type));
++	plist_dict_set_item(plist, "BundleID", plist_new_string("libimobiledevice"));
++	plist_dict_set_item(plist, "ProgName", plist_new_string("libimobiledevice"));
++	plist_dict_set_item(plist, "ClientVersionString", plist_new_string(libimobiledevice_version()));
++	plist_dict_set_item(plist, "kLibUSBMuxVersion", plist_new_uint(3));
++	return plist;
++}
++
++static int remote_send_plist_packet(int sfd, plist_t plist)
++{
++	char *xml = NULL;
++	uint32_t xml_len = 0;
++	plist_to_xml(plist, &xml, &xml_len);
++	if (!xml || xml_len == 0) {
++		free(xml);
++		return -1;
++	}
++
++	struct usbmuxd_header hdr;
++	memset(&hdr, 0, sizeof(hdr));
++	hdr.length = sizeof(hdr) + xml_len;
++	hdr.version = 1;
++	hdr.message = MESSAGE_PLIST;
++	hdr.tag = ++remote_tag;
++
++	if (socket_send_all(sfd, &hdr, sizeof(hdr)) < 0) {
++		free(xml);
++		return -1;
++	}
++	if (socket_send_all(sfd, xml, xml_len) < 0) {
++		free(xml);
++		return -1;
++	}
++	free(xml);
++	return 0;
++}
++
++static int remote_receive_plist_packet(int sfd, plist_t *out_plist)
++{
++	struct usbmuxd_header hdr;
++	if (socket_recv_all(sfd, &hdr, sizeof(hdr)) < 0) {
++		return -1;
++	}
++	if (hdr.length < sizeof(hdr)) {
++		return -1;
++	}
++
++	uint32_t payload_len = hdr.length - sizeof(hdr);
++	if (payload_len == 0 || hdr.message != MESSAGE_PLIST) {
++		return -1;
++	}
++
++	char *payload = (char*)malloc(payload_len);
++	if (!payload) {
++		return -1;
++	}
++	if (socket_recv_all(sfd, payload, payload_len) < 0) {
++		free(payload);
++		return -1;
++	}
++
++	plist_t plist = NULL;
++	plist_from_xml(payload, payload_len, &plist);
++	free(payload);
++	if (!plist) {
++		return -1;
++	}
++	*out_plist = plist;
++	return 0;
++}
++
++static int remote_parse_device_properties(plist_t plist, usbmuxd_device_info_t *muxdev)
++{
++	plist_t props = plist;
++	plist_t props_node = plist_dict_get_item(plist, "Properties");
++	if (props_node && plist_get_node_type(props_node) == PLIST_DICT) {
++		props = props_node;
++	}
++
++	uint64_t val = 0;
++	plist_t node = plist_dict_get_item(props, "DeviceID");
++	if (!node || plist_get_node_type(node) != PLIST_UINT) {
++		return -1;
++	}
++	plist_get_uint_val(node, &val);
++	muxdev->handle = (uint32_t)val;
++
++	node = plist_dict_get_item(props, "ProductID");
++	if (node && plist_get_node_type(node) == PLIST_UINT) {
++		plist_get_uint_val(node, &val);
++		muxdev->product_id = (uint32_t)val;
++	}
++
++	char *udid = NULL;
++	node = plist_dict_get_item(props, "SerialNumber");
++	if (node && plist_get_node_type(node) == PLIST_STRING) {
++		plist_get_string_val(node, &udid);
++	}
++	if (!udid) {
++		node = plist_dict_get_item(props, "UDID");
++		if (node && plist_get_node_type(node) == PLIST_STRING) {
++			plist_get_string_val(node, &udid);
++		}
++	}
++	if (!udid) {
++		return -1;
++	}
++
++	memset(muxdev->udid, 0, sizeof(muxdev->udid));
++	strncpy(muxdev->udid, udid, sizeof(muxdev->udid) - 1);
++	free(udid);
++
++	muxdev->conn_type = CONNECTION_TYPE_USB;
++	memset(muxdev->conn_data, 0, sizeof(muxdev->conn_data));
++	return 0;
++}
++
++static idevice_error_t remote_usbmux_connect(int sfd, uint32_t device_id, uint16_t port)
++{
++	plist_t plist = remote_create_plist_message("Connect");
++	plist_dict_set_item(plist, "DeviceID", plist_new_uint(device_id));
++	plist_dict_set_item(plist, "PortNumber", plist_new_uint(htons(port)));
++
++	if (remote_send_plist_packet(sfd, plist) < 0) {
++		plist_free(plist);
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++	plist_free(plist);
++
++	plist_t reply = NULL;
++	if (remote_receive_plist_packet(sfd, &reply) < 0) {
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	uint64_t num = 0;
++	plist_t node = plist_dict_get_item(reply, "Number");
++	if (node && plist_get_node_type(node) == PLIST_UINT) {
++		plist_get_uint_val(node, &num);
++	}
++	plist_free(reply);
++
++	if (num != 0) {
++		if (num == 2) {
++			return IDEVICE_E_NO_DEVICE;
++		}
++		if (num == 3) {
++			return IDEVICE_E_CONNREFUSED;
++		}
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	return IDEVICE_E_SUCCESS;
++}
++
+ static idevice_t idevice_from_mux_device(usbmuxd_device_info_t *muxdev)
+ {
+ 	if (!muxdev)
+@@ -435,6 +661,8 @@ static idevice_t idevice_from_mux_device(usbmuxd_device_info_t *muxdev)
+ 	device->mux_id = muxdev->handle;
+ 	device->version = 0;
+ 	device->device_class = 0;
++	device->remote_host = NULL;
++	device->remote_port = 0;
+ 	switch (muxdev->conn_type) {
+ 	case CONNECTION_TYPE_USB:
+ 		device->conn_type = CONNECTION_USBMUXD;
+@@ -499,6 +727,72 @@ idevice_error_t idevice_new(idevice_t * device, const char *udid)
+ 	return idevice_new_with_options(device, udid, 0);
+ }
+ 
++idevice_error_t idevice_new_remote(idevice_t *device, const char *ip_address, uint16_t port)
++{
++	if (!device || !ip_address || port == 0) {
++		return IDEVICE_E_INVALID_ARG;
++	}
++
++	int sfd = socket_connect(ip_address, port);
++	if (sfd < 0) {
++		debug_info("ERROR: Connecting to remote usbmux proxy failed: %s", strerror(errno));
++		return IDEVICE_E_NO_DEVICE;
++	}
++
++	if (remote_client_connect_init(sfd) < 0) {
++		socket_close(sfd);
++		debug_info("ERROR: Remote usbmux proxy handshake failed");
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	plist_t props_plist = NULL;
++	if (remote_receive_plist_packet(sfd, &props_plist) < 0) {
++		socket_close(sfd);
++		debug_info("ERROR: Failed to receive remote device properties");
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	usbmuxd_device_info_t muxdev;
++	memset(&muxdev, 0, sizeof(muxdev));
++	if (remote_parse_device_properties(props_plist, &muxdev) < 0) {
++		plist_free(props_plist);
++		socket_close(sfd);
++		debug_info("ERROR: Failed to parse remote device properties");
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++	plist_free(props_plist);
++
++	uint32_t remote_port_le = 0;
++	if (socket_recv_all(sfd, &remote_port_le, sizeof(remote_port_le)) < 0) {
++		socket_close(sfd);
++		debug_info("ERROR: Failed to read remote forwarding port");
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	socket_close(sfd);
++
++	if (remote_port_le == 0 || remote_port_le > 65535) {
++		debug_info("ERROR: Invalid remote forwarding port: %u", remote_port_le);
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	idevice_t new_device = idevice_from_mux_device(&muxdev);
++	if (!new_device) {
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	new_device->remote_host = strdup(ip_address);
++	new_device->remote_port = (uint16_t)remote_port_le;
++	new_device->conn_type = CONNECTION_USBMUXD;
++	if (new_device->conn_data) {
++		free(new_device->conn_data);
++		new_device->conn_data = NULL;
++	}
++
++	*device = new_device;
++	return IDEVICE_E_SUCCESS;
++}
++
+ idevice_error_t idevice_free(idevice_t device)
+ {
+ 	if (!device)
+@@ -512,6 +806,9 @@ idevice_error_t idevice_free(idevice_t device)
+ 	if (device->conn_data) {
+ 		free(device->conn_data);
+ 	}
++	if (device->remote_host) {
++		free(device->remote_host);
++	}
+ 	free(device);
+ 	return ret;
+ }
+@@ -522,6 +819,35 @@ idevice_error_t idevice_connect(idevice_t device, uint16_t port, idevice_connect
+ 		return IDEVICE_E_INVALID_ARG;
+ 	}
+ 
++	if (device->remote_host && device->remote_port) {
++		int sfd = socket_connect(device->remote_host, device->remote_port);
++		if (sfd < 0) {
++			debug_info("ERROR: Connecting to remote usbmux proxy failed: %s", strerror(errno));
++			return IDEVICE_E_NO_DEVICE;
++		}
++
++		if (remote_client_connect_init(sfd) < 0) {
++			socket_close(sfd);
++			return IDEVICE_E_UNKNOWN_ERROR;
++		}
++
++		idevice_error_t rerr = remote_usbmux_connect(sfd, device->mux_id, port);
++		if (rerr != IDEVICE_E_SUCCESS) {
++			socket_close(sfd);
++			return rerr;
++		}
++
++		idevice_connection_t new_connection = (idevice_connection_t)malloc(sizeof(struct idevice_connection_private));
++		new_connection->type = CONNECTION_USBMUXD;
++		new_connection->data = (void*)(uintptr_t)sfd;
++		new_connection->ssl_data = NULL;
++		new_connection->device = device;
++		new_connection->ssl_recv_timeout = (unsigned int)-1;
++		new_connection->status = IDEVICE_E_SUCCESS;
++		*connection = new_connection;
++		return IDEVICE_E_SUCCESS;
++	}
++
+ 	if (device->conn_type == CONNECTION_USBMUXD) {
+ 		int sfd = usbmuxd_connect(device->mux_id, port);
+ 		if (sfd < 0) {
+diff --git a/src/idevice.h b/src/idevice.h
+index e05338e..1e53228 100644
+--- a/src/idevice.h
++++ b/src/idevice.h
+@@ -95,6 +95,8 @@ struct idevice_private {
+ 	uint32_t mux_id;
+ 	enum idevice_connection_type conn_type;
+ 	void *conn_data;
++	char *remote_host;
++	uint16_t remote_port;
+ 	int version;
+ 	int device_class;
+ };

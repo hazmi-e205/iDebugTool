@@ -84,6 +84,7 @@ public:
 
     void Init(QWidget *parent);
     void ConnectToDevice(QString udid);
+    void ConnectToDevice(QString ipAddress, int port);
     QString GetCurrentUdid();
     bool IsConnected();
     QJsonDocument GetDeviceInfo(QString udid = "");

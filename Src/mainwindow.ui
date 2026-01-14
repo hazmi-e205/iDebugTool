@@ -10,11 +10,11 @@
     <height>858</height>
    </rect>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QToolTip { color: #000000; background-color: #ffffe1; border: 1px solid #000000; }</string>
-  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QToolTip { color: #000000; background-color: #ffffe1; border: 1px solid #000000; }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -250,7 +250,7 @@
                </size>
               </property>
               <property name="title">
-               <string>Connect via socket (Device Farmer use case)</string>
+               <string>Connect via Remote Protocol</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
@@ -277,6 +277,20 @@
                  <property name="editable">
                   <bool>true</bool>
                  </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="remoteType">
+                 <item>
+                  <property name="text">
+                   <string>sonic</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>stf</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
                <item>
@@ -328,7 +342,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1012</width>
+                  <width>998</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -2129,7 +2143,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>998</width>
+                  <width>984</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2713,7 +2727,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>1012</width>
+                  <width>998</width>
                   <height>409</height>
                  </rect>
                 </property>
