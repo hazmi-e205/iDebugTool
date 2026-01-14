@@ -10,6 +10,9 @@
     <height>858</height>
    </rect>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QToolTip { color: #000000; background-color: #ffffe1; border: 1px solid #000000; }</string>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -3579,6 +3582,9 @@ color: rgb(255, 255, 255);</string>
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="toolTip">
+                   <string>Refresh file list</string>
+                  </property>
                   <property name="text">
                    <string/>
                   </property>
@@ -3599,6 +3605,9 @@ color: rgb(255, 255, 255);</string>
                 </item>
                 <item>
                  <widget class="QPushButton" name="makeFolderBtn">
+                  <property name="toolTip">
+                   <string>Create new folder</string>
+                  </property>
                   <property name="text">
                    <string/>
                   </property>
@@ -3619,6 +3628,9 @@ color: rgb(255, 255, 255);</string>
                 </item>
                 <item>
                  <widget class="QPushButton" name="deleteFileBtn">
+                  <property name="toolTip">
+                   <string>Delete selected file or folder</string>
+                  </property>
                   <property name="text">
                    <string/>
                   </property>
@@ -3639,6 +3651,9 @@ color: rgb(255, 255, 255);</string>
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="toolTip">
+                   <string>Pull selected item to your computer</string>
+                  </property>
                   <property name="text">
                    <string>Pull</string>
                   </property>
@@ -3653,6 +3668,9 @@ color: rgb(255, 255, 255);</string>
                 </item>
                 <item>
                  <widget class="QPushButton" name="pushFileBtn">
+                  <property name="toolTip">
+                   <string>Push a file to the device</string>
+                  </property>
                   <property name="text">
                    <string>Push</string>
                   </property>
@@ -3667,6 +3685,9 @@ color: rgb(255, 255, 255);</string>
                 </item>
                 <item>
                  <widget class="QPushButton" name="renameFileBtn">
+                  <property name="toolTip">
+                   <string>Rename selected item</string>
+                  </property>
                   <property name="text">
                    <string>Rename</string>
                   </property>
