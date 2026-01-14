@@ -200,7 +200,7 @@ QString ParseVersion(QString version_raw)
     return version_str;
 }
 
-QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidget *parent, const QString &filter)
+QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidget *parent, const QString &filter, const QString& defaultFilename)
 {
     QString last_dir = UserConfigs::Get()->GetData("Last" + titleType + "Dir", "");
     QString result;
@@ -212,7 +212,7 @@ QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidg
         break;
 
     case BROWSE_TYPE::SAVE_FILE:
-        result = QFileDialog::getSaveFileName(parent, "Save " + titleType + "...", last_dir, filter);
+        result = QFileDialog::getSaveFileName(parent, "Save " + titleType + "...", (defaultFilename.isEmpty() ? last_dir : last_dir + "/" + defaultFilename) , filter);
         break;
 
     case BROWSE_TYPE::OPEN_DIR:

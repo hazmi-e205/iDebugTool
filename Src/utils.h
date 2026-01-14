@@ -35,7 +35,7 @@ enum BROWSE_TYPE
     SAVE_FILE,
     OPEN_DIR
 };
-QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString());
+QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString(), const QString& defaultFilename = QString());
 
 enum STYLE_TYPE
 {

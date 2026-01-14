@@ -219,6 +219,17 @@ void MainWindow::OnRefreshFileBrowserClicked()
 
 void MainWindow::OnPullFileClicked()
 {
+    FileManagerAction([this](QString& initialText, QString& storageAccess){
+        if (m_cachedFiles[initialText].isDirectory || initialText.isEmpty()) {
+            QMessageBox::critical(this, "Error", "Please choose a file in File Manager's Browser!", QMessageBox::Ok);
+            return;
+        }
+        QFileInfo fileInfo(initialText);
+        QString file = fileInfo.fileName();
+        QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Pull a file to device", this, "", file);
+        if (!filepath.isEmpty())
+            DeviceBridge::Get()->PullFromStorage(initialText, filepath, storageAccess);
+    }, false);
 }
 
 void MainWindow::OnPushFileClicked()
