@@ -9,6 +9,7 @@
 #include <QStyle>
 #include <QInputDialog>
 #include <QDir>
+#include <QRegularExpression>
 
 void MainWindow::SetupFileManagerUI()
 {
@@ -161,12 +162,16 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     }
 
     ui->fileBrowserTree->expandToDepth(0);
+
+    // Restore table header width
     ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
     ui->fileBrowserTree->header()->setStretchLastSection(false);
     if (m_fileManagerNameWidth > 0 && m_fileManagerSizeWidth > 0) {
         ui->fileBrowserTree->header()->resizeSection(0, m_fileManagerNameWidth);
         ui->fileBrowserTree->header()->resizeSection(1, m_fileManagerSizeWidth);
     }
+    // Filter the contents
+    OnFileFilterChanged(ui->searchFileEdit->text());
 }
 
 void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message)
@@ -205,8 +210,8 @@ void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operat
         if (m_loadingFileOperation->isVisible())
             m_loadingFileOperation->close();
 
-        if (operation != FileOperation::FETCH)
-            OnRefreshFileBrowserClicked();
+        if (operation != FileOperation::FETCH && operation != FileOperation::PULL)
+            OnRefreshFileBrowserClicked(); //refresh
     }
 
     ui->statusbar->showMessage(message);
@@ -296,5 +301,75 @@ void MainWindow::OnMakeFolderClicked()
 
 void MainWindow::OnFileFilterChanged(QString filter)
 {
+    if (!m_fileManagerModel)
+        return;
 
+    QString trimmed = filter.trimmed();
+    QString regex;
+    if (!trimmed.isEmpty())
+        regex = "(?i)" + QRegularExpression::escape(trimmed);
+
+    auto matchesItem = [&](QStandardItem *item) -> bool
+    {
+        if (!item)
+            return false;
+        if (trimmed.isEmpty())
+            return true;
+        return !FindRegex(item->text(), regex).isEmpty();
+    };
+
+    auto isDirectoryItem = [&](QStandardItem *item) -> bool
+    {
+        if (!item)
+            return false;
+        QString path = item->data(Qt::UserRole).toString();
+        return m_cachedFiles.contains(path) && m_cachedFiles[path].isDirectory;
+    };
+
+    std::function<void(QStandardItem*)> showAllChildren;
+    showAllChildren = [&](QStandardItem *item)
+    {
+        if (!item)
+            return;
+        for (int row = 0; row < item->rowCount(); row++)
+        {
+            QStandardItem *childItem = item->child(row, 0);
+            ui->fileBrowserTree->setRowHidden(row, item->index(), false);
+            showAllChildren(childItem);
+        }
+    };
+
+    std::function<bool(QStandardItem*)> applyFilter;
+    applyFilter = [&](QStandardItem *item) -> bool
+    {
+        if (!item)
+            return false;
+
+        bool itemMatch = matchesItem(item);
+        if (itemMatch && isDirectoryItem(item)) {
+            showAllChildren(item);
+            return true;
+        }
+
+        bool anyChildMatch = false;
+        for (int row = 0; row < item->rowCount(); row++)
+        {
+            QStandardItem *childItem = item->child(row, 0);
+            bool childMatch = applyFilter(childItem);
+            ui->fileBrowserTree->setRowHidden(row, item->index(), !childMatch);
+            anyChildMatch = anyChildMatch || childMatch;
+        }
+
+        bool visible = itemMatch || anyChildMatch;
+        if (!trimmed.isEmpty() && anyChildMatch && !itemMatch)
+            ui->fileBrowserTree->expand(item->index());
+        return visible;
+    };
+
+    for (int row = 0; row < m_fileManagerModel->rowCount(); row++)
+    {
+        QStandardItem *item = m_fileManagerModel->item(row, 0);
+        bool match = applyFilter(item);
+        ui->fileBrowserTree->setRowHidden(row, QModelIndex(), !match);
+    }
 }
