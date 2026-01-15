@@ -188,7 +188,7 @@ void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
         }
 
         emit ProcessStatusChanged(15, "Handshaking client...");
-        lockdownd_error_t ret = lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME);
+        lockdownd_error_t ret = lockdownd_client_new_with_handshake_remote(m_device, &m_client, TOOL_NAME);
         if (LOCKDOWN_E_SUCCESS != ret) {
             idevice_free(m_device);
             emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: Connecting to %s:%d failed!", ipAddress.toUtf8().data(), port));

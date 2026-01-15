@@ -25,8 +25,30 @@ index bc57778..65e6ce6 100644
  /**
   * Cleans up an idevice structure, then frees the structure itself.
   *
+diff --git a/include/libimobiledevice/lockdown.h b/include/libimobiledevice/lockdown.h
+index 21669ef..103c5b2 100644
+--- a/include/libimobiledevice/lockdown.h
++++ b/include/libimobiledevice/lockdown.h
+@@ -150,6 +150,17 @@ LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new(idevice_t device, lo
+  *  LOCKDOWN_E_INVALID_CONF if configuration data is wrong
+  */
+ LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new_with_handshake(idevice_t device, lockdownd_client_t *client, const char *label);
++/**
++ * Creates a lockdownd client and performs a handshake using an existing
++ * pair record, without attempting a new pairing.
++ *
++ * @param device The device to connect to.
++ * @param client Pointer that will be filled with a new client on success.
++ * @param label  The label to use for the lockdownd session.
++ *
++ * @return LOCKDOWN_E_SUCCESS on success, or a LOCKDOWN_E_* error code otherwise.
++ */
++LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new_with_handshake_remote(idevice_t device, lockdownd_client_t *client, const char *label);
+ 
+ /**
+  * Closes the lockdownd client session if one is running and frees up the
 diff --git a/src/idevice.c b/src/idevice.c
-index 0af27fd..522c0bb 100644
+index 0af27fd..aed714a 100644
 --- a/src/idevice.c
 +++ b/src/idevice.c
 @@ -40,6 +40,7 @@
@@ -46,7 +68,7 @@ index 0af27fd..522c0bb 100644
  #include "idevice.h"
  #include "lockdown.h"
  #include "common/userpref.h"
-@@ -422,6 +425,229 @@ void idevice_set_debug_level(int level)
+@@ -422,6 +425,307 @@ void idevice_set_debug_level(int level)
  	internal_set_debug_level(level);
  }
  
@@ -273,10 +295,88 @@ index 0af27fd..522c0bb 100644
 +	return IDEVICE_E_SUCCESS;
 +}
 +
++idevice_error_t idevice_remote_read_pair_record(idevice_t device, plist_t *pair_record)
++{
++	if (!device || !pair_record || !device->remote_host || !device->remote_port) {
++		return IDEVICE_E_INVALID_ARG;
++	}
++
++	int sfd = socket_connect(device->remote_host, device->remote_port);
++	if (sfd < 0) {
++		debug_info("ERROR: Connecting to remote usbmux proxy failed: %s", strerror(errno));
++		return IDEVICE_E_NO_DEVICE;
++	}
++
++	if (remote_client_connect_init(sfd) < 0) {
++		socket_close(sfd);
++		debug_info("ERROR: Remote usbmux proxy handshake failed");
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	plist_t req = remote_create_plist_message("ReadPairRecord");
++	plist_dict_set_item(req, "PairRecordID", plist_new_string(device->udid));
++	if (remote_send_plist_packet(sfd, req) < 0) {
++		plist_free(req);
++		socket_close(sfd);
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++	plist_free(req);
++
++	plist_t reply = NULL;
++	if (remote_receive_plist_packet(sfd, &reply) < 0) {
++		socket_close(sfd);
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	uint64_t num = 0;
++	plist_t num_node = plist_dict_get_item(reply, "Number");
++	if (num_node && plist_get_node_type(num_node) == PLIST_UINT) {
++		plist_get_uint_val(num_node, &num);
++		if (num != 0) {
++			plist_free(reply);
++			socket_close(sfd);
++			if (num == 2) {
++				return IDEVICE_E_NO_DEVICE;
++			}
++			if (num == 3) {
++				return IDEVICE_E_CONNREFUSED;
++			}
++			return IDEVICE_E_UNKNOWN_ERROR;
++		}
++	}
++
++	char *record_data = NULL;
++	uint64_t record_size = 0;
++	plist_t data_node = plist_dict_get_item(reply, "PairRecordData");
++	if (!data_node || plist_get_node_type(data_node) != PLIST_DATA) {
++		plist_free(reply);
++		socket_close(sfd);
++		return IDEVICE_E_NOT_ENOUGH_DATA;
++	}
++	plist_get_data_val(data_node, &record_data, &record_size);
++	plist_free(reply);
++	socket_close(sfd);
++
++	if (!record_data || record_size == 0) {
++		free(record_data);
++		return IDEVICE_E_NOT_ENOUGH_DATA;
++	}
++
++	*pair_record = NULL;
++	plist_from_memory(record_data, (uint32_t)record_size, pair_record, NULL);
++	free(record_data);
++
++	if (!*pair_record) {
++		return IDEVICE_E_UNKNOWN_ERROR;
++	}
++
++	return IDEVICE_E_SUCCESS;
++}
++
  static idevice_t idevice_from_mux_device(usbmuxd_device_info_t *muxdev)
  {
  	if (!muxdev)
-@@ -435,6 +661,8 @@ static idevice_t idevice_from_mux_device(usbmuxd_device_info_t *muxdev)
+@@ -435,6 +739,8 @@ static idevice_t idevice_from_mux_device(usbmuxd_device_info_t *muxdev)
  	device->mux_id = muxdev->handle;
  	device->version = 0;
  	device->device_class = 0;
@@ -285,7 +385,7 @@ index 0af27fd..522c0bb 100644
  	switch (muxdev->conn_type) {
  	case CONNECTION_TYPE_USB:
  		device->conn_type = CONNECTION_USBMUXD;
-@@ -499,6 +727,72 @@ idevice_error_t idevice_new(idevice_t * device, const char *udid)
+@@ -499,6 +805,72 @@ idevice_error_t idevice_new(idevice_t * device, const char *udid)
  	return idevice_new_with_options(device, udid, 0);
  }
  
@@ -358,7 +458,7 @@ index 0af27fd..522c0bb 100644
  idevice_error_t idevice_free(idevice_t device)
  {
  	if (!device)
-@@ -512,6 +806,9 @@ idevice_error_t idevice_free(idevice_t device)
+@@ -512,6 +884,9 @@ idevice_error_t idevice_free(idevice_t device)
  	if (device->conn_data) {
  		free(device->conn_data);
  	}
@@ -368,7 +468,7 @@ index 0af27fd..522c0bb 100644
  	free(device);
  	return ret;
  }
-@@ -522,6 +819,35 @@ idevice_error_t idevice_connect(idevice_t device, uint16_t port, idevice_connect
+@@ -522,6 +897,35 @@ idevice_error_t idevice_connect(idevice_t device, uint16_t port, idevice_connect
  		return IDEVICE_E_INVALID_ARG;
  	}
  
@@ -404,11 +504,43 @@ index 0af27fd..522c0bb 100644
  	if (device->conn_type == CONNECTION_USBMUXD) {
  		int sfd = usbmuxd_connect(device->mux_id, port);
  		if (sfd < 0) {
+@@ -1209,10 +1613,18 @@ idevice_error_t idevice_connection_enable_ssl(idevice_connection_t connection)
+ 	idevice_error_t ret = IDEVICE_E_SSL_ERROR;
+ 	plist_t pair_record = NULL;
+ 
+-	userpref_error_t uerr = userpref_read_pair_record(connection->device->udid, &pair_record);
+-	if (uerr != USERPREF_E_SUCCESS) {
+-		debug_info("ERROR: Failed enabling SSL. Unable to read pair record for udid %s (%d)", connection->device->udid, uerr);
+-		return ret;
++	if (connection->device && connection->device->remote_host && connection->device->remote_port) {
++		idevice_error_t rerr = idevice_remote_read_pair_record(connection->device, &pair_record);
++		if (rerr != IDEVICE_E_SUCCESS) {
++			debug_info("ERROR: Failed enabling SSL. Unable to read remote pair record for udid %s (%d)", connection->device->udid, rerr);
++			return ret;
++		}
++	} else {
++		userpref_error_t uerr = userpref_read_pair_record(connection->device->udid, &pair_record);
++		if (uerr != USERPREF_E_SUCCESS) {
++			debug_info("ERROR: Failed enabling SSL. Unable to read pair record for udid %s (%d)", connection->device->udid, uerr);
++			return ret;
++		}
+ 	}
+ 
+ #if defined(HAVE_OPENSSL)
 diff --git a/src/idevice.h b/src/idevice.h
-index e05338e..1e53228 100644
+index e05338e..ed2d082 100644
 --- a/src/idevice.h
 +++ b/src/idevice.h
-@@ -95,6 +95,8 @@ struct idevice_private {
+@@ -49,6 +49,8 @@
+   #endif
+ #endif
+ 
++#include <plist/plist.h>
++
+ #include "common/userpref.h"
+ #include "libimobiledevice/libimobiledevice.h"
+ 
+@@ -95,8 +97,12 @@ struct idevice_private {
  	uint32_t mux_id;
  	enum idevice_connection_type conn_type;
  	void *conn_data;
@@ -417,3 +549,90 @@ index e05338e..1e53228 100644
  	int version;
  	int device_class;
  };
+ 
++idevice_error_t idevice_remote_read_pair_record(idevice_t device, plist_t *pair_record);
++
+ #endif
+diff --git a/src/lockdown.c b/src/lockdown.c
+index 32389c9..7b01d09 100644
+--- a/src/lockdown.c
++++ b/src/lockdown.c
+@@ -789,6 +789,78 @@ lockdownd_error_t lockdownd_client_new_with_handshake(idevice_t device, lockdown
+ 	return ret;
+ }
+ 
++lockdownd_error_t lockdownd_client_new_with_handshake_remote(idevice_t device, lockdownd_client_t *client, const char *label)
++{
++	if (!client) {
++		return LOCKDOWN_E_INVALID_ARG;
++	}
++
++	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;
++	lockdownd_client_t client_loc = NULL;
++	plist_t pair_record = NULL;
++	char *host_id = NULL;
++
++	ret = lockdownd_client_new(device, &client_loc, label);
++	if (LOCKDOWN_E_SUCCESS != ret) {
++		debug_info("failed to create lockdownd client.");
++		return ret;
++	}
++
++	if (device && device->remote_host && device->remote_port) {
++		if (idevice_remote_read_pair_record(device, &pair_record) != IDEVICE_E_SUCCESS) {
++			lockdownd_client_free(client_loc);
++			return LOCKDOWN_E_MISSING_PAIR_RECORD;
++		}
++	} else {
++		userpref_error_t uerr = userpref_read_pair_record(client_loc->device->udid, &pair_record);
++		if (uerr == USERPREF_E_READ_ERROR) {
++			debug_info("ERROR: Failed to retrieve pair record for %s", client_loc->device->udid);
++			lockdownd_client_free(client_loc);
++			return LOCKDOWN_E_RECEIVE_TIMEOUT;
++		}
++		if (uerr == USERPREF_E_NOENT || !pair_record) {
++			lockdownd_client_free(client_loc);
++			return LOCKDOWN_E_MISSING_PAIR_RECORD;
++		}
++		if (uerr != USERPREF_E_SUCCESS) {
++			lockdownd_client_free(client_loc);
++			return LOCKDOWN_E_INVALID_CONF;
++		}
++	}
++
++	if (pair_record) {
++		pair_record_get_host_id(pair_record, &host_id);
++		plist_free(pair_record);
++		pair_record = NULL;
++	}
++
++	if (!host_id) {
++		lockdownd_client_free(client_loc);
++		return LOCKDOWN_E_MISSING_HOST_ID;
++	}
++
++	if (device->version < IDEVICE_DEVICE_VERSION(7,0,0) && device->device_class != DEVICE_CLASS_WATCH) {
++		ret = lockdownd_validate_pair(client_loc, NULL);
++		if (ret != LOCKDOWN_E_SUCCESS) {
++			lockdownd_client_free(client_loc);
++			free(host_id);
++			return ret;
++		}
++	}
++
++	ret = lockdownd_start_session(client_loc, host_id, NULL, NULL);
++	if (LOCKDOWN_E_SUCCESS != ret) {
++		debug_info("Session opening failed.");
++		lockdownd_client_free(client_loc);
++		free(host_id);
++		return ret;
++	}
++
++	*client = client_loc;
++	free(host_id);
++	return LOCKDOWN_E_SUCCESS;
++}
++
+ /**
+  * Returns a new plist from the supplied lockdownd pair record. The caller is
+  * responsible for freeing the plist.
