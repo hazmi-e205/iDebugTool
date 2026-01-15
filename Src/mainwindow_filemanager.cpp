@@ -24,7 +24,7 @@ void MainWindow::SetupFileManagerUI()
         ui->fileBrowserTree->setExpandsOnDoubleClick(true);
         ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
         ui->fileBrowserTree->header()->setStretchLastSection(false);
-        int totalWidth = ui->fileBrowserTree->width();
+        int totalWidth = 700; // hardcoded since getting total width not accurate
         if (totalWidth > 0) {
             int nameWidth = (totalWidth * 3) / 4;
             ui->fileBrowserTree->header()->resizeSection(0, nameWidth);
