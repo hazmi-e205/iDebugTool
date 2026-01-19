@@ -91,9 +91,6 @@ public:
     void ResetConnection();
     QMap<QString, idevice_connection_type> GetDevices();
     void StartDiagnostics(DiagnosticsMode mode);
-    QStringList GetMountedImages();
-    bool IsImageMounted();
-    void MountImage(QString image_path, QString signature_path);
     void Screenshot(QString path);
 
     static DeviceBridge *Get();
@@ -106,13 +103,11 @@ private:
     void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
-    static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
     static bool m_destroyed;
 
     idevice_t m_device;
     lockdownd_client_t m_client;
     diagnostics_relay_client_t m_diagnostics;
-    mobile_image_mounter_client_t m_imageMounter;
     screenshotr_client_t m_screenshot;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
@@ -125,14 +120,39 @@ signals:
      void UpdateDevices(QMap<QString, idevice_connection_type> devices);
      void DeviceConnected();
      void ProcessStatusChanged(int percentage, QString message);
-     void MounterStatusChanged(QString messages);
      void ScreenshotReceived(QString imagepath);
      void MessagesReceived(MessagesType type, QString messages);
 
      //AFCUtils
+ private:
+     int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
+     bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
+     int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
+     void afc_traverse_recursive(afc_client_t afc, const char* path);
+     afc_client_t m_afc;
+
+     //Mounter
+ public:
+    QStringList GetMountedImages();
+    bool IsImageMounted();
+    void MountImage(QString image_path, QString signature_path);
+ private:
+    static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
+    mobile_image_mounter_client_t m_imageMounter;
+ signals:
+     void MounterStatusChanged(QString messages);
+
+     //Crashlog
  public:
      void SyncCrashlogs(QString path);
+ private:
+     afc_client_t m_crashlog;
+     QString m_crashlogTargetDir;
+ signals:
+     void CrashlogsStatusChanged(QString messages);
 
+     //FileManager
+ public:
      struct FileProperty {
          bool isDirectory = false;
          quint64 sizeInBytes = 0;
@@ -143,21 +163,12 @@ signals:
      void DeleteFromStorage(QString devicePath, QString bundleId = "");
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
-
  private:
-     int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
-     bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
-     int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
-     void afc_traverse_recursive(afc_client_t afc, const char* path);
      void afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
-     afc_client_t m_afc;
-     afc_client_t m_crashlog;
      afc_client_t m_fileManager;
      house_arrest_client_t m_houseArrest;
-     QString m_crashlogTargetDir;
      QMap<QString, FileProperty> m_accessibleStorage;
  signals:
-     void CrashlogsStatusChanged(QString messages);
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents);
      void FileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
 
