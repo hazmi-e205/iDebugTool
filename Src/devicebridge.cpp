@@ -244,9 +244,6 @@ void DeviceBridge::StartServices()
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
     });
 
-    emit ProcessStatusChanged(35, "Getting installed apps info...");
-    m_installedApps = GetInstalledApps(false);
-
     emit ProcessStatusChanged(40, "Starting crash report mover service...");
     serviceIds = QStringList() << "com.apple.crashreportmover";
     StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){

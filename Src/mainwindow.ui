@@ -342,7 +342,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>998</width>
+                  <width>992</width>
                   <height>409</height>
                  </rect>
                 </property>
@@ -1538,6 +1538,11 @@ color: rgb(255, 255, 255);</string>
                                         <property name="editable">
                                          <bool>false</bool>
                                         </property>
+                                        <item>
+                                         <property name="text">
+                                          <string>Choose your app...</string>
+                                         </property>
+                                        </item>
                                        </widget>
                                       </item>
                                      </layout>
@@ -2143,7 +2148,7 @@ background-color: rgb(4, 111, 182);</string>
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>984</width>
+                  <width>978</width>
                   <height>433</height>
                  </rect>
                 </property>
@@ -2727,7 +2732,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>998</width>
+                  <width>992</width>
                   <height>409</height>
                  </rect>
                 </property>
