@@ -90,8 +90,6 @@ public:
     QJsonDocument GetDeviceInfo(QString udid = "");
     void ResetConnection();
     QMap<QString, idevice_connection_type> GetDevices();
-    void StartDiagnostics(DiagnosticsMode mode);
-    void Screenshot(QString path);
 
     static DeviceBridge *Get();
     static void Destroy();
@@ -107,8 +105,6 @@ private:
 
     idevice_t m_device;
     lockdownd_client_t m_client;
-    diagnostics_relay_client_t m_diagnostics;
-    screenshotr_client_t m_screenshot;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
@@ -120,8 +116,17 @@ signals:
      void UpdateDevices(QMap<QString, idevice_connection_type> devices);
      void DeviceConnected();
      void ProcessStatusChanged(int percentage, QString message);
-     void ScreenshotReceived(QString imagepath);
      void MessagesReceived(MessagesType type, QString messages);
+
+     //Misc
+ public:
+    void StartDiagnostics(DiagnosticsMode mode);
+    void Screenshot(QString path);
+ private:
+    diagnostics_relay_client_t m_diagnostics;
+    screenshotr_client_t m_screenshot;
+ signals:
+     void ScreenshotReceived(QString imagepath);
 
      //AFCUtils
  private:
