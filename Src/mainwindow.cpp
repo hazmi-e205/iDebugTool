@@ -162,7 +162,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->provisionExt2Edit
                    << ui->bundleEdit
                    << ui->threadEdit
-                   << ui->storageOption);
+                   << ui->storageOption
+                   << ui->remoteType);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
