@@ -73,7 +73,7 @@ private slots:
     void OnDevicesTableClicked(QModelIndex index);
     void OnRefreshClicked();
     void OnUpdateDevices(QMap<QString, idevice_connection_type> devices);
-    void OnDeviceConnected();
+    void OnDeviceStatus(ConnectionStatus status, QString udid, bool isRemote);
     void RefreshSocketList();
     void OnSocketClicked();
     void OnSystemInfoClicked();

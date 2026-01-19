@@ -139,6 +139,7 @@ void DeviceBridge::ResetConnection()
         //idevice_free(m_device);
         m_device = nullptr;
     }
+    emit DeviceStatus(ConnectionStatus::DISCONNECTED, m_currentUdid, m_isRemote);
 }
 
 void DeviceBridge::ConnectToDevice(QString udid)
@@ -164,6 +165,7 @@ void DeviceBridge::ConnectToDevice(QString udid)
 
         emit ProcessStatusChanged(20, "Getting device info...");
         m_currentUdid = udid;
+        m_isRemote = false;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
     });
@@ -193,6 +195,7 @@ void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
         }
 
         emit ProcessStatusChanged(20, "Getting device info...");
+        m_isRemote = true;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
     });
@@ -218,7 +221,7 @@ void DeviceBridge::UpdateDeviceInfo()
             m_deviceInfo[m_currentUdid] = deviceInfo;
             plist_free(node);
             node = nullptr;
-            emit DeviceConnected();
+            emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
 
             //start services
             StartServices();

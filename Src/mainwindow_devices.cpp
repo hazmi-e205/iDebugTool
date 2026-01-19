@@ -20,7 +20,7 @@ void MainWindow::SetupDevicesUI()
         connect(ui->socketBtn, SIGNAL(pressed()), this, SLOT(OnSocketClicked()));
         connect(ui->sysInfoBtn, SIGNAL(pressed()), this, SLOT(OnSystemInfoClicked()));
         connect(DeviceBridge::Get(), SIGNAL(UpdateDevices(QMap<QString,idevice_connection_type>)), this, SLOT(OnUpdateDevices(QMap<QString,idevice_connection_type>)));
-        connect(DeviceBridge::Get(), SIGNAL(DeviceConnected()), this, SLOT(OnDeviceConnected()));
+        connect(DeviceBridge::Get(), SIGNAL(DeviceStatus(ConnectionStatus, QString, bool)), this, SLOT(OnDeviceStatus(ConnectionStatus, QString, bool)));
         connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
         RefreshSocketList();
     }
@@ -88,19 +88,34 @@ void MainWindow::OnUpdateDevices(QMap<QString, idevice_connection_type> devices)
     }
 }
 
-void MainWindow::OnDeviceConnected()
+void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRemote)
 {
-    UpdateInfoWidget();
-
-    // update device name on choosen device
-    for (int idx = 0; idx < m_devicesModel->rowCount(); idx++)
+    if (status == ConnectionStatus::CONNECTED)
     {
-        QString udid = m_devicesModel->data(m_devicesModel->index(idx, 0)).toString();
-        if (udid.contains(DeviceBridge::Get()->GetCurrentUdid()))
+        UpdateInfoWidget();
+
+        // update device name on choosen device
+        for (int idx = 0; idx < m_devicesModel->rowCount(); idx++)
         {
-            QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
-            m_devicesModel->setData(m_devicesModel->index(idx, 1), name);
+            QString currentUdid = m_devicesModel->data(m_devicesModel->index(idx, 0)).toString();
+            if (currentUdid.contains(udid))
+            {
+                QString name = DeviceBridge::Get()->GetDeviceInfo()["DeviceName"].toString();
+                m_devicesModel->setData(m_devicesModel->index(idx, 1), name);
+            }
         }
+        if (isRemote)
+            ui->socketBtn->setText("Disconnect");
+    }
+    else
+    {
+        ui->ProductType->clear();
+        ui->OSName->clear();
+        ui->OSVersion->clear();
+        ui->CPUArch->clear();
+        ui->UDID->clear();
+        if (isRemote)
+            ui->socketBtn->setText("Connect");
     }
 }
 
@@ -114,7 +129,6 @@ void MainWindow::OnSocketClicked()
         {
             if (ui->remoteType->currentText().contains("sonic", Qt::CaseInsensitive))
             {
-                ui->socketBtn->setText("Disconnect");
                 QString historyData = UserConfigs::Get()->GetData("SocketHistory", "");
                 if (!historyData.contains(text))
                 {

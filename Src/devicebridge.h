@@ -75,6 +75,11 @@ enum FileOperation {
     MAKE_FOLDER
 };
 
+enum ConnectionStatus {
+    DISCONNECTED,
+    CONNECTED
+};
+
 class DeviceBridge : public QObject
 {
     Q_OBJECT
@@ -108,13 +113,14 @@ private:
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
+    bool m_isRemote;
     QMutex m_mutex;
 
     static DeviceBridge *m_instance;
 
 signals:
      void UpdateDevices(QMap<QString, idevice_connection_type> devices);
-     void DeviceConnected();
+     void DeviceStatus(ConnectionStatus status, QString udid, bool isRemote);
      void ProcessStatusChanged(int percentage, QString message);
      void MessagesReceived(MessagesType type, QString messages);
 
