@@ -69,9 +69,9 @@ void MainWindow::OnAppInfoClicked()
         m_textDialog->ShowText("App Information",m_installedApps[m_choosenBundleId].toJson());
 }
 
-void MainWindow::RefreshPIDandBundleID()
+void MainWindow::RefreshPIDandBundleID(bool async)
 {
-    m_installedApps = DeviceBridge::Get()->GetInstalledApps(true);
+    m_installedApps = DeviceBridge::Get()->GetInstalledApps(async);
     ui->bundleIds->clear();
     ui->bundleIds->addItems(m_installedApps.keys());
 

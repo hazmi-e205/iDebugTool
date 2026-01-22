@@ -105,7 +105,7 @@ void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRe
             }
         }
 
-        RefreshPIDandBundleID();
+        RefreshPIDandBundleID(false);
         OnPidFilterChanged(ui->pidEdit->currentText());
         if (isRemote)
             ui->socketBtn->setText("Disconnect");
