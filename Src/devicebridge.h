@@ -101,15 +101,13 @@ public:
 
 private:
     void UpdateDeviceInfo();
-    void StartServices();
-    void StartLockdown(bool condition, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function);
+    void StartLockdown(bool condition, lockdownd_client_t& client, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function, bool clear_lockdownd = true);
     void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static bool m_destroyed;
 
     idevice_t m_device;
-    lockdownd_client_t m_client;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
@@ -129,6 +127,7 @@ signals:
     void StartDiagnostics(DiagnosticsMode mode);
     void Screenshot(QString path);
  private:
+    lockdownd_client_t m_miscClient;
     diagnostics_relay_client_t m_diagnostics;
     screenshotr_client_t m_screenshot;
  signals:
@@ -140,7 +139,6 @@ signals:
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
      void afc_traverse_recursive(afc_client_t afc, const char* path);
-     afc_client_t m_afc;
 
      //Mounter
  public:
@@ -148,8 +146,11 @@ signals:
     bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
  private:
+    void mount_image(afc_client_t& afc, QString image_path, QString signature_path);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
     mobile_image_mounter_client_t m_imageMounter;
+    afc_client_t m_imageSender;
+    lockdownd_client_t m_mounterClient;
  signals:
      void MounterStatusChanged(QString messages);
 
@@ -157,6 +158,7 @@ signals:
  public:
      void SyncCrashlogs(QString path);
  private:
+     lockdownd_client_t m_crashlogClient;
      afc_client_t m_crashlog;
      QString m_crashlogTargetDir;
  signals:
@@ -176,6 +178,7 @@ signals:
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
  private:
      void afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
+     lockdownd_client_t m_fileClient;
      afc_client_t m_fileManager;
      house_arrest_client_t m_houseArrest;
      QMap<QString, FileProperty> m_accessibleStorage;
@@ -190,15 +193,21 @@ signals:
      void UninstallApp(QString bundleId);
      void InstallApp(InstallerMode cmd, QString path);
  private:
+     void install_app(afc_client_t &afc, InstallerMode cmd, QString path);
      static void InstallerCallback(plist_t command, plist_t status, void *unused);
      void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
+     void installer_action(std::function<void()> action);
      instproxy_client_t m_installer;
+     afc_client_t m_buildSender;
+     lockdownd_client_t m_installerClient;
      QMap<QString, QJsonDocument> m_installedApps;
  signals:
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);
 
      //SyslogBridge
  public:
+     void StartSyslog();
+     void StopSyslog();
      void ClearCachedLogs();
      void CaptureSystemLogs(bool enable);
      bool IsSystemLogsCaptured();
@@ -213,6 +222,7 @@ signals:
  private:
      static void SystemLogsCallback(char c, void *user_data);
      void TriggerSystemLogsReceived(LogPacket log);
+     lockdownd_client_t m_syslogClient;
      syslog_relay_client_t m_syslog;
      LogFilterThread* m_logHandler;
  signals:
@@ -233,6 +243,7 @@ public:
 private:
      void CloseDebugger();
      debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
+     lockdownd_client_t m_debugClient;
      debugserver_client_t m_debugger;
      DebuggerFilterThread *m_debugHandler;
 signals:

@@ -1,6 +1,5 @@
 #include "devicebridge.h"
 
-#include "nskeyedarchiver/scope.hpp"
 #include "nskeyedarchiver/kavalue.hpp"
 #include "nskeyedarchiver/kaarray.hpp"
 #include <QJsonDocument>

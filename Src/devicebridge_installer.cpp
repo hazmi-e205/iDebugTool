@@ -15,30 +15,25 @@
 QJsonDocument DeviceBridge::GetInstalledApps()
 {
     QJsonDocument jsonArray;
-    if (!m_installer) {
-        return jsonArray;
-    }
+    installer_action([&, this](){
+        plist_t client_opts = instproxy_client_options_new();
+        instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
 
-    plist_t client_opts = instproxy_client_options_new();
-    instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
+        plist_t apps = nullptr;
+        instproxy_error_t err = instproxy_browse(m_installer, client_opts, &apps);
+        if (err != INSTPROXY_E_SUCCESS || !apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_browse returnd an invalid plist!");
+            return;
+        }
 
-    plist_t apps = nullptr;
-    instproxy_error_t err = instproxy_browse(m_installer, client_opts, &apps);
-    if (err != INSTPROXY_E_SUCCESS || !apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_browse returnd an invalid plist!");
-        return jsonArray;
-    }
-
-    jsonArray = PlistToJson(apps);
-    plist_free(apps);
+        jsonArray = PlistToJson(apps);
+        plist_free(apps);
+    });
     return jsonArray;
 }
 
 QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
 {
-    if (!m_installer)
-        return m_installedApps;
-
     auto apps_update = [this](){
         QJsonDocument jsonArray = GetInstalledApps();
         QMap<QString, QJsonDocument> newAppList;
@@ -70,220 +65,236 @@ QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
 
 void DeviceBridge::UninstallApp(QString bundleId)
 {
-    AsyncManager::Get()->StartAsyncRequest([this, bundleId]() {
-        if (!m_installer) {
-            return;
-        }
-        instproxy_uninstall(m_installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
+    AsyncManager::Get()->StartAsyncRequest([=, this]() {
+        installer_action([&, this](){
+            instproxy_uninstall(m_installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
+        });
     });
 }
 
 void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 {
-    AsyncManager::Get()->StartAsyncRequest([this, cmd, path]() {
-        if (!m_installer) {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: instproxy_client_private is null!\nPlease connect your device to this PC!");
+    AsyncManager::Get()->StartAsyncRequest([=, this]() {
+        QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
+        StartLockdown(!m_buildSender, m_installerClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
+            afc_error_t aerr = afc_client_new(m_device, service, &m_buildSender);
+            if (aerr != AFC_E_SUCCESS) {
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
+                return;
+            }
+
+            installer_action([&, this](){
+                install_app(m_buildSender, cmd, path);
+            });
+
+            if (m_buildSender) {
+                afc_client_free(m_buildSender);
+                m_buildSender = nullptr;
+            }
+        });
+    });
+}
+
+void DeviceBridge::install_app(afc_client_t &afc, InstallerMode cmd, QString path)
+{
+    char *bundleidentifier = NULL;
+    QString pkgname = "";
+    uint64_t af = 0;
+    char buf[8192];
+
+    char **strs = NULL;
+    if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
+        if (afc_make_directory(afc, PKG_PATH) != AFC_E_SUCCESS) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 0, "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!");
+        }
+    }
+    if (strs) {
+        int i = 0;
+        while (strs[i]) {
+            free(strs[i]);
+            i++;
+        }
+        free(strs);
+    }
+
+    plist_t client_opts = instproxy_client_options_new();
+    if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive)))
+    {
+#ifdef IPCC_SUPPORT
+        int errp = 0;
+        struct zip *zf = zip_open(path.toUtf8().data(), 0, &errp);
+        if (!zf) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
             return;
         }
-        char *bundleidentifier = NULL;
-        QString pkgname = "";
-        uint64_t af = 0;
-        char buf[8192];
 
-        char **strs = NULL;
-        if (afc_get_file_info(m_afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
-            if (afc_make_directory(m_afc, PKG_PATH) != AFC_E_SUCCESS) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 0, "WARNING: Could not create directory '" + QString(PKG_PATH) + "' on device!");
-            }
-        }
-        if (strs) {
-            int i = 0;
-            while (strs[i]) {
-                free(strs[i]);
-                i++;
-            }
-            free(strs);
-        }
+        char* ipcc = path.toUtf8().data();
+        pkgname = QString(PKG_PATH) + "/" + basename(ipcc);
+        afc_make_directory(afc, pkgname.toUtf8().data());
 
-        plist_t client_opts = instproxy_client_options_new();
-        if ((path.length() > 5) && (path.endsWith(".ipcc", Qt::CaseInsensitive)))
-        {
-#ifdef IPCC_SUPPORT
-            int errp = 0;
-            struct zip *zf = zip_open(path.toUtf8().data(), 0, &errp);
-            if (!zf) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_open: " + path + ": " + QString::number(errp));
-                return;
-            }
+        printf("Uploading %s package contents... ", basename(ipcc));
 
-            char* ipcc = path.toUtf8().data();
-            pkgname = QString(PKG_PATH) + "/" + basename(ipcc);
-            afc_make_directory(m_afc, pkgname.toUtf8().data());
+        /* extract the contents of the .ipcc file to PublicStaging/<name>.ipcc directory */
+        zip_uint64_t numzf = zip_get_num_entries(zf, 0);
+        zip_uint64_t i = 0;
+        for (i = 0; numzf > 0 && i < numzf; i++) {
+            const char* zname = zip_get_name(zf, i, 0);
+            QString dstpath;
+            if (!zname) continue;
+            if (zname[strlen(zname)-1] == '/') {
+                // directory
+                dstpath = pkgname + "/" + zname;
+                afc_make_directory(afc, dstpath.toUtf8().data());
+            } else {
+                // file
+                struct zip_file* zfile = zip_fopen_index(zf, i, 0);
+                if (!zfile) continue;
 
-            printf("Uploading %s package contents... ", basename(ipcc));
-
-            /* extract the contents of the .ipcc file to PublicStaging/<name>.ipcc directory */
-            zip_uint64_t numzf = zip_get_num_entries(zf, 0);
-            zip_uint64_t i = 0;
-            for (i = 0; numzf > 0 && i < numzf; i++) {
-                const char* zname = zip_get_name(zf, i, 0);
-                QString dstpath;
-                if (!zname) continue;
-                if (zname[strlen(zname)-1] == '/') {
-                    // directory
-                    dstpath = pkgname + "/" + zname;
-                    afc_make_directory(m_afc, dstpath.toUtf8().data());
-                } else {
-                    // file
-                    struct zip_file* zfile = zip_fopen_index(zf, i, 0);
-                    if (!zfile) continue;
-
-                    dstpath = pkgname + "/" + zname;
-                    if (afc_file_open(m_afc, dstpath.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) {
-                        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Can't open afc://" + dstpath + " for writing.");
-                        zip_fclose(zfile);
-                        continue;
-                    }
-
-                    struct zip_stat zs;
-                    zip_stat_init(&zs);
-                    if (zip_stat_index(zf, i, 0, &zs) != 0) {
-                        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_stat_index " + QString::number(i) + " failed!");
-                        zip_fclose(zfile);
-                        continue;
-                    }
-
-                    zip_uint64_t zfsize = 0;
-                    while (zfsize < zs.size) {
-                        zip_int64_t amount = zip_fread(zfile, buf, sizeof(buf));
-                        if (amount == 0) {
-                            break;
-                        }
-
-                        if (amount > 0) {
-                            uint32_t written, total = 0;
-                            while (total < amount) {
-                                written = 0;
-                                if (afc_file_write(m_afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
-                                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: AFC Write error!");
-                                    break;
-                                }
-                                total += written;
-                            }
-                            if (total != amount) {
-                                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Wrote only " + QString::number(total) + " of " + QString::number(amount));
-                                afc_file_close(m_afc, af);
-                                zip_fclose(zfile);
-                                return;
-                            }
-                        }
-
-                        zfsize += amount;
-                    }
-
-                    afc_file_close(m_afc, af);
-                    af = 0;
-
+                dstpath = pkgname + "/" + zname;
+                if (afc_file_open(afc, dstpath.toUtf8().data(), AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) {
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Can't open afc://" + dstpath + " for writing.");
                     zip_fclose(zfile);
+                    continue;
                 }
-            }
-            if (zf) {
-                zip_unchange_all(zf);
-                zip_close(zf);
-            }
-            free(ipcc);
-            printf("DONE.\n");
 
-            instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
+                struct zip_stat zs;
+                zip_stat_init(&zs);
+                if (zip_stat_index(zf, i, 0, &zs) != 0) {
+                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: zip_stat_index " + QString::number(i) + " failed!");
+                    zip_fclose(zfile);
+                    continue;
+                }
+
+                zip_uint64_t zfsize = 0;
+                while (zfsize < zs.size) {
+                    zip_int64_t amount = zip_fread(zfile, buf, sizeof(buf));
+                    if (amount == 0) {
+                        break;
+                    }
+
+                    if (amount > 0) {
+                        uint32_t written, total = 0;
+                        while (total < amount) {
+                            written = 0;
+                            if (afc_file_write(afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
+                                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: AFC Write error!");
+                                break;
+                            }
+                            total += written;
+                        }
+                        if (total != amount) {
+                            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Wrote only " + QString::number(total) + " of " + QString::number(amount));
+                            afc_file_close(afc, af);
+                            zip_fclose(zfile);
+                            return;
+                        }
+                    }
+
+                    zfsize += amount;
+                }
+
+                afc_file_close(afc, af);
+                af = 0;
+
+                zip_fclose(zfile);
+            }
+        }
+        if (zf) {
+            zip_unchange_all(zf);
+            zip_close(zf);
+        }
+        free(ipcc);
+        printf("DONE.\n");
+
+        instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
 #else
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: IPCC not supported!");
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: IPCC not supported!");
 #endif
-        }
-        else if (QFileInfo(path).isDir())
+    }
+    else if (QFileInfo(path).isDir())
+    {
+        /* extract the CFBundleIdentifier from the package */
+        /* construct full filename to Info.plist */
+        QString filename = path + "/Info.plist";
+        JValue jvInfo;
+        if (!jvInfo.readPListFile(filename.toUtf8().data()))
         {
-            /* extract the CFBundleIdentifier from the package */
-            /* construct full filename to Info.plist */
-            QString filename = path + "/Info.plist";
-            JValue jvInfo;
-            if (!jvInfo.readPListFile(filename.toUtf8().data()))
-            {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not read " + filename);
-                return;
-            }
-            bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
-
-            /* upload developer app directory */
-            pkgname = QString(PKG_PATH) + "/" + basename(path.toUtf8().data());
-            auto afc_callback = [&](int progress, int total, QString messages){
-                int percentage = int((float(progress) / (float(total) * 2.f)) * 100.f);
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, QString::asprintf("(%d/%d) ", progress, total) + messages);
-            };
-            if (!afc_upload_dir(m_afc, path, pkgname, afc_callback))
-            {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not send " + path);
-                return;
-            }
-            instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not read " + filename);
+            return;
         }
-        else
+        bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
+
+        /* upload developer app directory */
+        pkgname = QString(PKG_PATH) + "/" + basename(path.toUtf8().data());
+        auto afc_callback = [&](int progress, int total, QString messages){
+            int percentage = int((float(progress) / (float(total) * 2.f)) * 100.f);
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, QString::asprintf("(%d/%d) ", progress, total) + messages);
+        };
+        if (!afc_upload_dir(afc, path, pkgname, afc_callback))
         {
-            /* determine .app directory in archive */
-            QString app_directory_name;
-            if (!ZipGetAppDirectory(path, app_directory_name)) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Unable to locate app directory in archive!");
-                return;
-            }
-
-            /* construct full filename to Info.plist */
-            QString filename = app_directory_name + "\\Info.plist";
-            std::vector<char> info;
-            if (!ZipGetContents(path, filename, info)) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not locate " + filename + " in archive!");
-                return;
-            }
-
-            JValue jvInfo;
-            if (!jvInfo.readPList(&info[0], info.size()))
-            {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not parse Info.plist!");
-                return;
-            }
-            bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
-            if (!jvInfo.has("CFBundleExecutable")) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not determine value for CFBundleExecutable!");
-                return;
-            }
-
-            /* copy archive to device */
-            pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Sending " + QFileInfo(path).fileName());
-            auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
-            {
-                int percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
-                QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, message);
-            };
-            int result = afc_upload_file(m_afc, path, pkgname, callback);
-            if (result != 0) {
-                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, QString::asprintf("ERROR: Failed to send %s : afc error code %d", path.toUtf8().data(), result));
-                return;
-            }
-
-            if (bundleidentifier) {
-                instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
-            }
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not send " + path);
+            return;
+        }
+        instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
+    }
+    else
+    {
+        /* determine .app directory in archive */
+        QString app_directory_name;
+        if (!ZipGetAppDirectory(path, app_directory_name)) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Unable to locate app directory in archive!");
+            return;
         }
 
-        /* perform installation or upgrade */
-        if (cmd == CMD_INSTALL) {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Installing " + QString(bundleidentifier));
-            instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
-        } else {
-            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
-            instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
+        /* construct full filename to Info.plist */
+        QString filename = app_directory_name + "\\Info.plist";
+        std::vector<char> info;
+        if (!ZipGetContents(path, filename, info)) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not locate " + filename + " in archive!");
+            return;
         }
-        instproxy_client_options_free(client_opts);
-    });
+
+        JValue jvInfo;
+        if (!jvInfo.readPList(&info[0], info.size()))
+        {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not parse Info.plist!");
+            return;
+        }
+        bundleidentifier = strdup(jvInfo["CFBundleIdentifier"].asCString());
+        if (!jvInfo.has("CFBundleExecutable")) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not determine value for CFBundleExecutable!");
+            return;
+        }
+
+        /* copy archive to device */
+        pkgname = QString(PKG_PATH) + "/" + bundleidentifier;
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 0, "Sending " + QFileInfo(path).fileName());
+        auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
+        {
+            int percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
+            QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, message);
+        };
+        int result = afc_upload_file(afc, path, pkgname, callback);
+        if (result != 0) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, QString::asprintf("ERROR: Failed to send %s : afc error code %d", path.toUtf8().data(), result));
+            return;
+        }
+
+        if (bundleidentifier) {
+            instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
+        }
+    }
+
+    /* perform installation or upgrade */
+    if (cmd == CMD_INSTALL) {
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Installing " + QString(bundleidentifier));
+        instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
+    } else {
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
+        instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
+    }
+    instproxy_client_options_free(client_opts);
 }
 
 void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument status)
@@ -310,6 +321,24 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     if (percentage == 100) {
         ConnectToDevice(m_currentUdid);
     }
+}
+
+void DeviceBridge::installer_action(std::function<void ()> action)
+{
+    QStringList serviceIds = QStringList() << INSTPROXY_SERVICE_NAME;
+    StartLockdown(!m_installer, m_installerClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
+        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
+        if (err != INSTPROXY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+            return;
+        }
+        action();
+
+        if (m_installer) {
+            instproxy_client_free(m_installer);
+            m_installer = nullptr;
+        }
+    });
 }
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)

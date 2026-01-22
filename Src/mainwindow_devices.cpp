@@ -104,6 +104,9 @@ void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRe
                 m_devicesModel->setData(m_devicesModel->index(idx, 1), name);
             }
         }
+
+        RefreshPIDandBundleID();
+        OnPidFilterChanged(ui->pidEdit->currentText());
         if (isRemote)
             ui->socketBtn->setText("Disconnect");
     }
@@ -186,8 +189,4 @@ void MainWindow::OnProcessStatusChanged(int percentage, QString message)
 
     m_loadingDevice->SetProgress(percentage, message);
     ui->statusbar->showMessage(message);
-    if (percentage == 100) {
-        RefreshPIDandBundleID();
-        OnPidFilterChanged(ui->pidEdit->currentText());
-    }
 }

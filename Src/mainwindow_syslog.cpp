@@ -115,11 +115,13 @@ void MainWindow::OnStartLogging()
     if (ui->startLogBtn->text().contains("start", Qt::CaseInsensitive))
     {
         DeviceBridge::Get()->CaptureSystemLogs(true);
+        DeviceBridge::Get()->StartSyslog();
         ui->startLogBtn->setText("Stop Logging");
     }
     else
     {
         DeviceBridge::Get()->CaptureSystemLogs(false);
+        DeviceBridge::Get()->StopSyslog();
         ui->startLogBtn->setText("Start Logging");
     }
 }

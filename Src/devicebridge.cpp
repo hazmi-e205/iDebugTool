@@ -21,17 +21,24 @@ void DeviceBridge::Destroy()
 
 DeviceBridge::DeviceBridge()
     : m_device(nullptr)
-    , m_client(nullptr)
+    , m_miscClient(nullptr)
     , m_diagnostics(nullptr)
     , m_screenshot(nullptr)
-    , m_afc(nullptr)
     , m_imageMounter(nullptr)
+    , m_imageSender(nullptr)
+    , m_mounterClient(nullptr)
+    , m_crashlogClient(nullptr)
     , m_crashlog(nullptr)
+    , m_fileClient(nullptr)
     , m_fileManager(nullptr)
     , m_houseArrest(nullptr)
     , m_installer(nullptr)
+    , m_buildSender(nullptr)
+    , m_installerClient(nullptr)
+    , m_syslogClient(nullptr)
     , m_syslog(nullptr)
     , m_logHandler(new LogFilterThread())
+    , m_debugClient(nullptr)
     , m_debugger(nullptr)
     , m_debugHandler(new DebuggerFilterThread())
 {
@@ -76,13 +83,6 @@ void DeviceBridge::ResetConnection()
     m_currentUdid.clear();
     StopDebugging();
 
-    if(m_client)
-    {
-        //Quick fix: stuck while reseting connection at exit, switch, reconnect
-        //is_exist ? (void)lockdownd_client_free(m_client) : free(m_client);
-        m_client = nullptr;
-    }
-
     if (m_screenshot)
     {
         screenshotr_client_free(m_screenshot);
@@ -97,10 +97,16 @@ void DeviceBridge::ResetConnection()
         m_imageMounter = nullptr;
     }
 
-    if (m_afc)
+    if (m_imageSender)
     {
-        afc_client_free(m_afc);
-        m_afc = nullptr;
+        afc_client_free(m_imageSender);
+        m_imageSender = nullptr;
+    }
+
+    if (m_buildSender)
+    {
+        afc_client_free(m_buildSender);
+        m_buildSender = nullptr;
     }
 
     if (m_crashlog)
@@ -132,11 +138,54 @@ void DeviceBridge::ResetConnection()
         syslog_relay_client_free(m_syslog);
         m_syslog = nullptr;
     }
+    
+    //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
+    if(m_miscClient)
+    {
+        lockdownd_client_free(m_miscClient);
+        m_miscClient = nullptr;
+    }
+
+    if(m_mounterClient)
+    {
+        lockdownd_client_free(m_mounterClient);
+        m_mounterClient = nullptr;
+    }
+
+    if(m_crashlogClient)
+    {
+        lockdownd_client_free(m_crashlogClient);
+        m_crashlogClient = nullptr;
+    }
+
+    if(m_fileClient)
+    {
+        lockdownd_client_free(m_fileClient);
+        m_fileClient = nullptr;
+    }
+
+    if(m_installerClient)
+    {
+        lockdownd_client_free(m_installerClient);
+        m_installerClient = nullptr;
+    }
+
+    if(m_syslogClient)
+    {
+        lockdownd_client_free(m_syslogClient);
+        m_syslogClient = nullptr;
+    }
+
+    if(m_debugClient)
+    {
+        lockdownd_client_free(m_debugClient);
+        m_debugClient = nullptr;
+    }
 
     if(m_device)
     {
         //Quick fix: crash when try to connect unpaired device
-        //idevice_free(m_device);
+        idevice_free(m_device);
         m_device = nullptr;
     }
     emit DeviceStatus(ConnectionStatus::DISCONNECTED, m_currentUdid, m_isRemote);
@@ -156,18 +205,12 @@ void DeviceBridge::ConnectToDevice(QString udid)
             return;
         }
 
-        emit ProcessStatusChanged(15, "Handshaking client...");
-        if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(m_device, &m_client, TOOL_NAME)) {
-            idevice_free(m_device);
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Connecting to " + udid + " failed!");
-            return;
-        }
-
         emit ProcessStatusChanged(20, "Getting device info...");
         m_currentUdid = udid;
         m_isRemote = false;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
+        emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
     });
 }
 
@@ -186,18 +229,11 @@ void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
             return;
         }
 
-        emit ProcessStatusChanged(15, "Handshaking client...");
-        lockdownd_error_t ret = lockdownd_client_new_with_handshake_remote(m_device, &m_client, TOOL_NAME);
-        if (LOCKDOWN_E_SUCCESS != ret) {
-            idevice_free(m_device);
-            emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: Connecting to %s:%d failed!", ipAddress.toUtf8().data(), port));
-            return;
-        }
-
         emit ProcessStatusChanged(20, "Getting device info...");
         m_isRemote = true;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
+        emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
     });
 }
 
@@ -213,20 +249,19 @@ bool DeviceBridge::IsConnected()
 
 void DeviceBridge::UpdateDeviceInfo()
 {
-    plist_t node = nullptr;
-    if(lockdownd_get_value(m_client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
-        if (node) {
-            QJsonDocument deviceInfo = PlistToJson(node);
-            m_currentUdid = deviceInfo["UniqueDeviceID"].toString();
-            m_deviceInfo[m_currentUdid] = deviceInfo;
-            plist_free(node);
-            node = nullptr;
-            emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
-
-            //start services
-            StartServices();
+    StartLockdown(true, m_miscClient, QStringList(), [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        plist_t node = nullptr;
+        if(lockdownd_get_value(m_miscClient, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
+            if (node) {
+                QJsonDocument deviceInfo = PlistToJson(node);
+                m_currentUdid = deviceInfo["UniqueDeviceID"].toString();
+                m_deviceInfo[m_currentUdid] = deviceInfo;
+                plist_free(node);
+                node = nullptr;
+            }
         }
-    }
+    });
+
 }
 
 QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)
@@ -234,116 +269,44 @@ QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)
     return m_deviceInfo[udid.isEmpty() ? m_currentUdid : udid];
 }
 
-void DeviceBridge::StartServices()
-{
-    emit ProcessStatusChanged(30, "Starting installation proxy service...");
-    QStringList serviceIds = QStringList() << "com.apple.mobile.installation_proxy";
-    StartLockdown(!m_installer, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
-        if (err != INSTPROXY_E_SUCCESS)
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-    });
-
-    emit ProcessStatusChanged(40, "Starting crash report mover service...");
-    serviceIds = QStringList() << "com.apple.crashreportmover";
-    StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        service_client_t svcmove = NULL;
-        service_error_t err = service_client_new(m_device, service, &svcmove);
-        if (err != SERVICE_E_SUCCESS)
-        {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-            return;
-        }
-
-        /* read "ping" message which indicates the crash logs have been moved to a safe harbor */
-        char* ping = (char*)malloc(4);
-        memset(ping, '\0', 4);
-        int attempts = 0;
-        while ((strncmp(ping, "ping", 4) != 0) && (attempts < 10)) {
-            uint32_t bytes = 0;
-            err = service_receive_with_timeout(svcmove, ping, 4, &bytes, 2000);
-            if (err == SERVICE_E_SUCCESS || err == SERVICE_E_TIMEOUT) {
-                attempts++;
-                continue;
-            }
-
-            fprintf(stderr, "ERROR: Crash logs could not be moved. Connection interrupted (%d).\n", err);
-            break;
-        }
-        service_client_free(svcmove);
-        free(ping);
-
-        if (attempts >= 10) {
-            fprintf(stderr, "ERROR: Failed to receive ping message from crash report mover.\n");
-        }
-    });
-
-    emit ProcessStatusChanged(50, "Starting crash report copy service...");
-    serviceIds = QStringList() << "com.apple.crashreportcopymobile";
-    StartLockdown(!m_crashlog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        afc_error_t err = afc_client_new(m_device, service, &m_crashlog);
-        if (err != AFC_E_SUCCESS)
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-    });
-
-    emit ProcessStatusChanged(60, "Starting afc service...");
-    serviceIds = QStringList() << "com.apple.afc";
-    StartLockdown(!m_afc, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        afc_error_t err = afc_client_new(m_device, service, &m_afc);
-        if (err != AFC_E_SUCCESS)
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-    });
-
-    emit ProcessStatusChanged(70, "Starting image mounter service...");
-    serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
-    StartLockdown(!m_imageMounter, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
-        if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS)
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-    });
-
-    emit ProcessStatusChanged(80, "Starting syslog relay service...");
-    serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
-    StartLockdown(!m_syslog, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        /* connect to syslog_relay service */
-        syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
-        err = syslog_relay_client_new(m_device, service, &m_syslog);
-        if (err != SYSLOG_RELAY_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-            return;
-        }
-
-        /* start capturing syslog */
-        err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
-        if (err != SYSLOG_RELAY_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to start capturing syslog.");
-            syslog_relay_client_free(m_syslog);
-            m_syslog = nullptr;
-            return;
-        }
-    });
-}
-
-void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function)
+void DeviceBridge::StartLockdown(bool condition, lockdownd_client_t& client, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function, bool clear_lockdownd)
 {
     if (!condition)
         return;
 
-    lockdownd_error_t lerr = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
+    lockdownd_error_t err = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
+    if (client == nullptr)
+    {
+        err = m_isRemote ? lockdownd_client_new_with_handshake_remote(m_device, &client, TOOL_NAME) : lockdownd_client_new_with_handshake(m_device, &client, TOOL_NAME);
+        if (LOCKDOWN_E_SUCCESS != err)
+        {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Create lockdownd handshake failed!");
+            client = nullptr;
+            return;
+        }
+    }
+
+    if (service_ids.size() > 0)
+        err = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
+
     lockdownd_service_descriptor_t service = nullptr;
     QString service_id;
     for ( const auto& svc_id : service_ids)
     {
         service_id = svc_id;
-        lerr = lockdownd_start_service(m_client, svc_id.toUtf8().data(), &service);
-        if(lerr == LOCKDOWN_E_SUCCESS) { break; }
+        err = lockdownd_start_service(client, svc_id.toUtf8().data(), &service);
+        if(err == LOCKDOWN_E_SUCCESS) { break; }
     }
 
-    switch (lerr)
+    switch (err)
     {
         case LOCKDOWN_E_SUCCESS:
             function(service_id, service);
             lockdownd_service_descriptor_free(service);
+            if (clear_lockdownd && !client) {
+                lockdownd_client_free(client);
+                client = nullptr;
+            }
             break;
 
         case LOCKDOWN_E_PASSWORD_PROTECTED:
@@ -351,7 +314,7 @@ void DeviceBridge::StartLockdown(bool condition, QStringList service_ids, const 
             break;
 
         default:
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(lerr));
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(err));
             break;
     }
 }

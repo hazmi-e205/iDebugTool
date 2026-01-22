@@ -67,6 +67,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
     ui->pidEdit->installEventFilter(m_eventFilter);
+    ui->bundleEdit->installEventFilter(m_eventFilter);
+    ui->storageOption->installEventFilter(m_eventFilter);
     connect(m_eventFilter, SIGNAL(pressed(QObject*)), this, SLOT(OnClickedEvent(QObject*)));
 
     ui->scrollInterval->setText(QString::number(m_scrollInterval));
@@ -126,7 +128,12 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->pushFileBtn
                    << ui->deleteFileBtn
                    << ui->renameFileBtn
-                   << ui->makeFolderBtn);
+                   << ui->makeFolderBtn
+                   << ui->restartBtn
+                   << ui->screenshotBtn
+                   << ui->mounterBtn
+                   << ui->sleepBtn
+                   << ui->shutdownBtn);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_EDIT_LIGHT, QList<QWidget*>()
                    << ui->UDID

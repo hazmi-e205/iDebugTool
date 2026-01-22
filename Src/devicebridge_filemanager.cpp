@@ -122,9 +122,22 @@ void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bun
 void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId)
 {
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
+        auto clear_instance = [this](){
+            if (m_fileManager)
+            {
+                afc_client_free(m_fileManager);
+                m_fileManager = nullptr;
+            }
+            if (m_houseArrest)
+            {
+                house_arrest_client_free(m_houseArrest);
+                m_houseArrest = nullptr;
+            }
+        };
+
         if (!bundleId.isEmpty()) {
             QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
-            StartLockdown(!m_houseArrest, serviceIds, [this, bundleId](QString& service_id, lockdownd_service_descriptor_t& service){
+            StartLockdown(!m_houseArrest, m_fileClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
                 house_arrest_error_t err = house_arrest_client_new(m_device, service, &m_houseArrest);
                 if (err != HOUSE_ARREST_E_SUCCESS)
                     emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
@@ -136,28 +149,22 @@ void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)>
                 afc_error_t aerr = afc_client_new_from_house_arrest_client(m_houseArrest, &m_fileManager);
                 if (aerr != AFC_E_SUCCESS)
                     emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + service_id + " client! " + QString::number(aerr));
+
+                //call function pass from params
+                action(m_fileManager);
+                clear_instance();
             });
         } else {
             QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
-            StartLockdown(!m_fileManager, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+            StartLockdown(!m_fileManager, m_fileClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
                 afc_error_t aerr = afc_client_new(m_device, service, &m_fileManager);
                 if (aerr != AFC_E_SUCCESS)
                     emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
+
+                //call function pass from params
+                action(m_fileManager);
+                clear_instance();
             });
-        }
-
-        //call function pass from params
-        action(m_fileManager);
-
-        if (m_fileManager)
-        {
-            afc_client_free(m_fileManager);
-            m_fileManager = nullptr;
-        }
-        if (m_houseArrest)
-        {
-            house_arrest_client_free(m_houseArrest);
-            m_houseArrest = nullptr;
         }
     });
 }

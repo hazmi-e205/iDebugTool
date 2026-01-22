@@ -76,6 +76,46 @@ void DeviceBridge::ClearCachedLogs()
     m_logHandler->ClearCachedLogs();
 }
 
+void DeviceBridge::StartSyslog()
+{
+    QStringList serviceIds = QStringList() << SYSLOG_RELAY_SERVICE_NAME;
+    StartLockdown(!m_syslog, m_syslogClient, serviceIds, [this](QString& service_id, lockdownd_service_descriptor_t& service){
+        /* connect to syslog_relay service */
+        syslog_relay_error_t err = SYSLOG_RELAY_E_UNKNOWN_ERROR;
+        err = syslog_relay_client_new(m_device, service, &m_syslog);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+            return;
+        }
+
+        /* start capturing syslog */
+        err = syslog_relay_start_capture_raw(m_syslog, SystemLogsCallback, nullptr);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to start capturing syslog.");
+            syslog_relay_client_free(m_syslog);
+            m_syslog = nullptr;
+            return;
+        }
+    }, false);
+}
+
+void DeviceBridge::StopSyslog()
+{
+    syslog_relay_error_t err = syslog_relay_stop_capture(m_syslog);
+    if (err != SYSLOG_RELAY_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to stop capturing syslog.");
+        return;
+    }
+    if (m_syslog) {
+        syslog_relay_client_free(m_syslog);
+        m_syslog = nullptr;
+    }
+    if (m_syslogClient) {
+        lockdownd_client_free(m_syslogClient);
+        m_syslogClient = nullptr;
+    }
+}
+
 QStringList DeviceBridge::GetPIDOptions(QMap<QString, QJsonDocument>& installed_apps)
 {
     QStringList result = QStringList() << "By user apps only" << "Related to user apps";
