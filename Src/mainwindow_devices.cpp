@@ -117,6 +117,7 @@ void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRe
         ui->OSVersion->clear();
         ui->CPUArch->clear();
         ui->UDID->clear();
+        ResetFileBrowser();
         if (isRemote)
             ui->socketBtn->setText("Connect");
     }

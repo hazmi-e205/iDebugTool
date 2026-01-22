@@ -8,6 +8,7 @@
 #include <QSplashScreen>
 #include <QMutex>
 #include <QPlainTextEdit>
+#include <QHeaderView>
 
 #include "crashsymbolicator.h"
 #include "devicebridge.h"
@@ -150,6 +151,9 @@ private:
     int m_fileManagerSizeWidth;
     void SetupFileManagerUI();
     void FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder = true);
+    void ResetFileBrowser();
+    void CacheHeaderSizes(QHeaderView *header, int &nameWidth, int &sizeWidth);
+    void RestoreHeaderSizes(QHeaderView *header, int nameWidth, int sizeWidth);
 private slots:
     void OnStorageChanged(QString storage);
     void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents);

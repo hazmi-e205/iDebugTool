@@ -2,14 +2,38 @@
 #include "qmessagebox.h"
 #include "ui_mainwindow.h"
 #include "utils.h"
-#include "userconfigs.h"
 #include <QJsonObject>
 #include <QFileInfo>
-#include <QHeaderView>
 #include <QStyle>
 #include <QInputDialog>
 #include <QDir>
 #include <QRegularExpression>
+
+void MainWindow::CacheHeaderSizes(QHeaderView *header, int &nameWidth, int &sizeWidth)
+{
+    if (!header)
+        return;
+
+    int cachedNameWidth = header->sectionSize(0);
+    int cachedSizeWidth = header->sectionSize(1);
+    if (cachedNameWidth > 0 && cachedSizeWidth > 0) {
+        nameWidth = cachedNameWidth;
+        sizeWidth = cachedSizeWidth;
+    }
+}
+
+void MainWindow::RestoreHeaderSizes(QHeaderView *header, int nameWidth, int sizeWidth)
+{
+    if (!header)
+        return;
+
+    header->setSectionResizeMode(QHeaderView::Interactive);
+    header->setStretchLastSection(false);
+    if (nameWidth > 0 && sizeWidth > 0) {
+        header->resizeSection(0, nameWidth);
+        header->resizeSection(1, sizeWidth);
+    }
+}
 
 void MainWindow::SetupFileManagerUI()
 {
@@ -29,7 +53,10 @@ void MainWindow::SetupFileManagerUI()
             int nameWidth = (totalWidth * 3) / 4;
             ui->fileBrowserTree->header()->resizeSection(0, nameWidth);
             ui->fileBrowserTree->header()->resizeSection(1, totalWidth - nameWidth);
+            m_fileManagerNameWidth = nameWidth;
+            m_fileManagerSizeWidth = totalWidth - nameWidth;
         }
+        ResetFileBrowser();
         m_loadingFileOperation->close();
     }
     connect(ui->storageOption, SIGNAL(textActivated(QString)), this, SLOT(OnStorageChanged(QString)));
@@ -69,6 +96,28 @@ void MainWindow::FileManagerAction(std::function<void(QString&,QString&)> action
     action(initialText, storage);
 }
 
+void MainWindow::ResetFileBrowser()
+{
+    if (!m_fileManagerModel)
+    {
+        SetupFileManagerUI();
+        return;
+    }
+
+    CacheHeaderSizes(ui->fileBrowserTree->header(), m_fileManagerNameWidth, m_fileManagerSizeWidth);
+
+    m_fileManagerModel->clear();
+    m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
+
+    QIcon dirIcon = style()->standardIcon(QStyle::SP_DirIcon);
+    QStandardItem *rootItem = new QStandardItem(dirIcon, "/");
+    QStandardItem *rootSizeItem = new QStandardItem("");
+    rootItem->setData("/", Qt::UserRole);
+    m_fileManagerModel->appendRow(QList<QStandardItem*>() << rootItem << rootSizeItem);
+
+    RestoreHeaderSizes(ui->fileBrowserTree->header(), m_fileManagerNameWidth, m_fileManagerSizeWidth);
+}
+
 void MainWindow::OnStorageChanged(QString storage)
 {
     if (storage.contains("User's Data", Qt::CaseInsensitive))
@@ -86,16 +135,8 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     m_cachedFiles = contents;// cache file property
     if (!m_fileManagerModel)
         SetupFileManagerUI();
-
-    int cachedNameWidth = ui->fileBrowserTree->header()->sectionSize(0);
-    int cachedSizeWidth = ui->fileBrowserTree->header()->sectionSize(1);
-    if (cachedNameWidth > 0 && cachedSizeWidth > 0) {
-        m_fileManagerNameWidth = cachedNameWidth;
-        m_fileManagerSizeWidth = cachedSizeWidth;
-    }
-
-    m_fileManagerModel->clear();
-    m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
+    else
+        ResetFileBrowser();
 
     QIcon dirIcon = style()->standardIcon(QStyle::SP_DirIcon);
     QIcon fileIcon = style()->standardIcon(QStyle::SP_FileIcon);
@@ -105,10 +146,13 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     };
 
     QMap<QString, QStandardItem*> pathMap;
-    QStandardItem *rootItem = new QStandardItem(dirIcon, "/");
-    QStandardItem *rootSizeItem = new QStandardItem("");
-    rootItem->setData("/", Qt::UserRole);
-    m_fileManagerModel->appendRow(QList<QStandardItem*>() << rootItem << rootSizeItem);
+    QStandardItem *rootItem = m_fileManagerModel->item(0, 0);
+    if (!rootItem) {
+        QStandardItem *rootSizeItem = new QStandardItem("");
+        rootItem = new QStandardItem(dirIcon, "/");
+        rootItem->setData("/", Qt::UserRole);
+        m_fileManagerModel->appendRow(QList<QStandardItem*>() << rootItem << rootSizeItem);
+    }
     pathMap["/"] = rootItem;
 
     auto ensureDirPath = [&](const QString &path)
@@ -162,14 +206,6 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     }
 
     ui->fileBrowserTree->expandToDepth(0);
-
-    // Restore table header width
-    ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
-    ui->fileBrowserTree->header()->setStretchLastSection(false);
-    if (m_fileManagerNameWidth > 0 && m_fileManagerSizeWidth > 0) {
-        ui->fileBrowserTree->header()->resizeSection(0, m_fileManagerNameWidth);
-        ui->fileBrowserTree->header()->resizeSection(1, m_fileManagerSizeWidth);
-    }
     // Filter the contents
     OnFileFilterChanged(ui->searchFileEdit->text());
 }
