@@ -113,6 +113,15 @@ private:
     QString m_currentUdid;
     bool m_isRemote;
     QMutex m_mutex;
+    struct RemoteAddress {
+        RemoteAddress(){}
+        RemoteAddress(QString ipAddress, int port){ m_ipAddress=ipAddress; m_port=port; }
+        void clear(){ m_ipAddress.clear(); m_port=0; }
+
+        QString m_ipAddress = "";
+        int m_port = 0;
+    };
+    RemoteAddress m_remoteAddress;
 
     static DeviceBridge *m_instance;
 

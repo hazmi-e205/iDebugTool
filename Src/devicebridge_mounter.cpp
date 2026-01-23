@@ -454,7 +454,6 @@ void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString si
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {
         emit MounterStatusChanged(is_personalized ? "Personalized disk image mounted" : "Developer disk image mounted");
-        ConnectToDevice(m_currentUdid); //hack to fix LOCKDOWN_E_MUX_ERROR after mounted
     }
     else
     {

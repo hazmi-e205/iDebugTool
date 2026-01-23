@@ -81,7 +81,9 @@ void DeviceBridge::ResetConnection()
 {
     bool is_exist = m_deviceList.find(m_currentUdid) != m_deviceList.end();
     m_currentUdid.clear();
+    m_remoteAddress.clear();
     StopDebugging();
+    StopSyslog();
 
     if (m_screenshot)
     {
@@ -231,6 +233,7 @@ void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
 
         emit ProcessStatusChanged(20, "Getting device info...");
         m_isRemote = true;
+        m_remoteAddress = RemoteAddress(ipAddress, port);
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
         emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
@@ -311,6 +314,13 @@ void DeviceBridge::StartLockdown(bool condition, lockdownd_client_t& client, QSt
 
         case LOCKDOWN_E_PASSWORD_PROTECTED:
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Device is passcode protected, enter passcode on the device to continue.");
+            break;
+
+        case LOCKDOWN_E_SSL_ERROR:
+            if (m_isRemote)
+                ConnectToDevice(m_remoteAddress.m_ipAddress, m_remoteAddress.m_port);
+            else
+                ConnectToDevice(m_currentUdid);
             break;
 
         default:

@@ -101,12 +101,12 @@ void DeviceBridge::StartSyslog()
 
 void DeviceBridge::StopSyslog()
 {
-    syslog_relay_error_t err = syslog_relay_stop_capture(m_syslog);
-    if (err != SYSLOG_RELAY_E_SUCCESS) {
-        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to stop capturing syslog.");
-        return;
-    }
     if (m_syslog) {
+        syslog_relay_error_t err = syslog_relay_stop_capture(m_syslog);
+        if (err != SYSLOG_RELAY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Unable to stop capturing syslog.");
+            return;
+        }
         syslog_relay_client_free(m_syslog);
         m_syslog = nullptr;
     }

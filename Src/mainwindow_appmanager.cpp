@@ -39,8 +39,10 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
             ui->installBar->setFormat("%p% " + (message.contains('\n') ? message.split('\n').at(0) : message));
             ui->installBar->setValue(percentage);
             ui->outputEdit->appendPlainText(messages);
-            if (percentage == 100)
+            if (percentage == 100) {
                 ui->installBtn->setEnabled(true);
+                RefreshPIDandBundleID(false);
+            }
         }
         break;
 
