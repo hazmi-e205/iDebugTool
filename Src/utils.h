@@ -6,7 +6,7 @@
 
 struct RemoteAddress {
     RemoteAddress(){}
-    RemoteAddress(QString ipAddress, int port){ ipAddress=ipAddress; port=port; }
+    RemoteAddress(QString ipAddress, int port){ this->ipAddress = ipAddress; this->port = port; }
     void clear(){ ipAddress.clear(); port=0; }
     QString toString() { return QString("%1:%2").arg(ipAddress, port); }
 
