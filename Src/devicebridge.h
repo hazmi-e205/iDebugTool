@@ -146,10 +146,6 @@ signals:
  public:
     void StartDiagnostics(DiagnosticsMode mode);
     void Screenshot(QString path);
- private:
-    lockdownd_client_t m_miscClient;
-    diagnostics_relay_client_t m_diagnostics;
-    screenshotr_client_t m_screenshot;
  signals:
      void ScreenshotReceived(QString imagepath);
 

@@ -21,9 +21,6 @@ void DeviceBridge::Destroy()
 
 DeviceBridge::DeviceBridge()
     : m_device(nullptr)
-    , m_miscClient(nullptr)
-    , m_diagnostics(nullptr)
-    , m_screenshot(nullptr)
     , m_imageMounter(nullptr)
     , m_imageSender(nullptr)
     , m_mounterClient(nullptr)
@@ -85,12 +82,6 @@ void DeviceBridge::ResetConnection()
     StopDebugging();
     StopSyslog();
 
-    if (m_screenshot)
-    {
-        screenshotr_client_free(m_screenshot);
-        m_screenshot = nullptr;
-    }
-
     if (m_imageMounter)
     {
         if (is_exist)
@@ -142,12 +133,6 @@ void DeviceBridge::ResetConnection()
     }
     
     //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
-    if(m_miscClient)
-    {
-        lockdownd_client_free(m_miscClient);
-        m_miscClient = nullptr;
-    }
-
     if(m_mounterClient)
     {
         lockdownd_client_free(m_mounterClient);

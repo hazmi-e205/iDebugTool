@@ -105,6 +105,12 @@ DeviceClient::~DeviceClient()
         mounter = nullptr;
     }
 
+    if (diagnostics) {
+        diagnostics_relay_goodbye(diagnostics);
+        diagnostics_relay_client_free(diagnostics);
+        diagnostics = nullptr;
+    }
+
     if (afc)
     {
         afc_client_free(afc);
