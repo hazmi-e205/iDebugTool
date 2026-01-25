@@ -5,7 +5,7 @@
 #include <QString>
 #include <QJsonDocument>
 #include <QJsonArray>
-#include <vector>
+#include <QMutex>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice-glue/utils.h>
@@ -21,17 +21,15 @@
 #include "debuggerfilterthread.h"
 #include "logpacket.h"
 #include "logfilterthread.h"
+#include "utils.h"
+#include "deviceclient.h"
 #include "asyncmanager.h"
-#include "qmutex.h"
 
 #include "idevice/instrument/dtxchannel.h"
 #include "idevice/instrument/dtxconnection.h"
 #include "idevice/instrument/dtxtransport.h"
-#include "idevice/instrument/dtxmessage.h"
-#include "nskeyedarchiver/kamap.hpp"
 using namespace idevice;
 
-#define TOOL_NAME                       "idebugtool"
 #define ITUNES_METADATA_PLIST_FILENAME  "iTunesMetadata.plist"
 #define PKG_PATH                        "PublicStaging"
 #define APPARCH_PATH                    "ApplicationArchives"
@@ -80,6 +78,26 @@ enum ConnectionStatus {
     CONNECTED
 };
 
+enum MobileOperation {
+    DEVICE_INFO,
+    DIAGNOSTICS,
+    SCREENSHOOT,
+    GET_MOUNTED,
+    MOUNT_IMAGE,
+    CRASHLOG,
+    FILE_LIST,
+    DELETE_FILE,
+    RENAME_FILE,
+    NEW_FOLDER,
+    PUSH_FILE,
+    PULL_FILE,
+    GET_APPS,
+    INSTALL_APP,
+    UNINSTALL_APP,
+    SYSLOG,
+    DEBUGGER
+};
+
 class DeviceBridge : public QObject
 {
     Q_OBJECT
@@ -108,19 +126,12 @@ private:
     static bool m_destroyed;
 
     idevice_t m_device;
+    QMap<MobileOperation,DeviceClient*> m_clients;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
     bool m_isRemote;
     QMutex m_mutex;
-    struct RemoteAddress {
-        RemoteAddress(){}
-        RemoteAddress(QString ipAddress, int port){ m_ipAddress=ipAddress; m_port=port; }
-        void clear(){ m_ipAddress.clear(); m_port=0; }
-
-        QString m_ipAddress = "";
-        int m_port = 0;
-    };
     RemoteAddress m_remoteAddress;
 
     static DeviceBridge *m_instance;

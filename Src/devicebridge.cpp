@@ -201,8 +201,9 @@ void DeviceBridge::ConnectToDevice(QString udid)
 
         //connect to udid
         emit ProcessStatusChanged(10, "Connecting to " + udid + "...");
-        idevice_new_with_options(&m_device, udid.toStdString().c_str(), m_deviceList[udid] == CONNECTION_USBMUXD ? IDEVICE_LOOKUP_USBMUX : IDEVICE_LOOKUP_NETWORK);
-        if (!m_device) {
+        m_clients[MobileOperation::DEVICE_INFO] = new DeviceClient(udid);
+        if (m_clients[MobileOperation::DEVICE_INFO]->device_error != IDEVICE_E_SUCCESS || m_clients[MobileOperation::DEVICE_INFO]->lockdownd_error != LOCKDOWN_E_SUCCESS)
+        {
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No device with UDID " + udid);
             return;
         }
@@ -224,16 +225,17 @@ void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
 
         //connect to udid
         emit ProcessStatusChanged(10, QString::asprintf("Connecting to %s:%d...", ipAddress.toUtf8().data(), port));
-
-        idevice_new_remote(&m_device, ipAddress.toStdString().c_str(), port);
-        if (!m_device) {
+        RemoteAddress address = RemoteAddress(ipAddress, port);
+        m_clients[MobileOperation::DEVICE_INFO] = new DeviceClient(address);
+        if (m_clients[MobileOperation::DEVICE_INFO]->device_error != IDEVICE_E_SUCCESS || m_clients[MobileOperation::DEVICE_INFO]->lockdownd_error != LOCKDOWN_E_SUCCESS)
+        {
             emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: No device with %s:%d!", ipAddress.toUtf8().data(), port));
             return;
         }
 
         emit ProcessStatusChanged(20, "Getting device info...");
         m_isRemote = true;
-        m_remoteAddress = RemoteAddress(ipAddress, port);
+        m_remoteAddress = address;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
         emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
@@ -252,19 +254,18 @@ bool DeviceBridge::IsConnected()
 
 void DeviceBridge::UpdateDeviceInfo()
 {
-    StartLockdown(true, m_miscClient, QStringList(), [this](QString& service_id, lockdownd_service_descriptor_t& service){
-        plist_t node = nullptr;
-        if(lockdownd_get_value(m_miscClient, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
-            if (node) {
-                QJsonDocument deviceInfo = PlistToJson(node);
-                m_currentUdid = deviceInfo["UniqueDeviceID"].toString();
-                m_deviceInfo[m_currentUdid] = deviceInfo;
-                plist_free(node);
-                node = nullptr;
-            }
+    plist_t node = nullptr;
+    if(lockdownd_get_value(m_clients[MobileOperation::DEVICE_INFO]->client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
+        if (node) {
+            QJsonDocument deviceInfo = PlistToJson(node);
+            m_currentUdid = deviceInfo["UniqueDeviceID"].toString();
+            m_deviceInfo[m_currentUdid] = deviceInfo;
+            plist_free(node);
+            node = nullptr;
         }
-    });
-
+    }
+    delete m_clients[MobileOperation::DEVICE_INFO];
+    m_clients.remove(MobileOperation::DEVICE_INFO);
 }
 
 QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)
@@ -318,7 +319,7 @@ void DeviceBridge::StartLockdown(bool condition, lockdownd_client_t& client, QSt
 
         case LOCKDOWN_E_SSL_ERROR:
             if (m_isRemote)
-                ConnectToDevice(m_remoteAddress.m_ipAddress, m_remoteAddress.m_port);
+                ConnectToDevice(m_remoteAddress.ipAddress, m_remoteAddress.port);
             else
                 ConnectToDevice(m_currentUdid);
             break;

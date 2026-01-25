@@ -2,6 +2,17 @@
 #define UTILS_H
 #include <QWidget>
 
+#define TOOL_NAME                       "idebugtool"
+
+struct RemoteAddress {
+    RemoteAddress(){}
+    RemoteAddress(QString ipAddress, int port){ ipAddress=ipAddress; port=port; }
+    void clear(){ ipAddress.clear(); port=0; }
+
+    QString ipAddress = "";
+    int port = 0;
+};
+
 QString Base64Encode(QString string);
 void StringWithSpaces(QString &string, bool CapFirstOnly = false);
 QString FindRegex(QString rawString, QString regex);
