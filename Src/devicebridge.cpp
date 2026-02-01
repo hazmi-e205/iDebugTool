@@ -65,8 +65,6 @@ DeviceBridge::DeviceBridge()
     , m_fileClient(nullptr)
     , m_fileManager(nullptr)
     , m_houseArrest(nullptr)
-    , m_syslogClient(nullptr)
-    , m_syslog(nullptr)
     , m_logHandler(new LogFilterThread())
     , m_debugClient(nullptr)
     , m_debugger(nullptr)
@@ -138,12 +136,6 @@ void DeviceBridge::ResetConnection()
         house_arrest_client_free(m_houseArrest);
         m_houseArrest = nullptr;
     }
-
-    if (m_syslog)
-    {
-        syslog_relay_client_free(m_syslog);
-        m_syslog = nullptr;
-    }
     
     //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
     if(m_crashlogClient)
@@ -156,12 +148,6 @@ void DeviceBridge::ResetConnection()
     {
         lockdownd_client_free(m_fileClient);
         m_fileClient = nullptr;
-    }
-
-    if(m_syslogClient)
-    {
-        lockdownd_client_free(m_syslogClient);
-        m_syslogClient = nullptr;
     }
 
     if(m_debugClient)

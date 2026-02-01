@@ -236,8 +236,6 @@ signals:
  private:
      static void SystemLogsCallback(char c, void *user_data);
      void TriggerSystemLogsReceived(LogPacket log);
-     lockdownd_client_t m_syslogClient;
-     syslog_relay_client_t m_syslog;
      LogFilterThread* m_logHandler;
  signals:
      void FilterStatusChanged(bool isfiltering);
