@@ -15,20 +15,34 @@
 QJsonDocument DeviceBridge::GetInstalledApps()
 {
     QJsonDocument jsonArray;
-    installer_action([&, this](){
-        plist_t client_opts = instproxy_client_options_new();
-        instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
+    QStringList serviceIds = QStringList() << INSTPROXY_SERVICE_NAME;
+    MobileOperation op = MobileOperation::GET_APPS;
+    if (!CreateClient(op, serviceIds))
+        return jsonArray;
 
-        plist_t apps = nullptr;
-        instproxy_error_t err = instproxy_browse(m_installer, client_opts, &apps);
-        if (err != INSTPROXY_E_SUCCESS || !apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_browse returnd an invalid plist!");
-            return;
-        }
+    lockdownd_service_descriptor_t service = GetService(op, serviceIds);
+    if (!service)
+        return jsonArray;
 
-        jsonArray = PlistToJson(apps);
-        plist_free(apps);
-    });
+    instproxy_error_t err = instproxy_client_new(m_clients[op]->device, service, &m_clients[op]->installer);
+    if (err != INSTPROXY_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(err));
+        return jsonArray;
+    }
+
+    plist_t client_opts = instproxy_client_options_new();
+    instproxy_client_options_add(client_opts, "ApplicationType", "User", nullptr);
+
+    plist_t apps = nullptr;
+    err = instproxy_browse(m_clients[op]->installer, client_opts, &apps);
+    if (err != INSTPROXY_E_SUCCESS || !apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: instproxy_browse returnd an invalid plist!");
+        return jsonArray;
+    }
+
+    jsonArray = PlistToJson(apps);
+    plist_free(apps);
+    RemoveClient(op);
     return jsonArray;
 }
 
@@ -66,36 +80,65 @@ QMap<QString, QJsonDocument> DeviceBridge::GetInstalledApps(bool doAsync)
 void DeviceBridge::UninstallApp(QString bundleId)
 {
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
-        installer_action([&, this](){
-            instproxy_uninstall(m_installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
-        });
+        QStringList serviceIds = QStringList() << INSTPROXY_SERVICE_NAME;
+        MobileOperation op = MobileOperation::UNINSTALL_APP;
+
+        if (!CreateClient(op, serviceIds))
+            return;
+
+        lockdownd_service_descriptor_t service = GetService(op, serviceIds);
+        if (!service)
+            return;
+
+        instproxy_error_t err = instproxy_client_new(m_clients[op]->device, service, &m_clients[op]->installer);
+        if (err != INSTPROXY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(err));
+            return;
+        }
+
+        err = instproxy_uninstall(m_clients[op]->installer, bundleId.toUtf8().data(), NULL, InstallerCallback, NULL);
+        if (err != INSTPROXY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Uninstall failed " + bundleId + " client! " + QString::number(err));
+        }
     });
 }
 
 void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
 {
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
-        QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
-        StartLockdown(!m_buildSender, m_installerClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-            afc_error_t aerr = afc_client_new(m_device, service, &m_buildSender);
-            if (aerr != AFC_E_SUCCESS) {
-                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
-                return;
-            }
 
-            installer_action([&, this](){
-                install_app(m_buildSender, cmd, path);
-            });
+        QStringList id_installer = QStringList() << INSTPROXY_SERVICE_NAME;
+        QStringList id_afc = QStringList() << AFC_SERVICE_NAME;
+        MobileOperation op = MobileOperation::INSTALL_APP;
 
-            if (m_buildSender) {
-                afc_client_free(m_buildSender);
-                m_buildSender = nullptr;
-            }
-        });
+        if (!CreateClient(op, id_installer, id_afc))
+            return;
+
+        lockdownd_service_descriptor_t service_installer = GetService(op, id_installer);
+        if (!service_installer)
+            return;
+
+        lockdownd_service_descriptor_t service_afc = GetService(op, id_afc);
+        if (!service_afc)
+            return;
+
+        instproxy_error_t err = instproxy_client_new(m_clients[op]->device, service_installer, &m_clients[op]->installer);
+        if (err != INSTPROXY_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + id_installer.join(", ") + " client! " + QString::number(err));
+            return;
+        }
+
+        afc_error_t aerr = afc_client_new(m_clients[op]->device, service_afc, &m_clients[op]->afc);
+        if (aerr != AFC_E_SUCCESS) {
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + id_afc.join(", ") + " client! " + QString::number(aerr));
+            return;
+        }
+
+        install_app(m_clients[op]->installer, m_clients[op]->afc, cmd, path);
     });
 }
 
-void DeviceBridge::install_app(afc_client_t &afc, InstallerMode cmd, QString path)
+void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path)
 {
     char *bundleidentifier = NULL;
     QString pkgname = "";
@@ -289,10 +332,10 @@ void DeviceBridge::install_app(afc_client_t &afc, InstallerMode cmd, QString pat
     /* perform installation or upgrade */
     if (cmd == CMD_INSTALL) {
         emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Installing " + QString(bundleidentifier));
-        instproxy_install(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
+        instproxy_install(installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     } else {
         emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
-        instproxy_upgrade(m_installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
+        instproxy_upgrade(installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     }
     instproxy_client_options_free(client_opts);
 }
@@ -315,30 +358,16 @@ void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument s
     }
     else
     {
-        percentage = pMessage == "Complete" ? 100 : (50 + status["PercentComplete"].toInt() / 2);
+        if (pMessage == "Complete")
+        {
+            percentage = 100;
+        }
+        else
+        {
+            percentage = 50 + status["PercentComplete"].toInt() / 2;
+        }
     }
     emit InstallerStatusChanged(pCommand, pBundleId, percentage, pMessage);
-    if (percentage == 100) {
-        ConnectToDevice(m_currentUdid);
-    }
-}
-
-void DeviceBridge::installer_action(std::function<void ()> action)
-{
-    QStringList serviceIds = QStringList() << INSTPROXY_SERVICE_NAME;
-    StartLockdown(!m_installer, m_installerClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-        instproxy_error_t err = instproxy_client_new(m_device, service, &m_installer);
-        if (err != INSTPROXY_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-            return;
-        }
-        action();
-
-        if (m_installer) {
-            instproxy_client_free(m_installer);
-            m_installer = nullptr;
-        }
-    });
 }
 
 void DeviceBridge::InstallerCallback(plist_t command, plist_t status, void *unused)

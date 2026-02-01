@@ -211,13 +211,9 @@ signals:
      void UninstallApp(QString bundleId);
      void InstallApp(InstallerMode cmd, QString path);
  private:
-     void install_app(afc_client_t &afc, InstallerMode cmd, QString path);
+     void install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path);
      static void InstallerCallback(plist_t command, plist_t status, void *unused);
      void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
-     void installer_action(std::function<void()> action);
-     instproxy_client_t m_installer;
-     afc_client_t m_buildSender;
-     lockdownd_client_t m_installerClient;
      QMap<QString, QJsonDocument> m_installedApps;
  signals:
      void InstallerStatusChanged(InstallerMode command, QString bundleId, int percentage, QString message);

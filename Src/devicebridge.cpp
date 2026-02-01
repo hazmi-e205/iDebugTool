@@ -20,15 +20,19 @@ void DeviceBridge::Destroy()
     m_destroyed = true;
 }
 
-bool DeviceBridge::CreateClient(MobileOperation operation, QStringList service_ids, QStringList service_ids_2)
+bool DeviceBridge::CreateClient(MobileOperation op, QStringList service_ids, QStringList service_ids_2)
 {
-    m_clients[operation] = m_isRemote ? new DeviceClient(m_remoteAddress, service_ids, service_ids_2) : new DeviceClient(m_currentUdid, service_ids, service_ids_2);
-    bool ok = m_clients[operation]->device_error == IDEVICE_E_SUCCESS && m_clients[operation]->lockdownd_error == LOCKDOWN_E_SUCCESS;
-    if (!ok) {
-        emit MessagesReceived(MessagesType::MSG_ERROR,
-            m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
-                       : ("ERROR: No device with UDID " + m_currentUdid));
-        RemoveClient(operation);
+    // make sure it killed
+    RemoveClient(op);
+
+    // create mew client
+    m_clients[op] = m_isRemote ? new DeviceClient(m_remoteAddress, service_ids, service_ids_2) : new DeviceClient(m_currentUdid, service_ids, service_ids_2);
+    bool ok = m_clients[op]->device_error == IDEVICE_E_SUCCESS && m_clients[op]->lockdownd_error == LOCKDOWN_E_SUCCESS;
+    if (!ok)
+    {
+        emit MessagesReceived(MessagesType::MSG_ERROR, m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
+                                                                  : ("ERROR: No device with UDID " + m_currentUdid));
+        RemoveClient(op);
     }
     return ok;
 }
@@ -61,9 +65,6 @@ DeviceBridge::DeviceBridge()
     , m_fileClient(nullptr)
     , m_fileManager(nullptr)
     , m_houseArrest(nullptr)
-    , m_installer(nullptr)
-    , m_buildSender(nullptr)
-    , m_installerClient(nullptr)
     , m_syslogClient(nullptr)
     , m_syslog(nullptr)
     , m_logHandler(new LogFilterThread())
@@ -120,12 +121,6 @@ void DeviceBridge::ResetConnection()
     }
     m_clients.clear();
 
-    if (m_buildSender)
-    {
-        afc_client_free(m_buildSender);
-        m_buildSender = nullptr;
-    }
-
     if (m_crashlog)
     {
         afc_client_free(m_crashlog);
@@ -142,12 +137,6 @@ void DeviceBridge::ResetConnection()
     {
         house_arrest_client_free(m_houseArrest);
         m_houseArrest = nullptr;
-    }
-
-    if (m_installer)
-    {
-        instproxy_client_free(m_installer);
-        m_installer = nullptr;
     }
 
     if (m_syslog)
@@ -167,12 +156,6 @@ void DeviceBridge::ResetConnection()
     {
         lockdownd_client_free(m_fileClient);
         m_fileClient = nullptr;
-    }
-
-    if(m_installerClient)
-    {
-        lockdownd_client_free(m_installerClient);
-        m_installerClient = nullptr;
     }
 
     if(m_syslogClient)
