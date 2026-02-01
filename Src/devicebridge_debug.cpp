@@ -89,8 +89,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             return;
         }
 
+        MobileOperation op = MobileOperation::DEBUGGER;
+        if (!CreateClient(op))
+            return;
+
         /* start and connect to debugserver */
-        if (debugserver_client_start_service(m_device, &m_debugger, TOOL_NAME) != DEBUGSERVER_E_SUCCESS) {
+        if (debugserver_client_start_service(m_clients[op]->device, &m_clients[op]->debugger, TOOL_NAME) != DEBUGSERVER_E_SUCCESS) {
             emit DebuggerReceived(
                     "Could not start com.apple.debugserver!\n"
                     "Please make sure to mount the developer disk image first:\n"
@@ -101,7 +105,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         }
 
         /* set receive params */
-        if (debugserver_client_set_receive_params(m_debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
+        if (debugserver_client_set_receive_params(m_clients[op]->debugger, cancel_receive, 250) != DEBUGSERVER_E_SUCCESS) {
             emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
             CloseDebugger();
             return;
@@ -113,12 +117,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         debugserver_error_t dres;
         /*fprintf(stdout, "Setting logging bitmask...");
         debugserver_command_new("QSetLogging:bitmask=LOG_ALL|LOG_RNB_REMOTE|LOG_RNB_PACKETS;", 0, NULL, &command);
-        debugserver_error_t dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        debugserver_error_t dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
                 return;
             }
             free(response);
@@ -129,12 +133,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         qDebug() << "Setting maximum packet size...";
         char* packet_size[2] = { (char*)"102400", NULL};
         debugserver_command_new("QSetMaxPacketSize:", 1, packet_size, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
                 emit DebuggerReceived("Error setting max packet size occurred: " + QString(response), true);
                 CloseDebugger();
                 return;
@@ -147,12 +151,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         qDebug() << "Setting working directory...";
         char* working_dir[2] = {strdup(container.toUtf8().data()), NULL};
         debugserver_command_new("QSetWorkingDir:", 1, working_dir, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
                 emit DebuggerReceived("Error setting working directory occurred: " + QString(response), true);
                 CloseDebugger();
                 return;
@@ -166,7 +170,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         qDebug() << "Setting environment...";
         foreach (const QString& env, environtment) {
             qDebug() << QString::asprintf("setting environment variable: %s", env.toUtf8().data());
-            debugserver_client_set_environment_hex_encoded(m_debugger, env.toUtf8().data(), NULL);
+            debugserver_client_set_environment_hex_encoded(m_clients[op]->debugger, env.toUtf8().data(), NULL);
         }
 
         /* set arguments and run app */
@@ -181,18 +185,18 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             idx += 1;
         }
         app_argv[args.count()] = NULL;
-        debugserver_client_set_argv(m_debugger, args.count(), app_argv, NULL);
+        debugserver_client_set_argv(m_clients[op]->debugger, args.count(), app_argv, NULL);
         free(app_argv);
 
         /* check if launch succeeded */
         qDebug() << "Checking if launch succeeded...";
         debugserver_command_new("qLaunchSuccess", 0, NULL, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
                 emit DebuggerReceived("Error checking if launch succeeded occurred: " + QString(response), true);
                 CloseDebugger();
                 return;
@@ -205,7 +209,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         if (detach_after_start) {
             qDebug() << "Detaching from app";
             debugserver_command_new("D", 0, NULL, &command);
-            dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+            dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
             debugserver_command_free(command);
             command = NULL;
 
@@ -217,12 +221,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         /* set thread */
         qDebug() << "Setting thread...";
         debugserver_command_new("Hc0", 0, NULL, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
                 emit DebuggerReceived("Error setting thread occurred: " + QString(response), true);
                 CloseDebugger();
                 return;
@@ -234,7 +238,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         /* continue running process */
         qDebug() << "Continue running process...";
         debugserver_command_new("c", 0, NULL, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         qDebug() << QString::asprintf("Continue response: %s", response);
@@ -250,7 +254,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
             if (response) {
                 //qDebug() << QString::asprintf("response: %s", response);
                 if (strncmp(response, "OK", 2) != 0) {
-                    dres = DebugServerHandleResponse(m_debugger, &response, &res);
+                    dres = DebugServerHandleResponse(m_clients[op]->debugger, &response, &res);
                     if (dres != DEBUGSERVER_E_SUCCESS) {
                         qDebug() << QString::asprintf("failed to process response; error %d; %s", dres, response);
                         break;
@@ -263,11 +267,11 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
                 return;
             }
 
-            dres = debugserver_client_receive_response(m_debugger, &response, NULL);
+            dres = debugserver_client_receive_response(m_clients[op]->debugger, &response, NULL);
         }
 
         /* ignore quit_flag after this point */
-        if (debugserver_client_set_receive_params(m_debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
+        if (debugserver_client_set_receive_params(m_clients[op]->debugger, NULL, 5000) != DEBUGSERVER_E_SUCCESS) {
             emit DebuggerReceived("Error in debugserver_client_set_receive_params", true);
             CloseDebugger();
             return;
@@ -275,12 +279,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
 
         /* interrupt execution */
         debugserver_command_new("\x03", 0, NULL, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
             }
             free(response);
             response = NULL;
@@ -289,12 +293,12 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
         /* kill process after we finished */
         qDebug() << "Killing process...";
         debugserver_command_new("k", 0, NULL, &command);
-        dres = debugserver_client_send_command(m_debugger, command, &response, NULL);
+        dres = debugserver_client_send_command(m_clients[op]->debugger, command, &response, NULL);
         debugserver_command_free(command);
         command = NULL;
         if (response) {
             if (strncmp(response, "OK", 2) != 0) {
-                DebugServerHandleResponse(m_debugger, &response, NULL);
+                DebugServerHandleResponse(m_clients[op]->debugger, &response, NULL);
             }
             free(response);
             response = NULL;
@@ -306,7 +310,7 @@ void DeviceBridge::StartDebugging(QString bundleId, bool detach_after_start, QSt
 
 void DeviceBridge::StopDebugging()
 {
-    if (m_debugger)
+    if (m_clients.contains(MobileOperation::DEBUGGER))
         quit_flag = 1;
 
     while (quit_flag == 1)
@@ -348,9 +352,5 @@ void DeviceBridge::DebuggerReloadFilter()
 void DeviceBridge::CloseDebugger()
 {
     quit_flag = 0;
-    if (m_debugger)
-    {
-        debugserver_client_free(m_debugger);
-        m_debugger = nullptr;
-    }
+    RemoveClient(MobileOperation::DEBUGGER);
 }

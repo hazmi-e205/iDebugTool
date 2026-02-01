@@ -64,8 +64,6 @@ DeviceBridge::DeviceBridge()
     , m_fileManager(nullptr)
     , m_houseArrest(nullptr)
     , m_logHandler(new LogFilterThread())
-    , m_debugClient(nullptr)
-    , m_debugger(nullptr)
     , m_debugHandler(new DebuggerFilterThread())
 {
     connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
@@ -134,12 +132,6 @@ void DeviceBridge::ResetConnection()
     {
         lockdownd_client_free(m_fileClient);
         m_fileClient = nullptr;
-    }
-
-    if(m_debugClient)
-    {
-        lockdownd_client_free(m_debugClient);
-        m_debugClient = nullptr;
     }
 
     if(m_device)

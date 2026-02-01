@@ -253,8 +253,6 @@ public:
 private:
      void CloseDebugger();
      debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
-     lockdownd_client_t m_debugClient;
-     debugserver_client_t m_debugger;
      DebuggerFilterThread *m_debugHandler;
 signals:
      void DebuggerReceived(QString messages, bool stopped = false);
