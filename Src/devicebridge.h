@@ -118,9 +118,8 @@ public:
     static void Destroy();
 
 private:
-    void CreateClient(MobileOperation operation, QStringList service_ids = QStringList(), QStringList service_ids_2 = QStringList());
+    bool CreateClient(MobileOperation operation, QStringList service_ids = QStringList(), QStringList service_ids_2 = QStringList());
     void RemoveClient(MobileOperation operation);
-    bool IsClientOk(MobileOperation operation);
     lockdownd_service_descriptor_t GetService(MobileOperation operation,  QStringList service_ids);
     void ConnectToDevice(const std::function<void()>& configureConnection);
 

@@ -8,8 +8,7 @@ void DeviceBridge::StartDiagnostics(DiagnosticsMode mode)
 {
     MobileOperation name = MobileOperation::DIAGNOSTICS;
     QStringList serviceIds = QStringList() << "com.apple.mobile.diagnostics_relay" << "com.apple.iosdiagnostics.relay";
-    CreateClient(name, serviceIds);
-    if (!IsClientOk(name))
+    if (!CreateClient(name, serviceIds))
         return;
 
     lockdownd_service_descriptor_t service = GetService(name, serviceIds);
@@ -53,8 +52,7 @@ void DeviceBridge::Screenshot(QString path)
 {
     MobileOperation name = MobileOperation::SCREENSHOOT;
     QStringList serviceIds = QStringList() << SCREENSHOTR_SERVICE_NAME;
-    CreateClient(name, serviceIds);
-    if (!IsClientOk(name))
+    if (!CreateClient(name, serviceIds))
         return;
 
     lockdownd_service_descriptor_t service = GetService(name, serviceIds);

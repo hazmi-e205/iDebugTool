@@ -20,9 +20,17 @@ void DeviceBridge::Destroy()
     m_destroyed = true;
 }
 
-void DeviceBridge::CreateClient(MobileOperation operation, QStringList service_ids, QStringList service_ids_2)
+bool DeviceBridge::CreateClient(MobileOperation operation, QStringList service_ids, QStringList service_ids_2)
 {
     m_clients[operation] = m_isRemote ? new DeviceClient(m_remoteAddress, service_ids, service_ids_2) : new DeviceClient(m_currentUdid, service_ids, service_ids_2);
+    bool ok = m_clients[operation]->device_error == IDEVICE_E_SUCCESS && m_clients[operation]->lockdownd_error == LOCKDOWN_E_SUCCESS;
+    if (!ok) {
+        emit MessagesReceived(MessagesType::MSG_ERROR,
+            m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
+                       : ("ERROR: No device with UDID " + m_currentUdid));
+        RemoveClient(operation);
+    }
+    return ok;
 }
 
 void DeviceBridge::RemoveClient(MobileOperation operation)
@@ -32,17 +40,6 @@ void DeviceBridge::RemoveClient(MobileOperation operation)
         delete m_clients[operation];
         m_clients.remove(operation);
     }
-}
-
-bool DeviceBridge::IsClientOk(MobileOperation operation)
-{
-    bool ok = m_clients[operation]->device_error == IDEVICE_E_SUCCESS && m_clients[operation]->lockdownd_error == LOCKDOWN_E_SUCCESS;
-    if (!ok) {
-        emit MessagesReceived(MessagesType::MSG_ERROR,
-            m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
-                       : ("ERROR: No device with UDID " + m_currentUdid));
-    }
-    return ok;
 }
 
 lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operation, QStringList service_ids)
@@ -201,8 +198,7 @@ void DeviceBridge::ConnectToDevice(const std::function<void()>& configureConnect
 
         emit ProcessStatusChanged(10, m_isRemote ? QString("Connecting to %1:%2...").arg(m_remoteAddress.ipAddress, m_remoteAddress.port) : QString("Connecting to %1...").arg(m_currentUdid));
         configureConnection();
-        CreateClient(MobileOperation::DEVICE_INFO);
-        if (!IsClientOk(MobileOperation::DEVICE_INFO))
+        if (!CreateClient(MobileOperation::DEVICE_INFO))
             return;
 
         emit ProcessStatusChanged(20, "Getting device info...");
