@@ -1,5 +1,6 @@
 #include "devicebridge.h"
 #include "extended_plist.h"
+#include "qforeach.h"
 #include <QDebug>
 #include <QMessageBox>
 
@@ -19,11 +20,45 @@ void DeviceBridge::Destroy()
     m_destroyed = true;
 }
 
+void DeviceBridge::CreateClient(MobileOperation operation, QStringList service_ids, QStringList service_ids_2)
+{
+    m_clients[operation] = m_isRemote ? new DeviceClient(m_remoteAddress, service_ids, service_ids_2) : new DeviceClient(m_currentUdid, service_ids, service_ids_2);
+}
+
+void DeviceBridge::RemoveClient(MobileOperation operation)
+{
+    if (m_clients.contains(operation))
+    {
+        delete m_clients[operation];
+        m_clients.remove(operation);
+    }
+}
+
+bool DeviceBridge::IsClientOk(MobileOperation operation)
+{
+    bool ok = m_clients[operation]->device_error == IDEVICE_E_SUCCESS && m_clients[operation]->lockdownd_error == LOCKDOWN_E_SUCCESS;
+    if (!ok) {
+        emit MessagesReceived(MessagesType::MSG_ERROR,
+            m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
+                       : ("ERROR: No device with UDID " + m_currentUdid));
+    }
+    return ok;
+}
+
+lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operation, QStringList service_ids)
+{
+    for (auto& id : service_ids)
+    {
+        if (m_clients[operation]->services.contains(id))
+            return m_clients[operation]->services[id];
+    }
+    RemoveClient(operation);
+    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No available service!" + service_ids.join(", "));
+    return nullptr;
+}
+
 DeviceBridge::DeviceBridge()
     : m_device(nullptr)
-    , m_imageMounter(nullptr)
-    , m_imageSender(nullptr)
-    , m_mounterClient(nullptr)
     , m_crashlogClient(nullptr)
     , m_crashlog(nullptr)
     , m_fileClient(nullptr)
@@ -82,20 +117,6 @@ void DeviceBridge::ResetConnection()
     StopDebugging();
     StopSyslog();
 
-    if (m_imageMounter)
-    {
-        if (is_exist)
-            mobile_image_mounter_hangup(m_imageMounter);
-        mobile_image_mounter_free(m_imageMounter);
-        m_imageMounter = nullptr;
-    }
-
-    if (m_imageSender)
-    {
-        afc_client_free(m_imageSender);
-        m_imageSender = nullptr;
-    }
-
     if (m_buildSender)
     {
         afc_client_free(m_buildSender);
@@ -133,12 +154,6 @@ void DeviceBridge::ResetConnection()
     }
     
     //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
-    if(m_mounterClient)
-    {
-        lockdownd_client_free(m_mounterClient);
-        m_mounterClient = nullptr;
-    }
-
     if(m_crashlogClient)
     {
         lockdownd_client_free(m_crashlogClient);
@@ -178,53 +193,41 @@ void DeviceBridge::ResetConnection()
     emit DeviceStatus(ConnectionStatus::DISCONNECTED, m_currentUdid, m_isRemote);
 }
 
-void DeviceBridge::ConnectToDevice(QString udid)
+void DeviceBridge::ConnectToDevice(const std::function<void()>& configureConnection)
 {
-    AsyncManager::Get()->StartAsyncRequest([this, udid]() {
+    AsyncManager::Get()->StartAsyncRequest([=, this]() {
         emit ProcessStatusChanged(0, "Reset previous connection...");
         ResetConnection();
 
-        //connect to udid
-        emit ProcessStatusChanged(10, "Connecting to " + udid + "...");
-        m_clients[MobileOperation::DEVICE_INFO] = new DeviceClient(udid);
-        if (m_clients[MobileOperation::DEVICE_INFO]->device_error != IDEVICE_E_SUCCESS || m_clients[MobileOperation::DEVICE_INFO]->lockdownd_error != LOCKDOWN_E_SUCCESS)
-        {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No device with UDID " + udid);
+        emit ProcessStatusChanged(10, m_isRemote ? QString("Connecting to %1:%2...").arg(m_remoteAddress.ipAddress, m_remoteAddress.port) : QString("Connecting to %1...").arg(m_currentUdid));
+        configureConnection();
+        CreateClient(MobileOperation::DEVICE_INFO);
+        if (!IsClientOk(MobileOperation::DEVICE_INFO))
             return;
-        }
 
         emit ProcessStatusChanged(20, "Getting device info...");
-        m_currentUdid = udid;
-        m_isRemote = false;
         UpdateDeviceInfo();
         emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
         emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
     });
 }
 
+void DeviceBridge::ConnectToDevice(QString udid)
+{
+    ConnectToDevice(
+        [this, udid]() {
+            m_currentUdid = udid;
+            m_isRemote = false;
+        });
+}
+
 void DeviceBridge::ConnectToDevice(QString ipAddress, int port)
 {
-    AsyncManager::Get()->StartAsyncRequest([=, this]() {
-        emit ProcessStatusChanged(0, "Reset previous connection...");
-        ResetConnection();
-
-        //connect to udid
-        emit ProcessStatusChanged(10, QString::asprintf("Connecting to %s:%d...", ipAddress.toUtf8().data(), port));
-        RemoteAddress address = RemoteAddress(ipAddress, port);
-        m_clients[MobileOperation::DEVICE_INFO] = new DeviceClient(address);
-        if (m_clients[MobileOperation::DEVICE_INFO]->device_error != IDEVICE_E_SUCCESS || m_clients[MobileOperation::DEVICE_INFO]->lockdownd_error != LOCKDOWN_E_SUCCESS)
-        {
-            emit MessagesReceived(MessagesType::MSG_ERROR, QString::asprintf("ERROR: No device with %s:%d!", ipAddress.toUtf8().data(), port));
-            return;
-        }
-
-        emit ProcessStatusChanged(20, "Getting device info...");
-        m_isRemote = true;
-        m_remoteAddress = address;
-        UpdateDeviceInfo();
-        emit ProcessStatusChanged(100, "Connected to " + GetDeviceInfo()["DeviceName"].toString() + "!");
-        emit DeviceStatus(ConnectionStatus::CONNECTED, m_currentUdid, m_isRemote);
-    });
+    ConnectToDevice(
+        [this, ipAddress, port]() {
+            m_remoteAddress = RemoteAddress(ipAddress, port);
+            m_isRemote = true;
+        });
 }
 
 QString DeviceBridge::GetCurrentUdid()
@@ -249,8 +252,7 @@ void DeviceBridge::UpdateDeviceInfo()
             node = nullptr;
         }
     }
-    delete m_clients[MobileOperation::DEVICE_INFO];
-    m_clients.remove(MobileOperation::DEVICE_INFO);
+    RemoveClient(MobileOperation::DEVICE_INFO);
 }
 
 QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)

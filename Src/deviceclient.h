@@ -21,14 +21,13 @@ using namespace idevice;
 class DeviceClient
 {
 public:
-    DeviceClient(QString udid, QStringList service_ids = QStringList());
-    DeviceClient(RemoteAddress address, QStringList service_ids = QStringList());
+    DeviceClient(QString udid, QStringList service_ids = QStringList(), QStringList service_ids_2 = QStringList());
+    DeviceClient(RemoteAddress address, QStringList service_ids = QStringList(), QStringList service_ids_2 = QStringList());
     ~DeviceClient();
 
     idevice_t device;
     lockdownd_client_t client;
-    lockdownd_service_descriptor_t service;
-    QString service_id;
+    QMap<QString,lockdownd_service_descriptor_t> services;
 
     lockdownd_error_t lockdownd_error;
     idevice_error_t device_error;

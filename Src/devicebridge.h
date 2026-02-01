@@ -118,6 +118,12 @@ public:
     static void Destroy();
 
 private:
+    void CreateClient(MobileOperation operation, QStringList service_ids = QStringList(), QStringList service_ids_2 = QStringList());
+    void RemoveClient(MobileOperation operation);
+    bool IsClientOk(MobileOperation operation);
+    lockdownd_service_descriptor_t GetService(MobileOperation operation,  QStringList service_ids);
+    void ConnectToDevice(const std::function<void()>& configureConnection);
+
     void UpdateDeviceInfo();
     void StartLockdown(bool condition, lockdownd_client_t& client, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function, bool clear_lockdownd = true);
     void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
@@ -162,11 +168,8 @@ signals:
     bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
  private:
-    void mount_image(afc_client_t& afc, QString image_path, QString signature_path);
+    void mount_image(QString image_path, QString signature_path);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
-    mobile_image_mounter_client_t m_imageMounter;
-    afc_client_t m_imageSender;
-    lockdownd_client_t m_mounterClient;
  signals:
      void MounterStatusChanged(QString messages);
 
