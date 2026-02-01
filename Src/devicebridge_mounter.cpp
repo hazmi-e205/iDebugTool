@@ -12,53 +12,55 @@ QStringList DeviceBridge::GetMountedImages()
 {
     QStringList signatures;
     QStringList serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
-    StartLockdown(!m_imageMounter, m_mounterClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-        mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
-        if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-            return;
-        }
+    MobileOperation name = MobileOperation::GET_MOUNTED;
+    if (!CreateClient(name, serviceIds))
+        return signatures;
 
-        QStringList os_version = m_deviceInfo[m_currentUdid]["ProductVersion"].toString().split(".");
-        int major_version = os_version.isEmpty() ? 0 : os_version[0].toInt();
-        QStringList lookup_types;
-        if (major_version >= 17) {
-            lookup_types << "Personalized" << "Developer";
-        } else {
-            lookup_types << "Developer";
-        }
+    lockdownd_service_descriptor_t service = GetService(name, serviceIds);
+    if (!service)
+        return signatures;
 
-        QJsonDocument doc;
-        plist_t result = nullptr;
-        for (const auto &type : lookup_types) {
-            err = mobile_image_mounter_lookup_image(m_imageMounter, type.toUtf8().data(), &result);
-            if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
-                doc = PlistToJson(result);
-                auto arr = doc["ImageSignature"].toArray();
-                for (int idx = 0; idx < arr.count(); idx++)
-                {
-                    signatures.append(arr[idx].toString());
-                }
-                break;
+    mobile_image_mounter_error_t err = mobile_image_mounter_new(m_clients[name]->device, service, &m_clients[name]->mounter);
+    if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(err));
+        return signatures;
+    }
+
+    QStringList os_version = m_deviceInfo[m_currentUdid]["ProductVersion"].toString().split(".");
+    int major_version = os_version.isEmpty() ? 0 : os_version[0].toInt();
+    QStringList lookup_types;
+    if (major_version >= 17) {
+        lookup_types << "Personalized" << "Developer";
+    } else {
+        lookup_types << "Developer";
+    }
+
+    QJsonDocument doc;
+    plist_t result = nullptr;
+    for (const auto &type : lookup_types) {
+        err = mobile_image_mounter_lookup_image(m_clients[name]->mounter, type.toUtf8().data(), &result);
+        if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+            doc = PlistToJson(result);
+            auto arr = doc["ImageSignature"].toArray();
+            for (int idx = 0; idx < arr.count(); idx++)
+            {
+                signatures.append(arr[idx].toString());
             }
-            if (result) {
-                plist_free(result);
-                result = nullptr;
-            }
-        }
-        if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "Error: lookup_image returned " + QString::number(err));
+            break;
         }
         if (result) {
             plist_free(result);
+            result = nullptr;
         }
-        if (m_imageMounter)
-        {
-            mobile_image_mounter_hangup(m_imageMounter);
-            mobile_image_mounter_free(m_imageMounter);
-            m_imageMounter = nullptr;
-        }
-    });
+    }
+    if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "Error: lookup_image returned " + QString::number(err));
+    }
+    if (result) {
+        plist_free(result);
+    }
+
+    RemoveClient(name);
     return signatures;
 }
 
@@ -70,42 +72,38 @@ bool DeviceBridge::IsImageMounted()
 
 void DeviceBridge::MountImage(QString image_path, QString signature_path)
 {
-    QStringList serviceIds = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
-    StartLockdown(!m_imageMounter, m_mounterClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-        mobile_image_mounter_error_t err = mobile_image_mounter_new(m_device, service, &m_imageMounter);
-        if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
-        }
-    }, false);
+    MobileOperation name = MobileOperation::MOUNT_IMAGE;
+    QStringList ids_mounter = QStringList() << MOBILE_IMAGE_MOUNTER_SERVICE_NAME;
+    QStringList ids_afc = QStringList() << AFC_SERVICE_NAME;
+    if (!CreateClient(name, ids_mounter, ids_afc))
+        return;
 
-    serviceIds = QStringList() << AFC_SERVICE_NAME;
-    StartLockdown(!m_imageSender, m_mounterClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-        afc_error_t aerr = afc_client_new(m_device, service, &m_imageSender);
-        if (aerr != AFC_E_SUCCESS) {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
-        }
-    }, false);
+    lockdownd_service_descriptor_t service_mounter = GetService(name, ids_mounter);
+    if (!service_mounter)
+        return;
+
+
+    lockdownd_service_descriptor_t service_afc = GetService(name, ids_afc);
+    if (!service_afc)
+        return;
+
+    mobile_image_mounter_error_t err = mobile_image_mounter_new(m_clients[name]->device, service_mounter, &m_clients[name]->mounter);
+    if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + ids_mounter.join(", ") + " client! " + QString::number(err));
+    }
+
+    afc_error_t aerr = afc_client_new(m_clients[name]->device, service_afc, &m_clients[name]->afc);
+    if (aerr != AFC_E_SUCCESS) {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + ids_afc.join(", ") + " client! " + QString::number(aerr));
+    }
 
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
-        mount_image(m_imageSender, image_path, signature_path);
-        if (m_imageSender) {
-            afc_client_free(m_imageSender);
-            m_imageSender = nullptr;
-        }
-        if (m_imageMounter)
-        {
-            mobile_image_mounter_hangup(m_imageMounter);
-            mobile_image_mounter_free(m_imageMounter);
-            m_imageMounter = nullptr;
-        }
-        if (!m_mounterClient) {
-            lockdownd_client_free(m_mounterClient);
-            m_mounterClient = nullptr;
-        }
+        mount_image(m_clients[name]->mounter, m_clients[name]->afc, image_path, signature_path);
+        RemoveClient(name);
     });
 }
 
-void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString signature_path)
+void DeviceBridge::mount_image(mobile_image_mounter_client_t& mounter, afc_client_t& afc, QString image_path, QString signature_path)
 {
     unsigned char *sig = NULL;
     unsigned int sig_length = 0;
@@ -149,7 +147,7 @@ void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString si
             return;
         }
 
-        mobile_image_mounter_error_t merr = mobile_image_mounter_query_personalization_identifiers(m_imageMounter, NULL, &identifiers);
+        mobile_image_mounter_error_t merr = mobile_image_mounter_query_personalization_identifiers(mounter, NULL, &identifiers);
         if (merr != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
             emit MounterStatusChanged("Error: Failed to query personalization identifiers: " + QString::number(merr));
             plist_free(build_manifest);
@@ -277,7 +275,7 @@ void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString si
             sig_length = static_cast<unsigned int>(signature_data.size());
         } else {
             merr = mobile_image_mounter_query_personalization_manifest(
-                m_imageMounter, "DeveloperDiskImage", sha384_digest, sizeof(sha384_digest), &manifest, &manifest_size);
+                mounter, "DeveloperDiskImage", sha384_digest, sizeof(sha384_digest), &manifest, &manifest_size);
             if (merr != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
                 emit MounterStatusChanged("Error: No personalization manifest available. Provide an IM4M signature file.");
                 fclose(f);
@@ -337,7 +335,7 @@ void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString si
     switch (mount_type) {
     case DISK_IMAGE_UPLOAD_TYPE_UPLOAD_IMAGE:
         emit MounterStatusChanged("Uploading '" + QFileInfo(image_path_local).fileName() + "' to device...");
-        err = mobile_image_mounter_upload_image(m_imageMounter, image_type, image_size, sig, sig_length, ImageMounterCallback, f);
+        err = mobile_image_mounter_upload_image(mounter, image_type, image_size, sig, sig_length, ImageMounterCallback, f);
         if (err != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
             QString message("ERROR: Unknown error occurred, can't mount.");
             if (err == MOBILE_IMAGE_MOUNTER_E_DEVICE_LOCKED) {
@@ -446,10 +444,10 @@ void DeviceBridge::mount_image(afc_client_t &afc, QString image_path, QString si
     emit MounterStatusChanged("Mounting...");
     if (mount_options) {
         err = mobile_image_mounter_mount_image_with_options(
-            m_imageMounter, mountname.toUtf8().data(), sig, sig_length, image_type, mount_options, &result);
+            mounter, mountname.toUtf8().data(), sig, sig_length, image_type, mount_options, &result);
     } else {
         err = mobile_image_mounter_mount_image(
-            m_imageMounter, mountname.toUtf8().data(), sig, sig_length, image_type, &result);
+            mounter, mountname.toUtf8().data(), sig, sig_length, image_type, &result);
     }
     if (err == MOBILE_IMAGE_MOUNTER_E_SUCCESS)
     {

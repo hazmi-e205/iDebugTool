@@ -47,6 +47,7 @@ public:
 
 private:
     DeviceClient();
+    bool StartService(const QStringList& service_ids);
 };
 
 #endif // DEVICECLIENT_H

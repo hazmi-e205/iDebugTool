@@ -114,6 +114,12 @@ void DeviceBridge::ResetConnection()
     StopDebugging();
     StopSyslog();
 
+    for (auto& client : m_clients.keys())
+    {
+        delete m_clients[client];
+    }
+    m_clients.clear();
+
     if (m_buildSender)
     {
         afc_client_free(m_buildSender);

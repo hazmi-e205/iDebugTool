@@ -167,7 +167,7 @@ signals:
     bool IsImageMounted();
     void MountImage(QString image_path, QString signature_path);
  private:
-    void mount_image(QString image_path, QString signature_path);
+    void mount_image(mobile_image_mounter_client_t& mounter, afc_client_t& afc, QString image_path, QString signature_path);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
  signals:
      void MounterStatusChanged(QString messages);

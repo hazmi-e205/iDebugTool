@@ -4,8 +4,6 @@
 DeviceClient::DeviceClient()
     : device(nullptr)
     , client(nullptr)
-    , service(nullptr)
-    , service_id()
     , lockdownd_error(LOCKDOWN_E_UNKNOWN_ERROR)
     , device_error(IDEVICE_E_UNKNOWN_ERROR)
     , dtx_transport(nullptr)
@@ -22,6 +20,24 @@ DeviceClient::DeviceClient()
 {
 }
 
+bool DeviceClient::StartService(const QStringList& service_ids)
+{
+    if (service_ids.isEmpty())
+        return false;
+
+    QString service_id;
+    lockdownd_error = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
+    for (const auto& svc_id : std::as_const(service_ids))
+    {
+        service_id = svc_id;
+        lockdownd_error = lockdownd_start_service(client, svc_id.toUtf8().data(), &services[service_id]);
+        if (lockdownd_error == LOCKDOWN_E_SUCCESS)
+            return true;
+    }
+    qDebug() << "Start lockdownd service" << service_ids.join(", ") << service_id << "error :" << lockdownd_error;
+    return false;
+}
+
 DeviceClient::DeviceClient(QString udid, QStringList service_ids, QStringList service_ids_2) : DeviceClient()
 {
     device_error = idevice_new_with_options(&device, udid.toStdString().c_str(), idevice_options(IDEVICE_LOOKUP_USBMUX | IDEVICE_LOOKUP_NETWORK));
@@ -36,39 +52,11 @@ DeviceClient::DeviceClient(QString udid, QStringList service_ids, QStringList se
         return;
     }
 
-    if (service_ids.size() == 0)
+    if (!StartService(service_ids))
         return;
 
-    QString service_id;
-    lockdownd_error = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-    for ( const auto& svc_id : std::as_const(service_ids))
-    {
-        service_id = svc_id;
-        // lockdownd_service_descriptor_t service;
-        lockdownd_error = lockdownd_start_service(client, svc_id.toUtf8().data(), &services[service_id]);
-        if(lockdownd_error == LOCKDOWN_E_SUCCESS) {
-            // services[service_id] = std::move(service);
-            break;
-        } else {
-            qDebug() << "Start lockdownd service 1 " << service_id << " error : " << lockdownd_error;
-            return;
-        }
-    }
-
-    lockdownd_error = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-    for ( const auto& svc_id : std::as_const(service_ids_2))
-    {
-        service_id = svc_id;
-        // lockdownd_service_descriptor_t service;
-        lockdownd_error = lockdownd_start_service(client, svc_id.toUtf8().data(), &services[service_id]);
-        if(lockdownd_error == LOCKDOWN_E_SUCCESS) {
-            // services[service_id] = std::move(service);
-            break;
-        } else {
-            qDebug() << "Start lockdownd service 2 " << service_id << " error : " << lockdownd_error;
-            return;
-        }
-    }
+    if (!StartService(service_ids_2))
+        return;
 }
 
 DeviceClient::DeviceClient(RemoteAddress address, QStringList service_ids, QStringList service_ids_2) : DeviceClient()
@@ -85,39 +73,11 @@ DeviceClient::DeviceClient(RemoteAddress address, QStringList service_ids, QStri
         return;
     }
 
-    if (service_ids.size() == 0)
+    if (!StartService(service_ids))
         return;
 
-    QString service_id;
-    lockdownd_error = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-    for ( const auto& svc_id : std::as_const(service_ids))
-    {
-        service_id = svc_id;
-        // lockdownd_service_descriptor_t service;
-        lockdownd_error = lockdownd_start_service(client, svc_id.toUtf8().data(), &services[service_id]);
-        if(lockdownd_error == LOCKDOWN_E_SUCCESS) {
-            // services[service_id] = std::move(service);
-            break;
-        } else {
-            qDebug() << "Start lockdownd service 1 " << service_id << " error : " << lockdownd_error;
-            return;
-        }
-    }
-
-    lockdownd_error = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-    for ( const auto& svc_id : std::as_const(service_ids_2))
-    {
-        service_id = svc_id;
-        // lockdownd_service_descriptor_t service;
-        lockdownd_error = lockdownd_start_service(client, svc_id.toUtf8().data(), &services[service_id]);
-        if(lockdownd_error == LOCKDOWN_E_SUCCESS) {
-            // services[service_id] = std::move(service);
-            break;
-        } else {
-            qDebug() << "Start lockdownd service 2 " << service_id << " error : " << lockdownd_error;
-            return;
-        }
-    }
+    if (!StartService(service_ids_2))
+        return;
 }
 
 DeviceClient::~DeviceClient()
@@ -190,11 +150,11 @@ DeviceClient::~DeviceClient()
     }
 
     // basics
-    if (service)
+    for (auto& service : services.keys())
     {
-        lockdownd_service_descriptor_free(service);
-        service = nullptr;
+        lockdownd_service_descriptor_free(services[service]);
     }
+    services.clear();
 
     if (client)
     {
