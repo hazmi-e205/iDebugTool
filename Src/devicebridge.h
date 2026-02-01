@@ -176,8 +176,6 @@ signals:
  public:
      void SyncCrashlogs(QString path);
  private:
-     lockdownd_client_t m_crashlogClient;
-     afc_client_t m_crashlog;
      QString m_crashlogTargetDir;
  signals:
      void CrashlogsStatusChanged(QString messages);

@@ -44,6 +44,7 @@ public:
     diagnostics_relay_client_t diagnostics;
     screenshotr_client_t screenshot;
     mobile_image_mounter_client_t mounter;
+    service_client_t service;
 
 private:
     DeviceClient();

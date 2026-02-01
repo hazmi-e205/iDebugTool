@@ -17,6 +17,7 @@ DeviceClient::DeviceClient()
     , diagnostics(nullptr)
     , screenshot(nullptr)
     , mounter(nullptr)
+    , service(nullptr)
 {
 }
 
@@ -99,6 +100,12 @@ DeviceClient::~DeviceClient()
     }
 
     // services
+    if (service)
+    {
+        service_client_free(service);
+        service = nullptr;
+    }
+
     if (screenshot)
     {
         screenshotr_client_free(screenshot);

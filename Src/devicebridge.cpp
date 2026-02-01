@@ -60,8 +60,6 @@ lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operatio
 
 DeviceBridge::DeviceBridge()
     : m_device(nullptr)
-    , m_crashlogClient(nullptr)
-    , m_crashlog(nullptr)
     , m_fileClient(nullptr)
     , m_fileManager(nullptr)
     , m_houseArrest(nullptr)
@@ -119,12 +117,6 @@ void DeviceBridge::ResetConnection()
     }
     m_clients.clear();
 
-    if (m_crashlog)
-    {
-        afc_client_free(m_crashlog);
-        m_crashlog = nullptr;
-    }
-
     if (m_fileManager)
     {
         afc_client_free(m_fileManager);
@@ -138,12 +130,6 @@ void DeviceBridge::ResetConnection()
     }
     
     //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
-    if(m_crashlogClient)
-    {
-        lockdownd_client_free(m_crashlogClient);
-        m_crashlogClient = nullptr;
-    }
-
     if(m_fileClient)
     {
         lockdownd_client_free(m_fileClient);
