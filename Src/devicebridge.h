@@ -161,6 +161,13 @@ signals:
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
      int afc_count_recursive(afc_client_t afc, const char* path);
+     // Recursively walks an AFC path and populates m_accessibleStorage.
+     // Parameters:
+     //  - afc: active AFC client used for directory reads and file info lookups.
+     //  - path: AFC path to start traversal (e.g. "/" or "/Documents").
+     //  - visited: optional counter of visited entries; incremented as each file/dir is processed.
+     //  - total: total number of entries expected; used with visited to compute percentage.
+     //  - progress_cb: optional callback invoked as progress_cb(visited, total) after each entry.
      void afc_traverse_recursive(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr);
 
      //Mounter
