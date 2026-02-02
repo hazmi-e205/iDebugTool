@@ -157,6 +157,7 @@ signals:
      //AFCUtils
  private:
      int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
+     int afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
      void afc_traverse_recursive(afc_client_t afc, const char* path);
@@ -193,10 +194,7 @@ signals:
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
  private:
-     void afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
-     lockdownd_client_t m_fileClient;
-     afc_client_t m_fileManager;
-     house_arrest_client_t m_houseArrest;
+     void afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
      QMap<QString, FileProperty> m_accessibleStorage;
  signals:
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents);

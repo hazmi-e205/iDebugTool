@@ -60,9 +60,6 @@ lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operatio
 
 DeviceBridge::DeviceBridge()
     : m_device(nullptr)
-    , m_fileClient(nullptr)
-    , m_fileManager(nullptr)
-    , m_houseArrest(nullptr)
     , m_logHandler(new LogFilterThread())
     , m_debugHandler(new DebuggerFilterThread())
 {
@@ -103,7 +100,6 @@ QMap<QString, idevice_connection_type> DeviceBridge::GetDevices()
 
 void DeviceBridge::ResetConnection()
 {
-    bool is_exist = m_deviceList.find(m_currentUdid) != m_deviceList.end();
     m_currentUdid.clear();
     m_remoteAddress.clear();
     StopDebugging();
@@ -114,25 +110,6 @@ void DeviceBridge::ResetConnection()
         delete m_clients[client];
     }
     m_clients.clear();
-
-    if (m_fileManager)
-    {
-        afc_client_free(m_fileManager);
-        m_fileManager = nullptr;
-    }
-
-    if (m_houseArrest)
-    {
-        house_arrest_client_free(m_houseArrest);
-        m_houseArrest = nullptr;
-    }
-    
-    //Quick fix: stuck while reseting connection at exit, switch, reconnect just comment free
-    if(m_fileClient)
-    {
-        lockdownd_client_free(m_fileClient);
-        m_fileClient = nullptr;
-    }
 
     if(m_device)
     {

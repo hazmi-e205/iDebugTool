@@ -60,6 +60,66 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
     return AFC_E_SUCCESS;
 }
 
+int DeviceBridge::afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
+{
+    FILE *f = NULL;
+    uint64_t af = 0;
+    char buf[1048576];
+    size_t total_bytes = 0;
+    size_t downloaded_bytes = 0;
+
+    if ((afc_file_open(afc, srcfn.toUtf8().data(), AFC_FOPEN_RDONLY, &af) != AFC_E_SUCCESS) || !af) {
+        fprintf(stderr, "afc_file_open on '%s' failed!\n", srcfn.toUtf8().data());
+        return -2;
+    }
+
+    f = fopen(dstfn.toUtf8().data(), "wb");
+    if (!f) {
+        afc_file_close(afc, af);
+        fprintf(stderr, "fopen: %s\n", strerror(errno));
+        return -2;
+    }
+
+    char **info = NULL;
+    if (afc_get_file_info(afc, srcfn.toUtf8().data(), &info) == AFC_E_SUCCESS && info) {
+        for (int j = 0; info[j]; j += 2) {
+            if (std::strcmp(info[j], "st_size") == 0) {
+                try {
+                    total_bytes = std::stoull(info[j + 1]);
+                } catch (...) {
+                    total_bytes = 0;
+                }
+            }
+        }
+        afc_dictionary_free(info);
+    }
+
+    afc_error_t aerr = AFC_E_SUCCESS;
+    uint32_t bytes_read = 0;
+    do {
+        bytes_read = 0;
+        aerr = afc_file_read(afc, af, buf, sizeof(buf), &bytes_read);
+        if (aerr != AFC_E_SUCCESS) {
+            break;
+        }
+        if (bytes_read > 0) {
+            fwrite(buf, 1, bytes_read, f);
+            downloaded_bytes += bytes_read;
+            if (callback) callback(downloaded_bytes, total_bytes);
+        }
+    } while (bytes_read > 0);
+
+    fclose(f);
+    afc_file_close(afc, af);
+
+    if (aerr != AFC_E_SUCCESS) {
+        fprintf(stderr, "afc_file_read on '%s' failed!\n", srcfn.toUtf8().data());
+        return aerr;
+    }
+
+    return AFC_E_SUCCESS;
+}
+
 bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback)
 {
     QStringList list_dirs, list_files;

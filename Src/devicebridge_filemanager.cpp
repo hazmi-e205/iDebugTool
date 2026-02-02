@@ -3,7 +3,7 @@
 
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
         m_accessibleStorage.clear();
         emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 50, bundleId);
         afc_traverse_recursive(afc, startPath.toStdString().c_str());
@@ -14,7 +14,7 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
 
 void DeviceBridge::PushToStorage(QString localPath, QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc){
         int percentage = 0;
         auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
         {
@@ -28,61 +28,28 @@ void DeviceBridge::PushToStorage(QString localPath, QString devicePath, QString 
 
 void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc){
         int percentage = 0;
-        int CHUNK_SIZE = 8192;
-        uint64_t handle = 0;
-        afc_error_t err = afc_file_open(afc, devicePath.toUtf8().data(), AFC_FOPEN_RDONLY, &handle);
-        if (err != AFC_E_SUCCESS) {
-            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open remote file: " + devicePath + "! " + QString::number(err));
-            return;
-        }
-
-        FILE *f = fopen(localPath.toUtf8().data(), "wb");
-        if (!f) {
-            afc_file_close(afc, handle);
-            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not open local file for writing: " + localPath + "! " + QString::number(err));
-            return;
-        }
-
-        char **info = NULL;
-        quint64 size_bytes = 0;
-        if (afc_get_file_info(afc, devicePath.toUtf8().data(), &info) == AFC_E_SUCCESS && info)
+        auto callback = [&](uint32_t downloaded_bytes, uint32_t total_bytes)
         {
-            for (int j = 0; info[j]; j += 2) {
-                if (std::strcmp(info[j], "st_size") == 0) {
-                    // Convert string to uint64_t
-                    try {
-                        size_bytes = std::stoull(info[j + 1]);
-                    } catch (...) {
-                        size_bytes = 0;
-                    }
-                }
+            if (total_bytes > 0) {
+                percentage = int((float(downloaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
             }
-            afc_dictionary_free(info);
-        }
-
-        quint64 written_bytes = 0;
-        uint32_t bytes_read = 0;
-        char buffer[CHUNK_SIZE];
-        while (afc_file_read(afc, handle, buffer, CHUNK_SIZE, &bytes_read) == AFC_E_SUCCESS && bytes_read > 0) {
-            fwrite(buffer, 1, bytes_read, f);
-            written_bytes += bytes_read;
-            percentage = int((float(written_bytes) / (float(size_bytes) * 2.f)) * 100.f);
             emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, percentage, devicePath);
+        };
+        int result = afc_download_file(afc, devicePath, localPath, callback);
+        if (result != 0) {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
+            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to pull file: " + devicePath + "! " + QString::number(result));
+            return;
         }
-
-        fclose(f);
-        afc_file_close(afc, handle);
         emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, percentage, devicePath);
     }, bundleId);
 }
 
 void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc){
         afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DELETE_OP, 100, devicePath);
@@ -95,7 +62,7 @@ void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::NEW_FOLDER, [=, this](afc_client_t& afc){
         afc_error_t err = afc_make_directory(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::MAKE_FOLDER, 100, devicePath);
@@ -108,7 +75,7 @@ void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bundleId)
 {
-    afc_filemanager_action([=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::RENAME_FILE, [=, this](afc_client_t& afc){
         afc_error_t err = afc_rename_path(afc, oldPath.toUtf8().data(), newPath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::RENAME, 100, newPath);
@@ -119,52 +86,52 @@ void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bun
     }, bundleId);
 }
 
-void DeviceBridge::afc_filemanager_action(std::function<void(afc_client_t &afc)> action, const QString& bundleId)
+void DeviceBridge::afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc)> action, const QString& bundleId)
 {
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
-        auto clear_instance = [this](){
-            if (m_fileManager)
-            {
-                afc_client_free(m_fileManager);
-                m_fileManager = nullptr;
-            }
-            if (m_houseArrest)
-            {
-                house_arrest_client_free(m_houseArrest);
-                m_houseArrest = nullptr;
-            }
-        };
-
-        if (!bundleId.isEmpty()) {
+        if (!bundleId.isEmpty())
+        {
             QStringList serviceIds = QStringList() << HOUSE_ARREST_SERVICE_NAME;
-            StartLockdown(!m_houseArrest, m_fileClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-                house_arrest_error_t err = house_arrest_client_new(m_device, service, &m_houseArrest);
-                if (err != HOUSE_ARREST_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(err));
+            if (!CreateClient(op, serviceIds))
+                return;
 
-                err = house_arrest_send_command(m_houseArrest, "VendContainer", bundleId.toUtf8().data());
-                if (err != HOUSE_ARREST_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
+            lockdownd_service_descriptor_t service = GetService(op, serviceIds);
+            if (!service)
+                return;
 
-                afc_error_t aerr = afc_client_new_from_house_arrest_client(m_houseArrest, &m_fileManager);
-                if (aerr != AFC_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + service_id + " client! " + QString::number(aerr));
+            house_arrest_error_t err = house_arrest_client_new(m_clients[op]->device, service, &m_clients[op]->house_arrest);
+            if (err != HOUSE_ARREST_E_SUCCESS)
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(err));
 
-                //call function pass from params
-                action(m_fileManager);
-                clear_instance();
-            });
-        } else {
-            QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
-            StartLockdown(!m_fileManager, m_fileClient, serviceIds, [&, this](QString& service_id, lockdownd_service_descriptor_t& service){
-                afc_error_t aerr = afc_client_new(m_device, service, &m_fileManager);
-                if (aerr != AFC_E_SUCCESS)
-                    emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " client! " + QString::number(aerr));
+            err = house_arrest_send_command(m_clients[op]->house_arrest, "VendContainer", bundleId.toUtf8().data());
+            if (err != HOUSE_ARREST_E_SUCCESS)
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
 
-                //call function pass from params
-                action(m_fileManager);
-                clear_instance();
-            });
+            afc_error_t aerr = afc_client_new_from_house_arrest_client(m_clients[op]->house_arrest, &m_clients[op]->afc);
+            if (aerr != AFC_E_SUCCESS)
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + serviceIds.join(", ") + " client! " + QString::number(aerr));
+
+            //call function pass from params
+            action(m_clients[op]->afc);
         }
+        else
+        {
+            QStringList serviceIds = QStringList() << AFC_SERVICE_NAME;
+            if (!CreateClient(op, serviceIds))
+                return;
+
+            lockdownd_service_descriptor_t service = GetService(op, serviceIds);
+            if (!service)
+                return;
+
+            afc_error_t aerr = afc_client_new(m_clients[op]->device, service, &m_clients[op]->afc);
+            if (aerr != AFC_E_SUCCESS)
+                emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(aerr));
+
+            //call function pass from params
+            action(m_clients[op]->afc);
+        }
+        //clear instances
+        RemoveClient(op);
     });
 }
