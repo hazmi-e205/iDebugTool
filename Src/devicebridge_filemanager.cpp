@@ -5,8 +5,19 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
 {
     afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
         m_accessibleStorage.clear();
-        emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 50, bundleId);
-        afc_traverse_recursive(afc, startPath.toStdString().c_str());
+        emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 0, bundleId);
+        int total_items = afc_count_recursive(afc, startPath.toStdString().c_str());
+        int visited_items = 0;
+        int last_percentage = -1;
+        auto progress_cb = [&](int current, int total) {
+            if (total <= 0) return;
+            int percentage = int((float(current) / float(total)) * 100.f);
+            if (percentage != last_percentage) {
+                last_percentage = percentage;
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, percentage, bundleId);
+            }
+        };
+        afc_traverse_recursive(afc, startPath.toStdString().c_str(), &visited_items, total_items, progress_cb);
         emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::FETCH, 100, bundleId);
         emit AccessibleStorageReceived(m_accessibleStorage);
     }, bundleId);

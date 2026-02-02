@@ -168,7 +168,48 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
     return true;
 }
 
-void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
+int DeviceBridge::afc_count_recursive(afc_client_t afc, const char *path)
+{
+    char **file_list = NULL;
+    int count = 0;
+
+    if (afc_read_directory(afc, path, &file_list) != AFC_E_SUCCESS || !file_list) {
+        return 0;
+    }
+
+    for (int i = 0; file_list[i]; i++) {
+        if (strcmp(file_list[i], ".") == 0 || strcmp(file_list[i], "..") == 0) continue;
+
+        char full_path[2048];
+        if (strcmp(path, "/") == 0) {
+            snprintf(full_path, sizeof(full_path), "/%s", file_list[i]);
+        } else {
+            snprintf(full_path, sizeof(full_path), "%s/%s", path, file_list[i]);
+        }
+
+        char **info = NULL;
+        bool is_dir = false;
+
+        if (afc_get_file_info(afc, full_path, &info) == AFC_E_SUCCESS && info) {
+            for (int j = 0; info[j]; j += 2) {
+                if (std::strcmp(info[j], "st_ifmt") == 0 && std::strcmp(info[j + 1], "S_IFDIR") == 0) {
+                    is_dir = true;
+                    break;
+                }
+            }
+            afc_dictionary_free(info);
+        }
+
+        count++;
+        if (is_dir) {
+            count += afc_count_recursive(afc, full_path);
+        }
+    }
+    afc_dictionary_free(file_list);
+    return count;
+}
+
+void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path, int* visited, int total, std::function<void(int,int)> progress_cb)
 {
     char **file_list = NULL;
 
@@ -211,8 +252,13 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path)
             afc_dictionary_free(info);
         }
 
+        if (visited) {
+            (*visited)++;
+            if (progress_cb) progress_cb(*visited, total);
+        }
+
         if (is_dir) {
-            afc_traverse_recursive(afc, full_path);
+            afc_traverse_recursive(afc, full_path, visited, total, progress_cb);
         }
     }
     afc_dictionary_free(file_list);

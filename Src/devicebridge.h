@@ -160,7 +160,8 @@ signals:
      int afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
      bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
-     void afc_traverse_recursive(afc_client_t afc, const char* path);
+     int afc_count_recursive(afc_client_t afc, const char* path);
+     void afc_traverse_recursive(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr);
 
      //Mounter
  public:
