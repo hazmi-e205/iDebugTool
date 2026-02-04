@@ -32,9 +32,9 @@ public:
     lockdownd_error_t lockdownd_error;
     idevice_error_t device_error;
 
-    DTXTransport* dtx_transport;
-    DTXConnection* dtx_connection;
-    std::unique_ptr<DTXChannel> dtx_channel;
+    DTXTransport* transport;
+    DTXConnection* connection;
+    std::shared_ptr<DTXChannel> channel;
 
     afc_client_t afc;
     house_arrest_client_t house_arrest;

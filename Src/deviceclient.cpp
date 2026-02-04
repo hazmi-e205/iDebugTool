@@ -6,9 +6,9 @@ DeviceClient::DeviceClient()
     , client(nullptr)
     , lockdownd_error(LOCKDOWN_E_UNKNOWN_ERROR)
     , device_error(IDEVICE_E_UNKNOWN_ERROR)
-    , dtx_transport(nullptr)
-    , dtx_connection(nullptr)
-    , dtx_channel()
+    , transport(nullptr)
+    , connection(nullptr)
+    , channel()
     , afc(nullptr)
     , house_arrest(nullptr)
     , installer(nullptr)
@@ -84,19 +84,19 @@ DeviceClient::DeviceClient(RemoteAddress address, QStringList service_ids, QStri
 DeviceClient::~DeviceClient()
 {
     // instruments
-    if (dtx_channel)
+    if (channel)
     {
-        dtx_channel = nullptr;
+        channel = nullptr;
     }
-    if (dtx_connection)
+    if (connection)
     {
-        delete dtx_connection;
-        dtx_connection = nullptr;
+        delete connection;
+        connection = nullptr;
     }
-    if (dtx_transport)
+    if (transport)
     {
-        delete dtx_transport;
-        dtx_transport = nullptr;
+        delete transport;
+        transport = nullptr;
     }
 
     // services

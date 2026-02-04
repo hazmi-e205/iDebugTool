@@ -95,7 +95,11 @@ enum MobileOperation {
     INSTALL_APP,
     UNINSTALL_APP,
     SYSLOG,
-    DEBUGGER
+    DEBUGGER,
+    SYSTEM_MONITOR,
+    FPS_MONITOR,
+    GET_PROCESS,
+    GET_ATTRIBUTES
 };
 
 class DeviceBridge : public QObject
@@ -276,10 +280,6 @@ signals:
      void GetProcessList();
      void StartFPS(unsigned int interval_ms);
      void StopFPS();
- private:
-     DTXTransport* m_transport;
-     DTXConnection* m_connection;
-     std::shared_ptr<DTXChannel> m_sysmontapChannel, m_openglChannel;
  signals:
 };
 
