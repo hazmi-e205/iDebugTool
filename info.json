@@ -36,19 +36,35 @@
             "use_submodules": false
         },
         {
-            "project": "libidevice",
-            "url": "https://github.com/sandin/libidevice",
-            "branch": "master",
-            "revision": "3844974cfaf8f70b36f281bd9c491e625012a4ba",
-            "path": "Externals/libidevice",
+            "project": "libinstruments",
+            "url": "https://github.com/hazmi-e205/libinstruments",
+            "branch": "main",
+            "revision": "b0c5366fc2301ed60824a14a16fb520561110705",
+            "path": "Externals/libinstruments",
             "use_submodules": false
         },
         {
-            "project": "libnskeyedarchiver",
-            "url": "https://github.com/sandin/libnskeyedarchiver",
+            "project": "lwip",
+            "url": "https://github.com/lwip-tcpip/lwip",
             "branch": "master",
-            "revision": "212c21a3f0f32abb65921cb2d1b8a42dcda221a5",
-            "path": "Externals/libnskeyedarchiver",
+            "revision": "4599f551dead9eac233b91c0b9ee5879f5d0620a",
+            "path": "Externals/lwip",
+            "use_submodules": false
+        },
+        {
+            "project": "picoquic",
+            "url": "https://github.com/private-octopus/picoquic",
+            "branch": "master",
+            "revision": "3335f4029b55f59a4868cacf3e92c3fb84982115",
+            "path": "Externals/picoquic",
+            "use_submodules": false
+        },
+        {
+            "project": "picotls",
+            "url": "https://github.com/private-octopus/picotls",
+            "branch": "master",
+            "revision": "5a4461d8a3948d9d26bf861e7d90cb80d8093515",
+            "path": "Externals/picotls",
             "use_submodules": false
         },
         {
