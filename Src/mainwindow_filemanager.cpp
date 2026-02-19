@@ -41,7 +41,7 @@ void MainWindow::SetupFileManagerUI()
         m_fileManagerModel = new QStandardItemModel();
         m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
         ui->fileBrowserTree->setModel(m_fileManagerModel);
-        ui->fileBrowserTree->setSelectionMode(QAbstractItemView::SingleSelection);
+        ui->fileBrowserTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
         ui->fileBrowserTree->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->fileBrowserTree->setRootIsDecorated(true);
         ui->fileBrowserTree->setItemsExpandable(true);
@@ -274,7 +274,7 @@ void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operat
             message = "Pushing " + message + " to device";
             break;
         case FileOperation::PULL:
-            message = "Pull " + message + " to local directory";
+            message = "Pulling " + message + " to local directory";
             break;
         case FileOperation::RENAME:
             message = "Rename a file to " + message + " in device";
@@ -322,17 +322,97 @@ void MainWindow::OnRefreshFileBrowserClicked()
 
 void MainWindow::OnPullFileClicked()
 {
-    FileManagerAction([this](QString& initialText, QString& storageAccess){
-        if (m_cachedFiles[initialText].isDirectory || initialText.isEmpty()) {
-            QMessageBox::critical(this, "Error", "Please choose a file in File Manager's Browser!", QMessageBox::Ok);
-            return;
+    // storage name
+    QString storage = ui->storageOption->currentText();
+    storage = storage.contains("User's Data", Qt::CaseInsensitive) ? "" : storage;
+
+    // Collect all selected device paths (column 0 only)
+    QModelIndexList selected = ui->fileBrowserTree->selectionModel()->selectedIndexes();
+    QSet<QString> selectedPaths;
+    bool hasFolder = false;
+
+    for (const QModelIndex& idx : selected) {
+        if (idx.column() != 0) continue;
+        QString path = idx.data(Qt::UserRole).toString();
+        if (path.isEmpty()) continue;
+        selectedPaths.insert(path);
+        if (m_cachedFiles.value(path).isDirectory)
+            hasFolder = true;
+    }
+
+    if (selectedPaths.isEmpty()) {
+        QMessageBox::critical(this, "Error", "Please choose file(s) in File Manager's Browser!", QMessageBox::Ok);
+        return;
+    }
+
+    // Expand folders to contained files using cached data
+    QSet<QString> allFiles;
+    for (const QString& path : selectedPaths) {
+        if (m_cachedFiles.value(path).isDirectory) {
+            QString prefix = path + "/";
+            for (auto it = m_cachedFiles.begin(); it != m_cachedFiles.end(); ++it) {
+                if (!it.value().isDirectory && it.key().startsWith(prefix))
+                    allFiles.insert(it.key());
+            }
+        } else {
+            allFiles.insert(path);
         }
-        QFileInfo fileInfo(initialText);
-        QString file = fileInfo.fileName();
-        QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Pull a file to device", this, "", file);
-        if (!filepath.isEmpty())
-            DeviceBridge::Get()->PullFromStorage(initialText, filepath, storageAccess);
-    }, false);
+    }
+
+    if (allFiles.isEmpty()) {
+        QMessageBox::critical(this, "Error", "No files to pull!", QMessageBox::Ok);
+        return;
+    }
+
+    // Determine flat vs structured:
+    //   flat  = all files share the same device parent directory AND no folder was selected
+    //   structured = folders selected OR files span multiple directories
+    bool flatMode = !hasFolder;
+    if (flatMode) {
+        QString commonDir;
+        for (const QString& f : allFiles) {
+            QString dir = QFileInfo(f).path();
+            if (commonDir.isEmpty()) commonDir = dir;
+            else if (commonDir != dir) { flatMode = false; break; }
+        }
+    }
+
+    // Choose output folder
+    QString outputFolder = ShowBrowseDialog(BROWSE_TYPE::OPEN_DIR, "Pull files to local", this);
+    if (outputFolder.isEmpty()) return;
+
+    // Build (devicePath → localPath) pairs, sorted for predictable [i/n] ordering
+    QStringList fileList = allFiles.values();
+    fileList.sort();
+
+    QList<QPair<QString,QString>> pairs;
+
+    if (flatMode) {
+        for (const QString& devicePath : fileList)
+            pairs.append({devicePath, outputFolder + "/" + QFileInfo(devicePath).fileName()});
+    } else {
+        // Find the common directory prefix across all file paths (by path segments)
+        auto splitDir = [](const QString& p) {
+            return QFileInfo(p).path().split('/', Qt::SkipEmptyParts);
+        };
+        QStringList common = splitDir(fileList.first());
+        for (const QString& f : fileList) {
+            QStringList parts = splitDir(f);
+            int minLen = std::min(common.size(), parts.size());
+            int i = 0;
+            while (i < minLen && common[i] == parts[i]) i++;
+            common = common.mid(0, i);
+        }
+        QString commonPrefix = common.isEmpty() ? "/" : "/" + common.join('/');
+
+        for (const QString& devicePath : fileList) {
+            QString relative = devicePath.mid(commonPrefix.length());
+            if (relative.startsWith('/')) relative = relative.mid(1);
+            pairs.append({devicePath, outputFolder + "/" + relative});
+        }
+    }
+
+    DeviceBridge::Get()->PullMultipleFromStorage(pairs, storage);
 }
 
 void MainWindow::OnPushFileClicked()

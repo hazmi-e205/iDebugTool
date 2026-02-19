@@ -1,4 +1,6 @@
 #include "devicebridge.h"
+#include <QDir>
+#include <QFileInfo>
 
 
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, bool partialUpdate)
@@ -112,6 +114,54 @@ void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QStrin
             return;
         }
         emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, percentage, devicePath);
+    }, bundleId);
+}
+
+void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, QString bundleId)
+{
+    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc){
+        int totalFiles = pairs.size();
+        if (totalFiles == 0) return;
+
+        bool hasError = false;
+
+        for (int i = 0; i < totalFiles; i++) {
+            const QString& devicePath = pairs[i].first;
+            const QString& localPath  = pairs[i].second;
+            QString filename = QFileInfo(devicePath).fileName();
+
+            QString fileLabel = QString("[%1/%2] %3").arg(i + 1).arg(totalFiles).arg(filename);
+
+            // Ensure local directory exists
+            QDir().mkpath(QFileInfo(localPath).dir().absolutePath());
+
+            int filesDone = i;
+            auto callback = [&, fileLabel, filesDone](uint32_t downloaded_bytes, uint32_t total_bytes) {
+                int currentFilePct = (total_bytes > 0)
+                    ? (int)((float)downloaded_bytes / (float)total_bytes * 100.f)
+                    : 0;
+                int percentage = std::min((filesDone * 100 + currentFilePct) / totalFiles, 99);
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, percentage, fileLabel);
+            };
+
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL,
+                (i * 100) / totalFiles, fileLabel);
+
+            int result = afc_download_file(afc, devicePath, localPath, callback);
+
+            if (result != 0) {
+                hasError = true;
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL,
+                    ((i + 1) * 100) / totalFiles, fileLabel + " - FAILED");
+                emit MessagesReceived(MessagesType::MSG_ERROR,
+                    "ERROR: Failed to pull file: " + devicePath + "! " + QString::number(result));
+            }
+        }
+
+        if (!hasError)
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, 100, pairs.last().first);
+        else
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, 100, "Completed with errors");
     }, bundleId);
 }
 
