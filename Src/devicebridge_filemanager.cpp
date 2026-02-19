@@ -5,8 +5,9 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, boo
 {
     afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
         if (partialUpdate) {
+            QString prefix = startPath + "/";
             for (auto it = m_accessibleStorage.begin(); it != m_accessibleStorage.end(); ) {
-                if (it.key().startsWith(startPath))
+                if (it.key().startsWith(prefix))
                     it = m_accessibleStorage.erase(it);
                 else
                     ++it;
