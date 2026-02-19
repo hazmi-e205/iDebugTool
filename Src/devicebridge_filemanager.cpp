@@ -61,6 +61,7 @@ void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceF
         int totalFiles = localPaths.size();
         int64_t bytesDoneTotal = 0;
         QString lastDevicePath = deviceFolderPath;
+        bool hasError = false;
 
         for (int i = 0; i < totalFiles; i++) {
             const QString& localPath = localPaths[i];
@@ -86,13 +87,17 @@ void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceF
             bytesDoneTotal += fi.size();
 
             if (result != 0) {
+                hasError = true;
                 emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH,
                     (int)((float)bytesDoneTotal / (float)totalBytes * 100.f),
                     fileLabel + " - FAILED");
             }
         }
 
-        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PUSH, 100, lastDevicePath);
+        if (hasError)
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PUSH, 100, "Completed with errors");
+        else
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PUSH, 100, lastDevicePath);
     }, bundleId);
 }
 
@@ -152,16 +157,14 @@ void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, 
             if (result != 0) {
                 hasError = true;
                 emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL,
-                    ((i + 1) * 100) / totalFiles, fileLabel + " - FAILED");
-                emit MessagesReceived(MessagesType::MSG_ERROR,
-                    "ERROR: Failed to pull file: " + devicePath + "! " + QString::number(result));
+                    ((i + 1) * 100) / totalFiles, fileLabel + " - FAILED - " + QString::number(result));
             }
         }
 
-        if (!hasError)
-            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, 100, pairs.last().first);
+        if (hasError)
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, 100, "Completed with errors");
         else
-            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, 100, "Completed with errors");
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, 100, pairs.last().first);
     }, bundleId);
 }
 
