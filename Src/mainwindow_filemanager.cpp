@@ -271,7 +271,7 @@ void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operat
 
         switch (operation) {
         case FileOperation::PUSH:
-            message = "Push a file to " + message + " in device";
+            message = "Pushing " + message + " to device";
             break;
         case FileOperation::PULL:
             message = "Pull " + message + " to local directory";
@@ -338,12 +338,9 @@ void MainWindow::OnPullFileClicked()
 void MainWindow::OnPushFileClicked()
 {
     FileManagerAction([this](QString& initialText, QString& storageAccess){
-        QString filepath = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Push a file to device", this);
-        if (!filepath.isEmpty()) {
-            QFileInfo fileInfo(filepath);
-            QString file = fileInfo.fileName();
-            DeviceBridge::Get()->PushToStorage(filepath, initialText + file, storageAccess);
-        }
+        QStringList filepaths = ShowBrowseDialogMultipleFiles("Push files to device", this);
+        if (!filepaths.isEmpty())
+            DeviceBridge::Get()->PushMultipleToStorage(filepaths, initialText, storageAccess);
     }, true);
 }
 

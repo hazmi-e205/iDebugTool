@@ -226,6 +226,15 @@ QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString &titleType, QWidg
     return result;
 }
 
+QStringList ShowBrowseDialogMultipleFiles(const QString &titleType, QWidget *parent, const QString &filter)
+{
+    QString last_dir = UserConfigs::Get()->GetData("Last" + titleType + "Dir", "");
+    QStringList results = QFileDialog::getOpenFileNames(parent, "Choose " + titleType + "...", last_dir, filter);
+    if (!results.isEmpty())
+        UserConfigs::Get()->SaveData("Last" + titleType + "Dir", GetBaseDirectory(results.first()));
+    return results;
+}
+
 QString BytesToString(quint64 bytes)
 {
     float num = (float)bytes;

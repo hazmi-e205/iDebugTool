@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QMutex>
+#include <QFileInfo>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice-glue/utils.h>
@@ -201,6 +202,7 @@ signals:
      };
      void GetAccessibleStorage(QString startPath = "/", QString bundleId = "", bool partialUpdate = false);
      void PushToStorage(QString localPath, QString devicePath, QString bundleId = "");
+    void PushMultipleToStorage(QStringList localPaths, QString deviceFolderPath, QString bundleId = "");
      void PullFromStorage(QString devicePath, QString localPath, QString bundleId = "");
      void DeleteFromStorage(QString devicePath, QString bundleId = "");
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");

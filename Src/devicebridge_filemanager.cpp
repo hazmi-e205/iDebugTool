@@ -47,6 +47,53 @@ void DeviceBridge::PushToStorage(QString localPath, QString devicePath, QString 
     }, bundleId);
 }
 
+void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceFolderPath, QString bundleId)
+{
+    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc){
+        // Pre-calculate total size of all files
+        int64_t totalBytes = 0;
+        for (const QString& path : localPaths)
+            totalBytes += QFileInfo(path).size();
+        if (totalBytes <= 0) totalBytes = 1;
+
+        int totalFiles = localPaths.size();
+        int64_t bytesDoneTotal = 0;
+        QString lastDevicePath = deviceFolderPath;
+
+        for (int i = 0; i < totalFiles; i++) {
+            const QString& localPath = localPaths[i];
+            QFileInfo fi(localPath);
+            QString filename = fi.fileName();
+            QString destPath = deviceFolderPath + filename;
+            lastDevicePath = destPath;
+
+            QString fileLabel = QString("[%1/%2] %3").arg(i + 1).arg(totalFiles).arg(filename);
+            int64_t fileStartBytes = bytesDoneTotal;
+
+            auto callback = [&, fileLabel, fileStartBytes](uint32_t uploaded_bytes, uint32_t /*total_bytes*/) {
+                int64_t progress = fileStartBytes + (int64_t)uploaded_bytes;
+                int percentage = (int)((float)progress / (float)totalBytes * 100.f);
+                percentage = std::min(percentage, 99);
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH, percentage, fileLabel);
+            };
+
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH,
+                (int)((float)bytesDoneTotal / (float)totalBytes * 100.f), fileLabel);
+
+            int result = afc_upload_file(afc, localPath, destPath, callback);
+            bytesDoneTotal += fi.size();
+
+            if (result != 0) {
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH,
+                    (int)((float)bytesDoneTotal / (float)totalBytes * 100.f),
+                    fileLabel + " - FAILED");
+            }
+        }
+
+        emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PUSH, 100, lastDevicePath);
+    }, bundleId);
+}
+
 void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QString bundleId)
 {
     afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc){

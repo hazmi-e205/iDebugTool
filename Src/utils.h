@@ -48,6 +48,7 @@ enum BROWSE_TYPE
     OPEN_DIR
 };
 QString ShowBrowseDialog(BROWSE_TYPE browsetype, const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString(), const QString& defaultFilename = QString());
+QStringList ShowBrowseDialogMultipleFiles(const QString& titleType, QWidget *parent = nullptr, const QString& filter = QString());
 
 enum STYLE_TYPE
 {
