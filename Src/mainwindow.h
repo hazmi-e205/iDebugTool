@@ -149,11 +149,15 @@ private:
     QMap<QString, DeviceBridge::FileProperty> m_cachedFiles;
     int m_fileManagerNameWidth;
     int m_fileManagerSizeWidth;
+    QString m_currentFileManagerBundleId;
+    QMap<QString, QSet<QString>> m_expandedPathsByBundle;
     void SetupFileManagerUI();
     void FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder = true);
     void ResetFileBrowser();
     void CacheHeaderSizes(QHeaderView *header, int &nameWidth, int &sizeWidth);
     void RestoreHeaderSizes(QHeaderView *header, int nameWidth, int sizeWidth);
+    void SaveExpandedPaths(const QString& bundleId);
+    void RestoreExpandedPaths(const QString& bundleId);
 private slots:
     void OnStorageChanged(QString storage);
     void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents);

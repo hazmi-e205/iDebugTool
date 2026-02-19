@@ -118,14 +118,62 @@ void MainWindow::ResetFileBrowser()
     RestoreHeaderSizes(ui->fileBrowserTree->header(), m_fileManagerNameWidth, m_fileManagerSizeWidth);
 }
 
+void MainWindow::SaveExpandedPaths(const QString& bundleId)
+{
+    if (!m_fileManagerModel)
+        return;
+
+    QSet<QString> expanded;
+    std::function<void(QStandardItem*)> collect;
+    collect = [&](QStandardItem* item) {
+        if (!item)
+            return;
+        if (ui->fileBrowserTree->isExpanded(m_fileManagerModel->indexFromItem(item))) {
+            QString path = item->data(Qt::UserRole).toString();
+            if (!path.isEmpty())
+                expanded.insert(path);
+        }
+        for (int row = 0; row < item->rowCount(); ++row)
+            collect(item->child(row, 0));
+    };
+
+    for (int row = 0; row < m_fileManagerModel->rowCount(); ++row)
+        collect(m_fileManagerModel->item(row, 0));
+
+    m_expandedPathsByBundle[bundleId] = expanded;
+}
+
+void MainWindow::RestoreExpandedPaths(const QString& bundleId)
+{
+    if (!m_fileManagerModel || !m_expandedPathsByBundle.contains(bundleId))
+        return;
+
+    const QSet<QString>& expanded = m_expandedPathsByBundle[bundleId];
+    std::function<void(QStandardItem*)> applyExpand;
+    applyExpand = [&](QStandardItem* item) {
+        if (!item)
+            return;
+        QString path = item->data(Qt::UserRole).toString();
+        if (expanded.contains(path))
+            ui->fileBrowserTree->expand(m_fileManagerModel->indexFromItem(item));
+        for (int row = 0; row < item->rowCount(); ++row)
+            applyExpand(item->child(row, 0));
+    };
+
+    for (int row = 0; row < m_fileManagerModel->rowCount(); ++row)
+        applyExpand(m_fileManagerModel->item(row, 0));
+}
+
 void MainWindow::OnStorageChanged(QString storage)
 {
     if (storage.contains("User's Data", Qt::CaseInsensitive))
     {
+        m_currentFileManagerBundleId = "";
         DeviceBridge::Get()->GetAccessibleStorage("/");
     }
     else
     {
+        m_currentFileManagerBundleId = storage;
         DeviceBridge::Get()->GetAccessibleStorage("/", storage);
     }
 }
@@ -135,8 +183,10 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
     m_cachedFiles = contents;// cache file property
     if (!m_fileManagerModel)
         SetupFileManagerUI();
-    else
+    else {
+        SaveExpandedPaths(m_currentFileManagerBundleId);
         ResetFileBrowser();
+    }
 
     QIcon dirIcon = style()->standardIcon(QStyle::SP_DirIcon);
     QIcon fileIcon = style()->standardIcon(QStyle::SP_FileIcon);
@@ -205,7 +255,10 @@ void MainWindow::OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FilePro
         }
     }
 
-    ui->fileBrowserTree->expandToDepth(0);
+    if (m_expandedPathsByBundle.contains(m_currentFileManagerBundleId))
+        RestoreExpandedPaths(m_currentFileManagerBundleId);
+    else
+        ui->fileBrowserTree->expandToDepth(0);
     // Filter the contents
     OnFileFilterChanged(ui->searchFileEdit->text());
 }
