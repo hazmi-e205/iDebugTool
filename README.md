@@ -9,11 +9,12 @@
 Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that written in C++ with Qt Framework. This tool is wrapper of iMobileDevice and maybe we'll be add more useful IOS development tool that can work cross platform here. Inspired from Console app on MacOS for debugging Apple Development, why don't we bring them to "isekai" since more of app developer out there working remotely (using MacOS device just for build machine).
 
 ## Runtime Requirements
-- iTunes (For Windows)
-- usbmuxd (For Linux)
+- Windows: iTunes / Apple Devices (Recommend), one of them should be installed and run at least once to agree ToC.
+- Linux: usbmuxd, it should running as service.
+- macOS: *untested*
 
 ## Features
-- Connect iPhone via USB and socket (such as STF / Device farmer use case)
+- Connect iPhone via USB and Remote (Support STF and Sonic Cloud)
 - Filter and Exclude logcat by text and regex
 - Filter logcat by process id (it also text and regex support)
 - Save logcat to file
@@ -24,7 +25,7 @@ Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that wr
 - Restart, Shutdown, and Sleep the device
 - Symbolicate Crashlogs using DWARF file or dSYM directory
 - Re-codesign apps using P12 / PEM Private Key and Provision Profile
-- File Manager (Fetch, Download, Upload, and Delete files) (WIP)
+- File Manager (Fetch, Download, Upload, and Delete files)
 
 ## Build Steps
 ### Prerequisite
