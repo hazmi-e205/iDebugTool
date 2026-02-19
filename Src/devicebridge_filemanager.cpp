@@ -6,7 +6,7 @@
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, bool partialUpdate)
 {
     afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
-        if (partialUpdate) {
+        if (partialUpdate && startPath != "/") {
             QString prefix = startPath + "/";
             for (auto it = m_accessibleStorage.begin(); it != m_accessibleStorage.end(); ) {
                 if (it.key().startsWith(prefix))
@@ -165,6 +165,49 @@ void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, 
             emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, 100, "Completed with errors");
         else
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::PULL, 100, pairs.last().first);
+    }, bundleId);
+}
+
+void DeviceBridge::DeleteMultipleFromStorage(QStringList devicePaths, QString bundleId)
+{
+    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc){
+        int totalFiles = devicePaths.size();
+        if (totalFiles == 0) return;
+
+        bool hasError = false;
+
+        for (int i = 0; i < totalFiles; i++) {
+            const QString& devicePath = devicePaths[i];
+            QString filename = QFileInfo(devicePath).fileName();
+            QString fileLabel = QString("[%1/%2] %3").arg(i + 1).arg(totalFiles).arg(filename);
+
+            emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::DELETE_OP,
+                (i * 100) / totalFiles, fileLabel);
+
+            afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
+            if (err != AFC_E_SUCCESS) {
+                hasError = true;
+                emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::DELETE_OP,
+                    ((i + 1) * 100) / totalFiles, fileLabel + " - FAILED - " + QString::number(err));
+            }
+        }
+
+        // Find common ancestor directory of all deleted paths for partial refresh
+        auto splitPath = [](const QString& p) { return p.split('/', Qt::SkipEmptyParts); };
+        QStringList common = splitPath(QFileInfo(devicePaths.first()).path());
+        for (const QString& path : devicePaths) {
+            QStringList parts = splitPath(QFileInfo(path).path());
+            int minLen = std::min(common.size(), parts.size());
+            int i = 0;
+            while (i < minLen && common[i] == parts[i]) i++;
+            common = common.mid(0, i);
+        }
+        QString commonDir = (common.isEmpty() ? "/" : "/" + common.join('/')) + "/";
+
+        if (hasError)
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::DELETE_OP, 100, "Completed with errors");
+        else
+            emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DELETE_OP, 100, commonDir);
     }, bundleId);
 }
 

@@ -206,6 +206,7 @@ signals:
      void PullFromStorage(QString devicePath, QString localPath, QString bundleId = "");
      void PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, QString bundleId = "");
      void DeleteFromStorage(QString devicePath, QString bundleId = "");
+     void DeleteMultipleFromStorage(QStringList devicePaths, QString bundleId = "");
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
  private:

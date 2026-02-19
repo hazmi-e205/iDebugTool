@@ -305,9 +305,10 @@ void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operat
             QString storage = ui->storageOption->currentText();
             storage = storage.contains("User's Data", Qt::CaseInsensitive) ? "" : storage;
 
-            // partial update
-            QFileInfo fileInfo(message);
-            QString dirPath = fileInfo.dir().absolutePath();
+            // partial update — trailing '/' means message is already the refresh directory
+            QString dirPath = message.endsWith('/')
+                ? message.chopped(1)
+                : QFileInfo(message).dir().absolutePath();
             DeviceBridge::Get()->GetAccessibleStorage(dirPath, storage, true);
         }
     }
@@ -426,21 +427,42 @@ void MainWindow::OnPushFileClicked()
 
 void MainWindow::OnDeleteFileClicked()
 {
-    FileManagerAction([this](QString& initialText, QString& storageAccess){
-        QMessageBox msgBox(this);
-        msgBox.setWindowTitle("Delete");
-        msgBox.setText("Are you sure to delete " + initialText + " from device?");
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Ok);
+    QString storage = ui->storageOption->currentText();
+    storage = storage.contains("User's Data", Qt::CaseInsensitive) ? "" : storage;
 
-        int ret = msgBox.exec();
-        if (ret == QMessageBox::Ok) {
-            DeviceBridge::Get()->DeleteFromStorage(initialText, storageAccess);
-        }
-        else {
-            m_loadingFileOperation->close();
-        }
-    }, false);
+    QModelIndexList selected = ui->fileBrowserTree->selectionModel()->selectedIndexes();
+    QStringList selectedPaths;
+    for (const QModelIndex& idx : selected) {
+        if (idx.column() != 0) continue;
+        QString path = idx.data(Qt::UserRole).toString();
+        if (path.isEmpty()) continue;
+        if (!selectedPaths.contains(path))
+            selectedPaths.append(path);
+    }
+
+    if (selectedPaths.isEmpty()) {
+        QMessageBox::critical(this, "Error", "Please choose file(s) in File Manager's Browser!", QMessageBox::Ok);
+        return;
+    }
+
+    QString confirmMsg = selectedPaths.size() == 1
+        ? "Are you sure to delete " + selectedPaths.first() + " from device?"
+        : QString("Are you sure to delete %1 items from device?").arg(selectedPaths.size());
+
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Delete");
+    msgBox.setText(confirmMsg);
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+
+    if (msgBox.exec() == QMessageBox::Ok) {
+        if (selectedPaths.size() == 1)
+            DeviceBridge::Get()->DeleteFromStorage(selectedPaths.first(), storage);
+        else
+            DeviceBridge::Get()->DeleteMultipleFromStorage(selectedPaths, storage);
+    } else {
+        m_loadingFileOperation->close();
+    }
 }
 
 void MainWindow::OnRenameFileClicked()
