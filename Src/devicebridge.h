@@ -199,7 +199,7 @@ signals:
          bool isDirectory = false;
          quint64 sizeInBytes = 0;
      };
-     void GetAccessibleStorage(QString startPath = "/", QString bundleId = "");
+     void GetAccessibleStorage(QString startPath = "/", QString bundleId = "", bool partialUpdate = false);
      void PushToStorage(QString localPath, QString devicePath, QString bundleId = "");
      void PullFromStorage(QString devicePath, QString localPath, QString bundleId = "");
      void DeleteFromStorage(QString devicePath, QString bundleId = "");

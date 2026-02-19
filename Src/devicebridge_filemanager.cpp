@@ -1,10 +1,19 @@
 #include "devicebridge.h"
 
 
-void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId)
+void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, bool partialUpdate)
 {
     afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
-        m_accessibleStorage.clear();
+        if (partialUpdate) {
+            for (auto it = m_accessibleStorage.begin(); it != m_accessibleStorage.end(); ) {
+                if (it.key().startsWith(startPath))
+                    it = m_accessibleStorage.erase(it);
+                else
+                    ++it;
+            }
+        } else {
+            m_accessibleStorage.clear();
+        }
         emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 0, bundleId);
         int total_items = afc_count_recursive(afc, startPath.toStdString().c_str());
         int visited_items = 0;

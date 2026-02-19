@@ -247,7 +247,16 @@ void MainWindow::OnFileManagerChanged(GenericStatus status, FileOperation operat
             m_loadingFileOperation->close();
 
         if (operation != FileOperation::FETCH && operation != FileOperation::PULL)
-            OnRefreshFileBrowserClicked(); //refresh
+        {
+            // storage name
+            QString storage = ui->storageOption->currentText();
+            storage = storage.contains("User's Data", Qt::CaseInsensitive) ? "" : storage;
+
+            // partial update
+            QFileInfo fileInfo(message);
+            QString dirPath = fileInfo.dir().absolutePath();
+            DeviceBridge::Get()->GetAccessibleStorage(dirPath, storage, true);
+        }
     }
 
     ui->statusbar->showMessage(message);
