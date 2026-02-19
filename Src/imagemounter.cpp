@@ -220,7 +220,10 @@ void ImageMounter::ChangeDownloadState(DOWNLOAD_STATE downloadState)
 
 void ImageMounter::OnImageClicked()
 {
-    QString filename = ShowBrowseDialog(BROWSE_TYPE::OPEN_FILE, "Image", this);
+    QString OSVersion = DeviceBridge::Get()->GetDeviceInfo()["ProductVersion"].toString();
+    int major_version = OSVersion.split(".").isEmpty() ? 0 : OSVersion.split(".")[0].toInt();
+    bool isPersonalized = (major_version >= 17);
+    QString filename = ShowBrowseDialog(isPersonalized ? BROWSE_TYPE::OPEN_DIR : BROWSE_TYPE::OPEN_FILE, "Image", this);
     ui->imageEdit->setText(filename);
 }
 

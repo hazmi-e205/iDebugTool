@@ -1,5 +1,7 @@
 #include "simplerequest.h"
 #include <QEventLoop>
+#include <QSslConfiguration>
+#include <QSslSocket>
 
 SimpleRequest::SimpleRequest()
     : m_manager(nullptr)
@@ -71,6 +73,30 @@ bool SimpleRequest::IsInternetOn()
     connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
     loop.exec();
     return reply->bytesAvailable();
+}
+
+QByteArray SimpleRequest::PostSync(const QString& url, const QByteArray& data, const QString& contentType, QString* errorStr)
+{
+    QNetworkAccessManager manager;
+    manager.setTransferTimeout(60000);
+    QUrl qurl(url);
+    QNetworkRequest request(qurl);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, contentType);
+    QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    request.setSslConfiguration(sslConfig);
+    QNetworkReply* reply = manager.post(request, data);
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+    if (reply->error() != QNetworkReply::NoError) {
+        if (errorStr) *errorStr = reply->errorString();
+        reply->deleteLater();
+        return {};
+    }
+    QByteArray result = reply->readAll();
+    reply->deleteLater();
+    return result;
 }
 
 void SimpleRequest::DoNextQueue()

@@ -1,5 +1,6 @@
 #include "devicebridge.h"
 #include "extended_plist.h"
+#include "simplerequest.h"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -227,10 +228,6 @@ void DeviceBridge::mount_image(mobile_image_mounter_client_t& mounter, afc_clien
             return;
         }
 
-        unsigned char buf[8192];
-        unsigned char sha384_digest[48];
-        sha384_context ctx;
-        sha384_init(&ctx);
         struct stat fst;
         if (fstat(fileno(f), &fst) != 0) {
             emit MounterStatusChanged("Error: fstat on image file '" + image_path_local + "' : " + strerror(errno));
@@ -241,15 +238,6 @@ void DeviceBridge::mount_image(mobile_image_mounter_client_t& mounter, afc_clien
             return;
         }
         image_size = (size_t)fst.st_size;
-        while (!feof(f)) {
-            size_t fr = fread(buf, 1, sizeof(buf), f);
-            if (fr == 0) {
-                break;
-            }
-            sha384_update(&ctx, buf, fr);
-        }
-        rewind(f);
-        sha384_final(&ctx, sha384_digest);
 
         if (!signature_path.isEmpty() && QFileInfo(signature_path).exists()) {
             QFile sig_file(signature_path);
@@ -274,18 +262,33 @@ void DeviceBridge::mount_image(mobile_image_mounter_client_t& mounter, afc_clien
             sig = reinterpret_cast<unsigned char*>(signature_data.data());
             sig_length = static_cast<unsigned int>(signature_data.size());
         } else {
-            merr = mobile_image_mounter_query_personalization_manifest(
-                mounter, "DeveloperDiskImage", sha384_digest, sizeof(sha384_digest), &manifest, &manifest_size);
-            if (merr != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
-                emit MounterStatusChanged("Error: No personalization manifest available. Provide an IM4M signature file.");
+            emit MounterStatusChanged("Querying nonce from device...");
+            unsigned char* nonce_data = nullptr;
+            unsigned int nonce_sz = 0;
+            merr = mobile_image_mounter_query_nonce(mounter, "DeveloperDiskImage", &nonce_data, &nonce_sz);
+            if (merr != MOBILE_IMAGE_MOUNTER_E_SUCCESS || !nonce_data) {
+                emit MounterStatusChanged("Error: Failed to query nonce: " + QString::number(merr));
                 fclose(f);
                 plist_free(build_manifest);
                 plist_free(identifiers);
                 plist_free(mount_options);
                 return;
             }
-            sig = manifest;
-            sig_length = manifest_size;
+            QByteArray nonce(reinterpret_cast<char*>(nonce_data), nonce_sz);
+            free(nonce_data);
+
+            uint64_t ecid = m_deviceInfo[m_currentUdid]["UniqueChipID"].toVariant().toULongLong();
+            emit MounterStatusChanged("Requesting personalization signature from Apple TSS...");
+            signature_data = request_tss_ticket(build_identity, identifiers, nonce, ecid);
+            if (signature_data.isEmpty()) {
+                fclose(f);
+                plist_free(build_manifest);
+                plist_free(identifiers);
+                plist_free(mount_options);
+                return;
+            }
+            sig = reinterpret_cast<unsigned char*>(signature_data.data());
+            sig_length = static_cast<unsigned int>(signature_data.size());
         }
     } else {
         QFile sig_file(signature_path);
@@ -482,4 +485,168 @@ ssize_t DeviceBridge::ImageMounterCallback(void *buf, size_t size, void *userdat
 {
     if (!m_destroyed)
         return fread(buf, 1, size, (FILE*)userdata);
+}
+
+QByteArray DeviceBridge::request_tss_ticket(plist_t build_identity, plist_t identifiers, const QByteArray& nonce, uint64_t ecid)
+{
+    // Get Digest values from BuildManifest (used by TSS to verify image integrity)
+    plist_t p_tc_digest = plist_access_path(build_identity, 3, "Manifest", "LoadableTrustCache", "Digest");
+    plist_t p_dmg_digest = plist_access_path(build_identity, 3, "Manifest", "PersonalizedDMG", "Digest");
+    if (!p_tc_digest || !p_dmg_digest) {
+        emit MounterStatusChanged("Error: TSS: could not find digest values in BuildManifest.");
+        return {};
+    }
+
+    char* tc_digest_data = nullptr;
+    uint64_t tc_digest_len = 0;
+    plist_get_data_val(p_tc_digest, &tc_digest_data, &tc_digest_len);
+
+    char* dmg_digest_data = nullptr;
+    uint64_t dmg_digest_len = 0;
+    plist_get_data_val(p_dmg_digest, &dmg_digest_data, &dmg_digest_len);
+
+    if (!tc_digest_data || !dmg_digest_data) {
+        emit MounterStatusChanged("Error: TSS: could not read digest values from BuildManifest.");
+        if (tc_digest_data) plist_mem_free(tc_digest_data);
+        if (dmg_digest_data) plist_mem_free(dmg_digest_data);
+        return {};
+    }
+
+    uint64_t board_id = plist_dict_get_uint(identifiers, "BoardId");
+    uint64_t chip_id  = plist_dict_get_uint(identifiers, "ChipID");
+    uint64_t sec_dom  = plist_dict_get_uint(identifiers, "SecurityDomain");
+
+    // Build TSS request plist (matches go-ios tss.go getSignature params)
+    plist_t req = plist_new_dict();
+    plist_dict_set_item(req, "@ApImg4Ticket",     plist_new_bool(1));
+    plist_dict_set_item(req, "@BBTicket",          plist_new_bool(1));
+    plist_dict_set_item(req, "@HostPlatformInfo",  plist_new_string("mac"));
+    plist_dict_set_item(req, "@VersionInfo",       plist_new_string("libauthinstall-973.40.2"));
+    plist_dict_set_item(req, "ApBoardID",          plist_new_uint(board_id));
+    plist_dict_set_item(req, "ApChipID",           plist_new_uint(chip_id));
+    plist_dict_set_item(req, "ApECID",             plist_new_uint(ecid));
+    plist_dict_set_item(req, "ApNonce",            plist_new_data(nonce.constData(), (uint64_t)nonce.size()));
+    plist_dict_set_item(req, "ApProductionMode",   plist_new_bool(1));
+    plist_dict_set_item(req, "ApSecurityDomain",   plist_new_uint(sec_dom));
+    plist_dict_set_item(req, "ApSecurityMode",     plist_new_bool(1));
+
+    plist_t tc_dict = plist_new_dict();
+    plist_dict_set_item(tc_dict, "Digest",  plist_new_data(tc_digest_data, tc_digest_len));
+    plist_dict_set_item(tc_dict, "EPRO",    plist_new_bool(1));
+    plist_dict_set_item(tc_dict, "ESEC",    plist_new_bool(1));
+    plist_dict_set_item(tc_dict, "Trusted", plist_new_bool(1));
+    plist_dict_set_item(req, "LoadableTrustCache", tc_dict);
+
+    plist_t dmg_dict = plist_new_dict();
+    plist_dict_set_item(dmg_dict, "Digest",  plist_new_data(dmg_digest_data, dmg_digest_len));
+    plist_dict_set_item(dmg_dict, "EPRO",    plist_new_bool(1));
+    plist_dict_set_item(dmg_dict, "ESEC",    plist_new_bool(1));
+    plist_dict_set_item(dmg_dict, "Name",    plist_new_string("DeveloperDiskImage"));
+    plist_dict_set_item(dmg_dict, "Trusted", plist_new_bool(1));
+    plist_dict_set_item(req, "PersonalizedDMG", dmg_dict);
+
+    char sep_nonce[20] = {};
+    plist_dict_set_item(req, "SepNonce", plist_new_data(sep_nonce, 20));
+    plist_dict_set_item(req, "UID_MODE", plist_new_bool(0));
+
+    plist_mem_free(tc_digest_data);
+    plist_mem_free(dmg_digest_data);
+
+    // Add all "Ap,*" keys from device identifiers (e.g. Ap,OSLongVersion, Ap,SikaFuse, etc.)
+    plist_dict_iter id_iter = nullptr;
+    plist_dict_new_iter(identifiers, &id_iter);
+    char* id_key = nullptr;
+    plist_t id_val = nullptr;
+    do {
+        plist_dict_next_item(identifiers, id_iter, &id_key, &id_val);
+        if (id_key) {
+            if (strncmp(id_key, "Ap,", 3) == 0)
+                plist_dict_set_item(req, id_key, plist_copy(id_val));
+            free(id_key);
+            id_key = nullptr;
+        }
+    } while (id_val);
+    plist_mem_free(id_iter);
+
+    // Serialize to XML plist
+    char* xml_data = nullptr;
+    uint32_t xml_len = 0;
+    plist_to_xml(req, &xml_data, &xml_len);
+    plist_free(req);
+    if (!xml_data) {
+        emit MounterStatusChanged("Error: TSS: failed to serialize request plist.");
+        return {};
+    }
+    QByteArray body(xml_data, (int)xml_len);
+    plist_mem_free(xml_data);
+
+    // POST to Apple TSS server
+    QString netError;
+    QByteArray responseData = SimpleRequest::PostSync(
+        "https://gs.apple.com/TSS/controller?action=2", body, "text/xml", &netError);
+    if (responseData.isEmpty()) {
+        emit MounterStatusChanged("Error: TSS request failed: " + netError);
+        return {};
+    }
+
+    // Response is URL-encoded: STATUS=0&MESSAGE=SUCCESS&REQUEST_STRING=<xml plist>
+    // REQUEST_STRING is always last with no trailing &
+    QString resp = QString::fromUtf8(responseData);
+
+    int statusVal = -1;
+    int statusIdx = resp.indexOf("STATUS=");
+    if (statusIdx >= 0) {
+        QString s = resp.mid(statusIdx + 7);
+        int e = s.indexOf('&'); if (e >= 0) s = s.left(e);
+        statusVal = s.toInt();
+    }
+
+    if (statusVal != 0) {
+        QString msg;
+        int msgIdx = resp.indexOf("MESSAGE=");
+        if (msgIdx >= 0) { msg = resp.mid(msgIdx + 8); int e = msg.indexOf('&'); if (e >= 0) msg = msg.left(e); }
+        emit MounterStatusChanged("Error: TSS server returned status " + QString::number(statusVal) + ": " + msg);
+        return {};
+    }
+
+    int rsIdx = resp.indexOf("REQUEST_STRING=");
+    if (rsIdx < 0) {
+        emit MounterStatusChanged("Error: TSS: REQUEST_STRING missing in response.");
+        return {};
+    }
+    QString requestString = resp.mid(rsIdx + 15); // len("REQUEST_STRING=") == 15
+    int ampIdx = requestString.indexOf('&');
+    if (ampIdx >= 0) requestString = requestString.left(ampIdx);
+
+    // Parse plist and extract ApImg4Ticket
+    QByteArray rsBytes = requestString.toUtf8();
+    plist_t ticket_plist = nullptr;
+    plist_from_xml(rsBytes.constData(), (uint32_t)rsBytes.size(), &ticket_plist);
+    if (!ticket_plist) {
+        emit MounterStatusChanged("Error: TSS: failed to parse response plist.");
+        return {};
+    }
+
+    plist_t p_ticket = plist_dict_get_item(ticket_plist, "ApImg4Ticket");
+    if (!p_ticket) {
+        emit MounterStatusChanged("Error: TSS: ApImg4Ticket not found in response.");
+        plist_free(ticket_plist);
+        return {};
+    }
+
+    char* ticket_data = nullptr;
+    uint64_t ticket_size = 0;
+    plist_get_data_val(p_ticket, &ticket_data, &ticket_size);
+    if (!ticket_data) {
+        emit MounterStatusChanged("Error: TSS: failed to read ApImg4Ticket.");
+        plist_free(ticket_plist);
+        return {};
+    }
+
+    QByteArray ticket(ticket_data, (int)ticket_size);
+    plist_mem_free(ticket_data);
+    plist_free(ticket_plist);
+
+    emit MounterStatusChanged("TSS signature obtained successfully.");
+    return ticket;
 }

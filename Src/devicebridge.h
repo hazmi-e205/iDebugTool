@@ -182,6 +182,7 @@ signals:
     void MountImage(QString image_path, QString signature_path);
  private:
     void mount_image(mobile_image_mounter_client_t& mounter, afc_client_t& afc, QString image_path, QString signature_path);
+    QByteArray request_tss_ticket(plist_t build_identity, plist_t identifiers, const QByteArray& nonce, uint64_t ecid);
     static ssize_t ImageMounterCallback(void* buf, size_t size, void* userdata);
  signals:
      void MounterStatusChanged(QString messages);
