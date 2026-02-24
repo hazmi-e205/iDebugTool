@@ -1,4 +1,4 @@
-name: Windows Nightly CI
+name: Cross-Platform Nightly CI
 on:
   push:
     branches: [ "main" ]
@@ -9,14 +9,21 @@ on:
   workflow_dispatch:
 
 env:
-  QT_VERSION: 6.5.1
+  QT_VERSION: 6.5.3
   SOURCE_DIR: ${{ github.workspace }}
-  BUILD_DIR: ${{ github.workspace }}\Build\Qt-windows\bin
   ARCHIVE_NAME: nightly-build
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-20.04]
+        include:
+          - os: windows-latest
+            archive_suffix: windows
+          - os: ubuntu-20.04
+            archive_suffix: linux
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Python check
       run: python -V
@@ -50,13 +57,9 @@ jobs:
     - name: Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARCHIVE_NAME }}
-        path: ${{ env.BUILD_DIR }}/**
+        name: ${{ env.ARCHIVE_NAME }}-${{ matrix.archive_suffix }}
+        path: ${{ runner.os == 'Windows' && format('{0}/Build/Qt-windows/bin/**', github.workspace) || format('{0}/Build/Qt-linux/bin/**', github.workspace) }}
         if-no-files-found: error
         compression-level: 9
         
-
-
-
-
 
