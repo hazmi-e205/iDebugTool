@@ -1,11 +1,17 @@
 version: 2.1
 orbs:
   win: circleci/windows@5.0
+parameters:
+  qt_version:
+    type: string
+    default: "6.5.3"
 jobs:
   Windows x64:
     executor:
       name: win/default
       size: large
+    environment:
+      QT_VERSION: << pipeline.parameters.qt_version >>
     steps:
       - run:
           name: LFS Install
@@ -21,7 +27,7 @@ jobs:
           name: Qt Install
           command: |
             python -m pip install --upgrade pip
-            python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+            python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$Env:QT_VERSION
       - run:
           name: Checkout Deps
           command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
@@ -33,14 +39,14 @@ jobs:
           command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
       - run:
           name: Build
-          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
+          command: python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$Env:QT_VERSION --build
       - run:
           name: Archive
           command: |
             if (-not [string]::IsNullOrWhiteSpace($Env:CIRCLE_TAG)) {
-              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive=release
+              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$Env:QT_VERSION --archive=release
             } else {
-              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive
+              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$Env:QT_VERSION --archive
             }
             mkdir Archive
             xcopy *.zip Archive\
@@ -51,6 +57,8 @@ jobs:
     machine:
       image: ubuntu-2004:current
     resource_class: large
+    environment:
+      QT_VERSION: << pipeline.parameters.qt_version >>
     steps:
       - run:
           name: LFS Install
@@ -70,7 +78,7 @@ jobs:
             sudo apt update
             sudo apt install -y p7zip-full libgl1-mesa-dev
             python3 -m pip install --upgrade pip
-            python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3
+            python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$QT_VERSION
       - run:
           name: Checkout Deps
           command: python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --checkout
@@ -82,7 +90,7 @@ jobs:
           command: python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --premake
       - run:
           name: Build
-          command: python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --build
+          command: python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=$QT_VERSION --build
 
 workflows:
   Nightly:
