@@ -12,6 +12,12 @@ jobs:
           command: git lfs install
       - checkout
       - run:
+          name: Sync version from tag
+          command: |
+            if (-not [string]::IsNullOrWhiteSpace($Env:CIRCLE_TAG)) {
+              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --tag=$Env:CIRCLE_TAG
+            }
+      - run:
           name: Qt Install
           command: |
             python -m pip install --upgrade pip
@@ -31,7 +37,11 @@ jobs:
       - run:
           name: Archive
           command: |
-            python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive
+            if (-not [string]::IsNullOrWhiteSpace($Env:CIRCLE_TAG)) {
+              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive=release
+            } else {
+              python $Env:CIRCLE_WORKING_DIRECTORY/Scripts/make.py --aqt=6.5.3 --archive
+            }
             mkdir Archive
             xcopy *.zip Archive\
       - store_artifacts:
@@ -48,6 +58,12 @@ jobs:
             sudo apt install -y git-lfs
             git lfs install
       - checkout
+      - run:
+          name: Sync version from tag
+          command: |
+            if [ -n "$CIRCLE_TAG" ]; then
+              python3 $CIRCLE_WORKING_DIRECTORY/Scripts/make.py --tag=$CIRCLE_TAG
+            fi
       - run:
           name: Qt Install
           command: |
