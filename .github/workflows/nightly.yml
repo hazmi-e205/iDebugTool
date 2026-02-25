@@ -37,6 +37,13 @@ jobs:
     - name: Checkout Dependencies
       run: |
         python ${{ env.SOURCE_DIR }}/Scripts/make.py --checkout
+
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git-lfs p7zip-full libgl1-mesa-dev
+        git lfs install
         
     - name: Apply Patches
       run: |
@@ -62,4 +69,3 @@ jobs:
         if-no-files-found: error
         compression-level: 9
         
-
