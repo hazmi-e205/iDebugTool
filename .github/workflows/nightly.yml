@@ -17,11 +17,11 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-20.04]
+        os: [windows-latest, ubuntu-22.04]
         include:
           - os: windows-latest
             archive_suffix: windows
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             archive_suffix: linux
     runs-on: ${{ matrix.os }}
     steps:
