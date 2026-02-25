@@ -268,7 +268,18 @@ def Build():
     cprint("Generate makefile from qmake...", 'yellow', attrs=['reverse', 'blink'])
     if not os.path.exists(build_cache):
         os.makedirs(build_cache)
-    utils.call([qmake_path, prj_path, "-spec", "linux-g++" if "linux" in sys.platform else "win32-g++", "\"CONFIG+=qtquickcompiler\""], build_cache)
+    qmake_spec = "linux-g++" if "linux" in sys.platform else "win32-g++"
+    qmake_args = [
+        qmake_path,
+        prj_path,
+        "-spec",
+        qmake_spec,
+        "CONFIG+=qtquickcompiler",
+        "CONFIG+=release",
+        "CONFIG-=debug",
+        "CONFIG-=debug_and_release",
+    ]
+    utils.call(qmake_args, build_cache)
 
     cprint("Build qmake...", 'yellow', attrs=['reverse', 'blink'])
     utils.call([make_path, "-f", makefile_path, "qmake_all"], build_cache)
