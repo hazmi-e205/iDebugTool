@@ -2,6 +2,7 @@ from importlib.metadata import version
 import sys
 import os
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
 import tarfile, zipfile
@@ -49,6 +50,7 @@ is_aqtinstaller = False
 is_aqtcreator   = False
 is_archive      = False
 is_nightly      = True
+release_tag     = ""
 
 
 def DownloadPremake():
@@ -99,6 +101,24 @@ def SaveRevisionInfo(project_name):
             repo_item["revision"] = utils.Git.get_revision(repo_path)
             break
             
+    with open(info_path, "w") as outfile:
+        json.dump(project_info, outfile, indent=4)
+
+
+def UpdateInfoFromTag(tag_name):
+    tag_name = tag_name.strip()
+    if tag_name.startswith("refs/tags/"):
+        tag_name = tag_name.removeprefix("refs/tags/")
+    if tag_name == "":
+        return
+
+    m = re.match(r"^(?P<version>\d+\.\d+\.\d+)(?:-(?P<status>[A-Za-z0-9._-]+))?$", tag_name)
+    if m is None:
+        sys.exit("Invalid release tag '{}'. Expected format: <major>.<minor>.<patch> or <major>.<minor>.<patch>-<status>".format(tag_name))
+
+    project_info["version"] = m.group("version")
+    project_info["status"] = m.group("status") if m.group("status") else "release"
+
     with open(info_path, "w") as outfile:
         json.dump(project_info, outfile, indent=4)
 
@@ -316,6 +336,8 @@ def OpenCreator():
 
 def Execute():
     LoadInfo()
+    if len(release_tag) > 0:
+        UpdateInfoFromTag(release_tag)
     if is_reset is True:
         Reset()
     if is_checkout is True:
@@ -381,4 +403,8 @@ if __name__ == "__main__":
             archive_split = arg.split('=')
             if len(archive_split) > 1:
                 is_nightly = False if "release" in archive_split[1].strip() else True
+        if "--tag" in arg:
+            tag_split = arg.split('=')
+            if len(tag_split) > 1:
+                release_tag = tag_split[1].strip()
     Execute()
