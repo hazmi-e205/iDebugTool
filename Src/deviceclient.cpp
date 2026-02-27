@@ -6,9 +6,7 @@ DeviceClient::DeviceClient()
     , client(nullptr)
     , lockdownd_error(LOCKDOWN_E_UNKNOWN_ERROR)
     , device_error(IDEVICE_E_UNKNOWN_ERROR)
-    , transport(nullptr)
-    , connection(nullptr)
-    , channel()
+    , instrument()
     , afc(nullptr)
     , house_arrest(nullptr)
     , installer(nullptr)
@@ -84,20 +82,7 @@ DeviceClient::DeviceClient(RemoteAddress address, QStringList service_ids, QStri
 DeviceClient::~DeviceClient()
 {
     // instruments
-    if (channel)
-    {
-        channel = nullptr;
-    }
-    if (connection)
-    {
-        delete connection;
-        connection = nullptr;
-    }
-    if (transport)
-    {
-        delete transport;
-        transport = nullptr;
-    }
+    instrument.reset();
 
     // services
     if (service)

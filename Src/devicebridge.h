@@ -26,10 +26,7 @@
 #include "deviceclient.h"
 #include "asyncmanager.h"
 
-#include "idevice/instrument/dtxchannel.h"
-#include "idevice/instrument/dtxconnection.h"
-#include "idevice/instrument/dtxtransport.h"
-using namespace idevice;
+#include <instruments/instruments.h>
 
 #define ITUNES_METADATA_PLIST_FILENAME  "iTunesMetadata.plist"
 #define PKG_PATH                        "PublicStaging"

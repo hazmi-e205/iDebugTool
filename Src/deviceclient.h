@@ -11,12 +11,10 @@
 #include "libimobiledevice/installation_proxy.h"
 #include "libimobiledevice/mobile_image_mounter.h"
 #include "libimobiledevice/screenshotr.h"
+#include "libimobiledevice/service.h"
 #include "libimobiledevice/syslog_relay.h"
-#include "idevice/instrument/dtxconnection.h"
-#include "idevice/instrument/dtxtransport.h"
+#include <instruments/instruments.h>
 #include "utils.h"
-
-using namespace idevice;
 
 class DeviceClient
 {
@@ -32,9 +30,7 @@ public:
     lockdownd_error_t lockdownd_error;
     idevice_error_t device_error;
 
-    DTXTransport* transport;
-    DTXConnection* connection;
-    std::shared_ptr<DTXChannel> channel;
+    std::shared_ptr<instruments::Instruments> instrument;
 
     afc_client_t afc;
     house_arrest_client_t house_arrest;

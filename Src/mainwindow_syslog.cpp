@@ -94,34 +94,39 @@ void MainWindow::OnClearClicked()
 
 void MainWindow::OnSaveClicked()
 {
-    bool is_capture = DeviceBridge::Get()->IsSystemLogsCaptured();
-    DeviceBridge::Get()->CaptureSystemLogs(false);
+    // bool is_capture = DeviceBridge::Get()->IsSystemLogsCaptured();
+    // DeviceBridge::Get()->CaptureSystemLogs(false);
 
-    QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
-    if (!filepath.isEmpty()) {
-        QFile f(filepath);
-        if (f.open(QIODevice::WriteOnly)) {
-            QTextStream stream(&f);
-            stream << ui->syslogEdit->toPlainText();
-            f.close();
-        }
-    }
+    // QString filepath = ShowBrowseDialog(BROWSE_TYPE::SAVE_FILE, "Log", this, "Text File (*.txt)");
+    // if (!filepath.isEmpty()) {
+    //     QFile f(filepath);
+    //     if (f.open(QIODevice::WriteOnly)) {
+    //         QTextStream stream(&f);
+    //         stream << ui->syslogEdit->toPlainText();
+    //         f.close();
+    //     }
+    // }
 
-    DeviceBridge::Get()->CaptureSystemLogs(is_capture);
+    // DeviceBridge::Get()->CaptureSystemLogs(is_capture);
+    DeviceBridge::Get()->GetProcessList();
 }
 
 void MainWindow::OnStartLogging()
 {
     if (ui->startLogBtn->text().contains("start", Qt::CaseInsensitive))
     {
-        DeviceBridge::Get()->CaptureSystemLogs(true);
-        DeviceBridge::Get()->StartSyslog();
+        // DeviceBridge::Get()->CaptureSystemLogs(true);
+        // DeviceBridge::Get()->StartSyslog();
+        auto system = QStringList();//DeviceBridge::Get()->GetAttributes(DeviceBridge::AttrType::SYSTEM);
+        auto process = DeviceBridge::Get()->GetAttributes(DeviceBridge::AttrType::PROCESS);
+        DeviceBridge::Get()->StartMonitor(100, system, process);
         ui->startLogBtn->setText("Stop Logging");
     }
     else
     {
-        DeviceBridge::Get()->CaptureSystemLogs(false);
-        DeviceBridge::Get()->StopSyslog();
+        // DeviceBridge::Get()->CaptureSystemLogs(false);
+        // DeviceBridge::Get()->StopSyslog();
+        DeviceBridge::Get()->StopMonitor();
         ui->startLogBtn->setText("Start Logging");
     }
 }

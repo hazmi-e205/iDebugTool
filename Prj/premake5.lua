@@ -8,10 +8,13 @@ solution "iDebugTool"
     include "libusbmuxd.lua"
     include "libimobiledevice.lua"
     include "libimobiledevice-glue.lua"
-    include "libidevice.lua"
     include "macholib.lua"
     include "zsign.lua"
     include "bit7z.lua"
+    include "picotls.lua"
+    include "picoquic.lua"
+    include "lwip.lua"
+    include "libinstruments.lua"
 
 project "SelfUpdater"
     kind "ConsoleApp"
@@ -77,8 +80,10 @@ project "iDebugTool"
         "../Externals/MachOLib",
         "../Externals/zsign",
         "../Externals/bit7z/include",
-        "../Externals/libidevice/include",
-        "../Externals/libnskeyedarchiver/include",
+        "../Externals/picoquic/picoquic",
+        "../Externals/picotls/include",
+        "../Externals/lwip/src/include",
+        "../Externals/libinstruments/include",
     }
 
     links
@@ -95,8 +100,10 @@ project "iDebugTool"
         "minizip",
         "zsign",
         "bit7z",
-        "nskeyedarchiver",
-        "idevice",
+        "instruments",
+        "picotls",
+        "picoquic",
+        "lwip",
     }
 
     libdirs
@@ -106,6 +113,9 @@ project "iDebugTool"
 
     defines
     {
+        "INSTRUMENTS_STATIC",
+        "INSTRUMENTS_HAS_QUIC",
+        "INSTRUMENTS_ENABLE_LOGGING",
         "LIBIMOBILEDEVICE_STATIC",
         "LIBUSBMUXD_STATIC",
         "LIBPLIST_STATIC",
@@ -116,6 +126,8 @@ project "iDebugTool"
     local copysrc = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/libs"
     local copydst = "$$PWD/../../../Build/" .. GetPathFromPlatform() .. "/bin"
     if IsWindows() then
+        defines { "_WINDOWS" }
+
         links
         {
             "Iphlpapi",
@@ -154,5 +166,6 @@ project "iDebugTool"
         links
         {
             "dl",
+            "pthread",
         }
     end

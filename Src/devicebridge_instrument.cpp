@@ -1,11 +1,6 @@
 #include "devicebridge.h"
-#include "nskeyedarchiver/kavalue.hpp"
-#include "nskeyedarchiver/kamap.hpp"
-#include "nskeyedarchiver/kaarray.hpp"
-#include <QJsonDocument>
-#include <QJsonArray>
 
-using namespace idevice;
+using namespace instruments;
 
 QStringList DeviceBridge::GetAttributes(AttrType type)
 {
@@ -15,20 +10,25 @@ QStringList DeviceBridge::GetAttributes(AttrType type)
     if (!CreateClient(op))
         return list;
 
-    m_clients[op]->transport = new DTXTransport(m_clients[op]->device, false);
-    m_clients[op]->connection = new DTXConnection(m_clients[op]->transport);
-    m_clients[op]->connection->Connect();
-
-    auto channel = m_clients[op]->connection->MakeChannelWithIdentifier("com.apple.instruments.server.services.deviceinfo");
-    std::string selector = std::string("sysmon") + (type == AttrType::PROCESS ? "Process" : "System") + "Attributes";
-    std::shared_ptr<DTXMessage> message = DTXMessage::CreateWithSelector(selector.c_str());
-    auto response = channel->SendMessageSync(message);
-    if (response->PayloadObject()) {
-        QJsonDocument availableOpt = QJsonDocument::fromJson(response->PayloadObject()->ToJson().c_str());
-        foreach (const auto& value, availableOpt.array())
-            list.append(value.toString(""));
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        qDebug() << "ERROR: Failed to create Instruments connection";
+        RemoveClient(op);
+        return list;
     }
-    channel->Cancel();
+
+    std::vector<std::string> attrs;
+    Error err;
+    if (type == AttrType::PROCESS)
+        err = m_clients[op]->instrument->Performance().GetProcessAttributes(attrs);
+    else
+        err = m_clients[op]->instrument->Performance().GetSystemAttributes(attrs);
+
+    if (err == Error::Success) {
+        for (const auto& attr : attrs)
+            list.append(QString::fromStdString(attr));
+    }
+
     RemoveClient(op);
     return list;
 }
@@ -39,51 +39,42 @@ void DeviceBridge::StartMonitor(unsigned int interval_ms, QStringList system_att
     if (!CreateClient(op))
         return;
 
-    m_clients[op]->transport = new DTXTransport(m_clients[op]->device, false);
-    m_clients[op]->connection = new DTXConnection(m_clients[op]->transport);
-    m_clients[op]->connection->Connect();
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        qDebug() << "ERROR: Failed to create Instruments connection";
+        RemoveClient(op);
+        return;
+    }
 
-    nskeyedarchiver::KAArray proccessAttrs(nskeyedarchiver::KAArray("NSSet", {"NSSet", "NSObject"}));
-    nskeyedarchiver::KAArray systemAttrs(nskeyedarchiver::KAArray("NSSet", {"NSSet", "NSObject"}));
+    PerfConfig config;
+    config.sampleIntervalMs = interval_ms;
+    for (const auto& value : std::as_const(system_attr))
+        config.systemAttributes.push_back(value.toStdString());
+    for (const auto& value : std::as_const(process_attr))
+        config.processAttributes.push_back(value.toStdString());
 
-    foreach (const auto& value, process_attr)
-        proccessAttrs.push_back(nskeyedarchiver::KAValue(value.toUtf8().data()));
-
-    foreach (const auto& value, system_attr)
-        systemAttrs.push_back(nskeyedarchiver::KAValue(value.toUtf8().data()));
-
-    m_clients[op]->channel = m_clients[op]->connection->MakeChannelWithIdentifier("com.apple.instruments.server.services.sysmontap");
-    auto message = DTXMessage::CreateWithSelector("setConfig:");
-    nskeyedarchiver::KAMap configs(nskeyedarchiver::KAMap("NSMutableDictionary", {"NSMutableDictionary", "NSDictionary", "NSObject"}));
-    configs["ur"] = interval_ms;
-    configs["sampleInterval"] = interval_ms * 1000000;
-    configs["bm"] = 0;
-    configs["cpuUsage"] = true;
-    configs["procAttrs"] = proccessAttrs;
-    configs["sysAttrs"] = systemAttrs;
-    message->AppendAuxiliary(nskeyedarchiver::KAValue(configs));
-    auto response = m_clients[op]->channel->SendMessageSync(message);
-    response->Dump();
-
-    m_clients[op]->channel->SetMessageHandler([=](std::shared_ptr<DTXMessage> msg) {
-        if (msg->PayloadObject()) {
-            qDebug() << msg->PayloadObject()->ToJson().c_str();
+    m_clients[op]->instrument->Performance().Start(config,
+        [](const SystemMetrics& m) {
+            qDebug() << "CPU:" << m.cpuTotalLoad << "% User:" << m.cpuUserLoad
+                     << "% Sys:" << m.cpuSystemLoad << "%"
+                     << "Net I/O:" << m.netBytesIn << "/" << m.netBytesOut;
+        },
+        [](const std::vector<ProcessMetrics>& procs) {
+            for (const auto& p : procs) {
+                if (p.cpuUsage > 0.1) {
+                    qDebug() << "PID:" << p.pid << p.name.c_str()
+                             << "CPU:" << p.cpuUsage << "% MEM:" << p.memResident;
+                }
+            }
         }
-    });
-
-    message = DTXMessage::CreateWithSelector("start");
-    response = m_clients[op]->channel->SendMessageSync(message);
-    response->Dump();
+    );
 }
 
 void DeviceBridge::StopMonitor()
 {
     MobileOperation op = MobileOperation::SYSTEM_MONITOR;
-    if (m_clients[op]->channel) {
-        auto message = DTXMessage::CreateWithSelector("stop");
-        m_clients[op]->channel->SendMessageSync(message);
-        m_clients[op]->channel->Cancel();
-    }
+    if (m_clients[op]->instrument)
+        m_clients[op]->instrument->Performance().Stop();
     RemoveClient(op);
 }
 
@@ -93,17 +84,26 @@ void DeviceBridge::GetProcessList()
     if (!CreateClient(op))
         return;
 
-    m_clients[op]->transport = new DTXTransport(m_clients[op]->device, false);
-    m_clients[op]->connection = new DTXConnection(m_clients[op]->transport);
-    m_clients[op]->connection->Connect();
-
-    m_clients[op]->channel = m_clients[op]->connection->MakeChannelWithIdentifier("com.apple.instruments.server.services.deviceinfo");
-    std::shared_ptr<DTXMessage> message = DTXMessage::CreateWithSelector("runningProcesses");
-    auto response = m_clients[op]->channel->SendMessageSync(message);
-    if (response->PayloadObject()) {
-        qDebug() << response->PayloadObject()->ToJson().c_str();
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        qDebug() << "ERROR: Failed to create Instruments connection";
+        RemoveClient(op);
+        return;
     }
-    m_clients[op]->channel->Cancel();
+
+    std::vector<ProcessInfo> procs;
+    Error err = m_clients[op]->instrument->Process().GetProcessList(procs);
+    if (err == Error::Success) {
+        for (const auto& p : procs) {
+            qDebug() << "PID:" << p.pid
+                     << (p.isApplication ? "App" : "Proc")
+                     << p.bundleId.c_str()
+                     << p.name.c_str();
+        }
+    } else {
+        qDebug() << "ERROR: GetProcessList failed with error:" << static_cast<int>(err);
+    }
+
     RemoveClient(op);
 }
 
@@ -113,40 +113,24 @@ void DeviceBridge::StartFPS(unsigned int interval_ms)
     if (!CreateClient(op))
         return;
 
-    m_clients[op]->transport = new DTXTransport(m_clients[op]->device, false);
-    m_clients[op]->connection = new DTXConnection(m_clients[op]->transport);
-    m_clients[op]->connection->Connect();
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        qDebug() << "ERROR: Failed to create Instruments connection";
+        RemoveClient(op);
+        return;
+    }
 
-    m_clients[op]->channel = m_clients[op]->connection->MakeChannelWithIdentifier("com.apple.instruments.server.services.graphics.opengl");
-    auto message = DTXMessage::CreateWithSelector("availableStatistics");
-    m_clients[op]->channel->SendMessageSync(message);
-
-    message = DTXMessage::CreateWithSelector("driverNames");
-    m_clients[op]->channel->SendMessageSync(message);
-
-    message = DTXMessage::CreateWithSelector("setSamplingRate:");
-    message->AppendAuxiliary(nskeyedarchiver::KAValue((float)interval_ms / 100.f));
-    m_clients[op]->channel->SendMessageSync(message);
-
-    m_clients[op]->channel->SetMessageHandler([=](std::shared_ptr<DTXMessage> msg) {
-        if (msg->PayloadObject()) {
-            qDebug() << msg->PayloadObject()->ToJson().c_str();
+    m_clients[op]->instrument->FPS().Start(interval_ms,
+        [](const FPSData& data) {
+            qDebug() << "FPS:" << data.fps << "GPU:" << data.gpuUtilization << "%";
         }
-    });
-
-    message = DTXMessage::CreateWithSelector("startSamplingAtTimeInterval:");
-    message->AppendAuxiliary(nskeyedarchiver::KAValue(0.0f));
-    auto response = m_clients[op]->channel->SendMessageSync(message);
-    response->Dump();
+    );
 }
 
 void DeviceBridge::StopFPS()
 {
     MobileOperation op = MobileOperation::FPS_MONITOR;
-    if (m_clients[op]->channel){
-        auto message = DTXMessage::CreateWithSelector("stopSampling");
-        m_clients[op]->channel->SendMessageSync(message);
-        m_clients[op]->channel->Cancel();
-    }
+    if (m_clients[op]->instrument)
+        m_clients[op]->instrument->FPS().Stop();
     RemoveClient(op);
 }
