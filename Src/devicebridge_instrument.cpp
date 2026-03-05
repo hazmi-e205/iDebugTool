@@ -54,14 +54,16 @@ void DeviceBridge::StartMonitor(unsigned int interval_ms, QStringList system_att
         config.processAttributes.push_back(value.toStdString());
 
     m_clients[op]->instrument->Performance().Start(config,
-        [](const SystemMetrics& m) {
+        [this](const SystemMetrics& m) {
+            emit SystemLogsReceived2(QString("SystemMetrics > CPU: %0 | User: %1 | Sys: %2 | Net I: %3 | Net O: %4").arg(m.cpuTotalLoad).arg(m.cpuUserLoad).arg(m.cpuSystemLoad).arg(m.netBytesIn).arg(m.netBytesOut));
             qDebug() << "CPU:" << m.cpuTotalLoad << "% User:" << m.cpuUserLoad
                      << "% Sys:" << m.cpuSystemLoad << "%"
                      << "Net I/O:" << m.netBytesIn << "/" << m.netBytesOut;
         },
-        [](const std::vector<ProcessMetrics>& procs) {
+        [this](const std::vector<ProcessMetrics>& procs) {
             for (const auto& p : procs) {
                 if (p.cpuUsage > 0.1) {
+                    emit SystemLogsReceived2(QString("ProcessMetrics > PID: %0 | Name: %1 | CPU: %2 | MEM: %3").arg(p.pid).arg(p.name.c_str()).arg(p.cpuUsage).arg(p.memResident));
                     qDebug() << "PID:" << p.pid << p.name.c_str()
                              << "CPU:" << p.cpuUsage << "% MEM:" << p.memResident;
                 }
@@ -121,7 +123,8 @@ void DeviceBridge::StartFPS(unsigned int interval_ms)
     }
 
     m_clients[op]->instrument->FPS().Start(interval_ms,
-        [](const FPSData& data) {
+        [this](const FPSData& data) {
+            emit SystemLogsReceived2(QString("FPS: %0 | GPU: %1").arg(data.fps).arg(data.gpuUtilization));
             qDebug() << "FPS:" << data.fps << "GPU:" << data.gpuUtilization << "%";
         }
     );
