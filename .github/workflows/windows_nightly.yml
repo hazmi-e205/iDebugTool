@@ -1,9 +1,9 @@
 name: Windows Nightly CI
 on:
   push:
-    branches: [ "main" ]
+    branches-ignore: [ "main" ]
+    tags-ignore: [ "*" ]
   pull_request:
-    branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -55,8 +55,6 @@ jobs:
         if-no-files-found: error
         compression-level: 9
         
-
-
 
 
 

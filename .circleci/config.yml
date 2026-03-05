@@ -71,5 +71,15 @@ jobs:
 workflows:
   Nightly:
     jobs:
-      - Windows x64
-      - Linux x64
+      - Windows x64:
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /.*/
+      - Linux x64:
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /.*/
