@@ -15,6 +15,7 @@ Rework of [iOS Debug Tool](https://github.com/hazmi-e205/IOS-Debug-Tool) that wr
 
 ## Features
 - Connect iPhone via USB and Remote (Support STF and Sonic Cloud)
+- Logcat support legacy (syslog) and unified logging (ostrace)
 - Filter and Exclude logcat by text and regex
 - Filter logcat by process id (it also text and regex support)
 - Save logcat to file

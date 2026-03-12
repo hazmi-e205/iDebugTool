@@ -1,7 +1,7 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "beta1",
+    "status": "beta2",
     "dependencies": [
         {
             "project": "libimobiledevice",
