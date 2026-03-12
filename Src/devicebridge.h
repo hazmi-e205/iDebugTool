@@ -7,6 +7,8 @@
 #include <QJsonArray>
 #include <QMutex>
 #include <QFileInfo>
+#include <memory>
+#include <atomic>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice-glue/utils.h>
@@ -140,7 +142,8 @@ private:
     static bool m_destroyed;
 
     idevice_t m_device;
-    QMap<MobileOperation,DeviceClient*> m_clients;
+    QMap<MobileOperation,std::shared_ptr<DeviceClient>> m_clients;
+    QMap<MobileOperation,std::shared_ptr<std::atomic_bool>> m_cancelFlags;
     QMap<QString, QJsonDocument> m_deviceInfo;
     QMap<QString, idevice_connection_type> m_deviceList;
     QString m_currentUdid;
@@ -165,11 +168,11 @@ signals:
 
      //AFCUtils
  private:
-     int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
-     int afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr);
-     bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr);
+     int afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr, std::function<bool()> should_stop = nullptr);
+     int afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback = nullptr, std::function<bool()> should_stop = nullptr);
+     bool afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback = nullptr, std::function<bool()> should_stop = nullptr);
      int afc_copy_crash_reports(afc_client_t &afc, const char* device_directory, const char* host_directory, const char* target_dir = nullptr, const char* filename_filter = nullptr);
-     int afc_count_recursive(afc_client_t afc, const char* path);
+     int afc_count_recursive(afc_client_t afc, const char* path, std::function<bool()> should_stop = nullptr);
      // Recursively walks an AFC path and populates m_accessibleStorage.
      // Parameters:
      //  - afc: active AFC client used for directory reads and file info lookups.
@@ -177,7 +180,7 @@ signals:
      //  - visited: optional counter of visited entries; incremented as each file/dir is processed.
      //  - total: total number of entries expected; used with visited to compute percentage.
      //  - progress_cb: optional callback invoked as progress_cb(visited, total) after each entry.
-     void afc_traverse_recursive(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr);
+     void afc_traverse_recursive(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr, std::function<bool()> should_stop = nullptr);
 
      //Mounter
  public:
@@ -215,7 +218,7 @@ signals:
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
  private:
-     void afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc)> action, const QString& bundleId = "");
+     void afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc, std::shared_ptr<DeviceClient> client, std::shared_ptr<std::atomic_bool> cancel_flag)> action, const QString& bundleId = "");
      QMap<QString, FileProperty> m_accessibleStorage;
  signals:
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents);
@@ -228,7 +231,7 @@ signals:
      void UninstallApp(QString bundleId);
      void InstallApp(InstallerMode cmd, QString path);
  private:
-     void install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path);
+     void install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path, std::function<bool()> should_stop = nullptr);
      static void InstallerCallback(plist_t command, plist_t status, void *unused);
      void TriggetInstallerStatus(QJsonDocument command, QJsonDocument status);
      QMap<QString, QJsonDocument> m_installedApps;

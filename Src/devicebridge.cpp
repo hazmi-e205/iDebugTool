@@ -25,9 +25,16 @@ bool DeviceBridge::CreateClient(MobileOperation op, QStringList service_ids, QSt
     // make sure it killed
     RemoveClient(op);
 
+    m_cancelFlags[op] = std::make_shared<std::atomic_bool>(false);
+
     // create mew client
-    m_clients[op] = m_isRemote ? new DeviceClient(m_remoteAddress, service_ids, service_ids_2) : new DeviceClient(m_currentUdid, service_ids, service_ids_2);
-    bool ok = m_clients[op]->device_error == IDEVICE_E_SUCCESS && m_clients[op]->lockdownd_error == LOCKDOWN_E_SUCCESS;
+    std::shared_ptr<DeviceClient> client;
+    if (m_isRemote)
+        client = std::make_shared<DeviceClient>(m_remoteAddress, service_ids, service_ids_2);
+    else
+        client = std::make_shared<DeviceClient>(m_currentUdid, service_ids, service_ids_2);
+    m_clients[op] = client;
+    bool ok = client->device_error == IDEVICE_E_SUCCESS && client->lockdownd_error == LOCKDOWN_E_SUCCESS;
     if (!ok)
     {
         emit MessagesReceived(MessagesType::MSG_ERROR, m_isRemote ? ("ERROR: No device with " + m_remoteAddress.toString())
@@ -39,19 +46,31 @@ bool DeviceBridge::CreateClient(MobileOperation op, QStringList service_ids, QSt
 
 void DeviceBridge::RemoveClient(MobileOperation operation)
 {
+    auto cancel = m_cancelFlags.value(operation);
+    if (cancel) {
+        cancel->store(true);
+    }
+    m_cancelFlags.remove(operation);
+
     if (m_clients.contains(operation))
     {
-        delete m_clients[operation];
         m_clients.remove(operation);
     }
 }
 
 lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operation, QStringList service_ids)
 {
+    auto client = m_clients.value(operation);
+    if (!client)
+    {
+        emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No active client for requested operation.");
+        return nullptr;
+    }
+
     for (auto& id : service_ids)
     {
-        if (m_clients[operation]->services.contains(id))
-            return m_clients[operation]->services[id];
+        if (client->services.contains(id))
+            return client->services[id];
     }
     RemoveClient(operation);
     emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: No available service!" + service_ids.join(", "));
@@ -108,9 +127,13 @@ void DeviceBridge::ResetConnection()
 
     for (auto& client : m_clients.keys())
     {
-        delete m_clients[client];
+        auto cancel = m_cancelFlags.value(client);
+        if (cancel) {
+            cancel->store(true);
+        }
     }
     m_clients.clear();
+    m_cancelFlags.clear();
 
     if(m_device)
     {
@@ -169,8 +192,12 @@ bool DeviceBridge::IsConnected()
 
 void DeviceBridge::UpdateDeviceInfo()
 {
+    auto client = m_clients.value(MobileOperation::DEVICE_INFO);
+    if (!client)
+        return;
+
     plist_t node = nullptr;
-    if(lockdownd_get_value(m_clients[MobileOperation::DEVICE_INFO]->client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
+    if(lockdownd_get_value(client->client, nullptr, nullptr, &node) == LOCKDOWN_E_SUCCESS) {
         if (node) {
             QJsonDocument deviceInfo = PlistToJson(node);
             m_currentUdid = deviceInfo["UniqueDeviceID"].toString();

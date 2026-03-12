@@ -5,7 +5,7 @@
 
 void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, bool partialUpdate)
 {
-    afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::FILE_LIST, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
         if (partialUpdate && startPath != "/") {
             QString prefix = startPath + "/";
             for (auto it = m_accessibleStorage.begin(); it != m_accessibleStorage.end(); ) {
@@ -18,7 +18,8 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, boo
             m_accessibleStorage.clear();
         }
         emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, 0, bundleId);
-        int total_items = afc_count_recursive(afc, startPath.toStdString().c_str());
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
+        int total_items = afc_count_recursive(afc, startPath.toStdString().c_str(), should_stop);
         int visited_items = 0;
         int last_percentage = -1;
         auto progress_cb = [&](int current, int total) {
@@ -29,7 +30,13 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, boo
                 emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::FETCH, percentage, bundleId);
             }
         };
-        afc_traverse_recursive(afc, startPath.toStdString().c_str(), &visited_items, total_items, progress_cb);
+        afc_traverse_recursive(afc, startPath.toStdString().c_str(), &visited_items, total_items, progress_cb, should_stop);
+
+        if (should_stop()) {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::FETCH, last_percentage < 0 ? 0 : last_percentage, bundleId);
+            return;
+        }
+
         emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::FETCH, 100, bundleId);
         emit AccessibleStorageReceived(m_accessibleStorage);
     }, bundleId);
@@ -37,21 +44,26 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, boo
 
 void DeviceBridge::PushToStorage(QString localPath, QString devicePath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
         int percentage = 0;
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
         auto callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
         {
             percentage = int((float(uploaded_bytes) / (float(total_bytes) * 2.f)) * 100.f);
             emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH, percentage, devicePath);
         };
-        int result = afc_upload_file(afc, localPath, devicePath, callback);
+        int result = afc_upload_file(afc, localPath, devicePath, callback, should_stop);
+        if (result == -3 || should_stop()) {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PUSH, percentage, "Cancelled");
+            return;
+        }
         emit FileManagerChanged(result == 0 ? GenericStatus::SUCCESS : GenericStatus::FAILED, FileOperation::PUSH, percentage, devicePath);
     }, bundleId);
 }
 
 void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceFolderPath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PUSH_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
         // Pre-calculate total size of all files
         int64_t totalBytes = 0;
         for (const QString& path : localPaths)
@@ -62,8 +74,15 @@ void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceF
         int64_t bytesDoneTotal = 0;
         QString lastDevicePath = deviceFolderPath;
         bool hasError = false;
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
 
         for (int i = 0; i < totalFiles; i++) {
+            if (should_stop()) {
+                emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PUSH,
+                    (int)((float)bytesDoneTotal / (float)totalBytes * 100.f), "Cancelled");
+                return;
+            }
+
             const QString& localPath = localPaths[i];
             QFileInfo fi(localPath);
             QString filename = fi.fileName();
@@ -83,8 +102,14 @@ void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceF
             emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PUSH,
                 (int)((float)bytesDoneTotal / (float)totalBytes * 100.f), fileLabel);
 
-            int result = afc_upload_file(afc, localPath, destPath, callback);
+            int result = afc_upload_file(afc, localPath, destPath, callback, should_stop);
             bytesDoneTotal += fi.size();
+
+            if (result == -3 || should_stop()) {
+                emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PUSH,
+                    (int)((float)bytesDoneTotal / (float)totalBytes * 100.f), "Cancelled");
+                return;
+            }
 
             if (result != 0) {
                 hasError = true;
@@ -103,8 +128,9 @@ void DeviceBridge::PushMultipleToStorage(QStringList localPaths, QString deviceF
 
 void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
         int percentage = 0;
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
         auto callback = [&](uint32_t downloaded_bytes, uint32_t total_bytes)
         {
             if (total_bytes > 0) {
@@ -112,7 +138,11 @@ void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QStrin
             }
             emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL, percentage, devicePath);
         };
-        int result = afc_download_file(afc, devicePath, localPath, callback);
+        int result = afc_download_file(afc, devicePath, localPath, callback, should_stop);
+        if (result == -3 || should_stop()) {
+            emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, "Cancelled");
+            return;
+        }
         if (result != 0) {
             emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL, percentage, devicePath);
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Failed to pull file: " + devicePath + "! " + QString::number(result));
@@ -124,13 +154,20 @@ void DeviceBridge::PullFromStorage(QString devicePath, QString localPath, QStrin
 
 void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::PULL_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
         int totalFiles = pairs.size();
         if (totalFiles == 0) return;
 
         bool hasError = false;
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
 
         for (int i = 0; i < totalFiles; i++) {
+            if (should_stop()) {
+                emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL,
+                    (i * 100) / totalFiles, "Cancelled");
+                return;
+            }
+
             const QString& devicePath = pairs[i].first;
             const QString& localPath  = pairs[i].second;
             QString filename = QFileInfo(devicePath).fileName();
@@ -152,7 +189,13 @@ void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, 
             emit FileManagerChanged(GenericStatus::IN_PROGRESS, FileOperation::PULL,
                 (i * 100) / totalFiles, fileLabel);
 
-            int result = afc_download_file(afc, devicePath, localPath, callback);
+            int result = afc_download_file(afc, devicePath, localPath, callback, should_stop);
+
+            if (result == -3 || should_stop()) {
+                emit FileManagerChanged(GenericStatus::FAILED, FileOperation::PULL,
+                    ((i + 1) * 100) / totalFiles, "Cancelled");
+                return;
+            }
 
             if (result != 0) {
                 hasError = true;
@@ -170,7 +213,7 @@ void DeviceBridge::PullMultipleFromStorage(QList<QPair<QString,QString>> pairs, 
 
 void DeviceBridge::DeleteMultipleFromStorage(QStringList devicePaths, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool>){
         int totalFiles = devicePaths.size();
         if (totalFiles == 0) return;
 
@@ -213,7 +256,7 @@ void DeviceBridge::DeleteMultipleFromStorage(QStringList devicePaths, QString bu
 
 void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::DELETE_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool>){
         afc_error_t err = afc_remove_path(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::DELETE_OP, 100, devicePath);
@@ -226,7 +269,7 @@ void DeviceBridge::DeleteFromStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::NEW_FOLDER, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::NEW_FOLDER, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool>){
         afc_error_t err = afc_make_directory(afc, devicePath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::MAKE_FOLDER, 100, devicePath);
@@ -239,7 +282,7 @@ void DeviceBridge::MakeDirectoryToStorage(QString devicePath, QString bundleId)
 
 void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bundleId)
 {
-    afc_filemanager_action(MobileOperation::RENAME_FILE, [=, this](afc_client_t& afc){
+    afc_filemanager_action(MobileOperation::RENAME_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool>){
         afc_error_t err = afc_rename_path(afc, oldPath.toUtf8().data(), newPath.toUtf8().data());
         if (err == AFC_E_SUCCESS) {
             emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::RENAME, 100, newPath);
@@ -250,7 +293,7 @@ void DeviceBridge::RenameToStorage(QString oldPath, QString newPath, QString bun
     }, bundleId);
 }
 
-void DeviceBridge::afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc)> action, const QString& bundleId)
+void DeviceBridge::afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc, std::shared_ptr<DeviceClient> client, std::shared_ptr<std::atomic_bool> cancel_flag)> action, const QString& bundleId)
 {
     AsyncManager::Get()->StartAsyncRequest([=, this]() {
         if (!bundleId.isEmpty())
@@ -259,24 +302,31 @@ void DeviceBridge::afc_filemanager_action(MobileOperation op, std::function<void
             if (!CreateClient(op, serviceIds))
                 return;
 
+            auto client = m_clients.value(op);
+            if (!client)
+                return;
+            auto cancel_flag = m_cancelFlags.value(op);
+            if (!cancel_flag)
+                return;
+
             lockdownd_service_descriptor_t service = GetService(op, serviceIds);
             if (!service)
                 return;
 
-            house_arrest_error_t err = house_arrest_client_new(m_clients[op]->device, service, &m_clients[op]->house_arrest);
+            house_arrest_error_t err = house_arrest_client_new(client->device, service, &client->house_arrest);
             if (err != HOUSE_ARREST_E_SUCCESS)
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(err));
 
-            err = house_arrest_send_command(m_clients[op]->house_arrest, "VendContainer", bundleId.toUtf8().data());
+            err = house_arrest_send_command(client->house_arrest, "VendContainer", bundleId.toUtf8().data());
             if (err != HOUSE_ARREST_E_SUCCESS)
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Access Denied to " + bundleId + "'s VendContainer client! " + QString::number(err));
 
-            afc_error_t aerr = afc_client_new_from_house_arrest_client(m_clients[op]->house_arrest, &m_clients[op]->afc);
+            afc_error_t aerr = afc_client_new_from_house_arrest_client(client->house_arrest, &client->afc);
             if (aerr != AFC_E_SUCCESS)
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to afc with " + serviceIds.join(", ") + " client! " + QString::number(aerr));
 
             //call function pass from params
-            action(m_clients[op]->afc);
+            action(client->afc, client, cancel_flag);
         }
         else
         {
@@ -284,16 +334,23 @@ void DeviceBridge::afc_filemanager_action(MobileOperation op, std::function<void
             if (!CreateClient(op, serviceIds))
                 return;
 
+            auto client = m_clients.value(op);
+            if (!client)
+                return;
+            auto cancel_flag = m_cancelFlags.value(op);
+            if (!cancel_flag)
+                return;
+
             lockdownd_service_descriptor_t service = GetService(op, serviceIds);
             if (!service)
                 return;
 
-            afc_error_t aerr = afc_client_new(m_clients[op]->device, service, &m_clients[op]->afc);
+            afc_error_t aerr = afc_client_new(client->device, service, &client->afc);
             if (aerr != AFC_E_SUCCESS)
                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + serviceIds.join(", ") + " client! " + QString::number(aerr));
 
             //call function pass from params
-            action(m_clients[op]->afc);
+            action(client->afc, client, cancel_flag);
         }
         //clear instances
         RemoveClient(op);

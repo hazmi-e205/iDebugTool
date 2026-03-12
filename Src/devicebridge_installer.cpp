@@ -114,36 +114,65 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         if (!CreateClient(op, id_installer, id_afc))
             return;
 
-        lockdownd_service_descriptor_t service_installer = GetService(op, id_installer);
-        if (!service_installer)
+        auto client = m_clients.value(op);
+        if (!client) {
+            RemoveClient(op);
             return;
+        }
+        auto cancel_flag = m_cancelFlags.value(op);
+        if (!cancel_flag) {
+            RemoveClient(op);
+            return;
+        }
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
+        if (should_stop()) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+            RemoveClient(op);
+            return;
+        }
+
+        lockdownd_service_descriptor_t service_installer = GetService(op, id_installer);
+        if (!service_installer) {
+            RemoveClient(op);
+            return;
+        }
 
         lockdownd_service_descriptor_t service_afc = GetService(op, id_afc);
-        if (!service_afc)
+        if (!service_afc) {
+            RemoveClient(op);
             return;
+        }
 
-        instproxy_error_t err = instproxy_client_new(m_clients[op]->device, service_installer, &m_clients[op]->installer);
+        instproxy_error_t err = instproxy_client_new(client->device, service_installer, &client->installer);
         if (err != INSTPROXY_E_SUCCESS) {
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + id_installer.join(", ") + " client! " + QString::number(err));
+            RemoveClient(op);
             return;
         }
 
-        afc_error_t aerr = afc_client_new(m_clients[op]->device, service_afc, &m_clients[op]->afc);
+        afc_error_t aerr = afc_client_new(client->device, service_afc, &client->afc);
         if (aerr != AFC_E_SUCCESS) {
             emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + id_afc.join(", ") + " client! " + QString::number(aerr));
+            RemoveClient(op);
             return;
         }
 
-        install_app(m_clients[op]->installer, m_clients[op]->afc, cmd, path);
+        install_app(client->installer, client->afc, cmd, path, should_stop);
+        RemoveClient(op);
     });
 }
 
-void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path)
+void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc, InstallerMode cmd, QString path, std::function<bool()> should_stop)
 {
     char *bundleidentifier = NULL;
     QString pkgname = "";
     uint64_t af = 0;
     char buf[8192];
+
+    if (should_stop && should_stop()) {
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+        return;
+    }
 
     char **strs = NULL;
     if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
@@ -181,6 +210,11 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
         zip_uint64_t numzf = zip_get_num_entries(zf, 0);
         zip_uint64_t i = 0;
         for (i = 0; numzf > 0 && i < numzf; i++) {
+            if (should_stop && should_stop()) {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+                break;
+            }
+
             const char* zname = zip_get_name(zf, i, 0);
             QString dstpath;
             if (!zname) continue;
@@ -210,6 +244,13 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
 
                 zip_uint64_t zfsize = 0;
                 while (zfsize < zs.size) {
+                    if (should_stop && should_stop()) {
+                        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+                        afc_file_close(afc, af);
+                        zip_fclose(zfile);
+                        return;
+                    }
+
                     zip_int64_t amount = zip_fread(zfile, buf, sizeof(buf));
                     if (amount == 0) {
                         break;
@@ -218,6 +259,13 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
                     if (amount > 0) {
                         uint32_t written, total = 0;
                         while (total < amount) {
+                            if (should_stop && should_stop()) {
+                                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+                                afc_file_close(afc, af);
+                                zip_fclose(zfile);
+                                return;
+                            }
+
                             written = 0;
                             if (afc_file_write(afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
                                 emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: AFC Write error!");
@@ -249,6 +297,11 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
         free(ipcc);
         printf("DONE.\n");
 
+        if (should_stop && should_stop()) {
+            emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+            return;
+        }
+
         instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
 #else
         emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: IPCC not supported!");
@@ -273,8 +326,12 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
             int percentage = int((float(progress) / (float(total) * 2.f)) * 100.f);
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, QString::asprintf("(%d/%d) ", progress, total) + messages);
         };
-        if (!afc_upload_dir(afc, path, pkgname, afc_callback))
+        if (!afc_upload_dir(afc, path, pkgname, afc_callback, should_stop))
         {
+            if (should_stop && should_stop()) {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "Cancelled");
+                return;
+            }
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, "", 100, "ERROR: Could not send " + path);
             return;
         }
@@ -318,8 +375,12 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
             QString message = "Sending " + BytesToString(uploaded_bytes) + " of " + BytesToString(total_bytes);
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, percentage, message);
         };
-        int result = afc_upload_file(afc, path, pkgname, callback);
+        int result = afc_upload_file(afc, path, pkgname, callback, should_stop);
         if (result != 0) {
+            if (should_stop && should_stop()) {
+                emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, "Cancelled");
+                return;
+            }
             emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, QString::asprintf("ERROR: Failed to send %s : afc error code %d", path.toUtf8().data(), result));
             return;
         }
@@ -327,6 +388,11 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
         if (bundleidentifier) {
             instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
         }
+    }
+
+    if (should_stop && should_stop()) {
+        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 100, "Cancelled");
+        return;
     }
 
     /* perform installation or upgrade */

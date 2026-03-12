@@ -10,7 +10,7 @@
 #include "utils.h"
 
 
-int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
+int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback, std::function<bool()> should_stop)
 {
     FILE *f = NULL;
     uint64_t af = 0;
@@ -32,11 +32,22 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
 
     size_t amount = 0;
     do {
+        if (should_stop && should_stop()) {
+            afc_file_close(afc, af);
+            fclose(f);
+            return -3;
+        }
+
         amount = fread(buf, 1, sizeof(buf), f);
         if (amount > 0) {
             uint32_t written, total = 0;
             afc_error_t aerr = AFC_E_SUCCESS;
             while (total < amount) {
+                if (should_stop && should_stop()) {
+                    afc_file_close(afc, af);
+                    fclose(f);
+                    return -3;
+                }
                 written = 0;
                 aerr = afc_file_write(afc, af, buf, amount, &written);
                 if (aerr != AFC_E_SUCCESS) {
@@ -60,7 +71,7 @@ int DeviceBridge::afc_upload_file(afc_client_t &afc, const QString &filename, co
     return AFC_E_SUCCESS;
 }
 
-int DeviceBridge::afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback)
+int DeviceBridge::afc_download_file(afc_client_t &afc, const QString &srcfn, const QString &dstfn, std::function<void(uint32_t,uint32_t)> callback, std::function<bool()> should_stop)
 {
     FILE *f = NULL;
     uint64_t af = 0;
@@ -97,6 +108,12 @@ int DeviceBridge::afc_download_file(afc_client_t &afc, const QString &srcfn, con
     afc_error_t aerr = AFC_E_SUCCESS;
     uint32_t bytes_read = 0;
     do {
+        if (should_stop && should_stop()) {
+            fclose(f);
+            afc_file_close(afc, af);
+            return -3;
+        }
+
         bytes_read = 0;
         aerr = afc_file_read(afc, af, buf, sizeof(buf), &bytes_read);
         if (aerr != AFC_E_SUCCESS) {
@@ -120,7 +137,7 @@ int DeviceBridge::afc_download_file(afc_client_t &afc, const QString &srcfn, con
     return AFC_E_SUCCESS;
 }
 
-bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback)
+bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const QString &afcpath, std::function<void(int,int,QString)> callback, std::function<bool()> should_stop)
 {
     QStringList list_dirs, list_files;
     QDir dirpath(path);
@@ -137,6 +154,9 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
     int total = list_dirs.count() + list_files.count();
     foreach (QString dir_name, list_dirs)
     {
+        if (should_stop && should_stop())
+            return false;
+
         idx++;
         QString targetpath = afcpath + "/" + dirpath.relativeFilePath(dir_name);
         if (callback) callback(idx, total, QString::asprintf("Adding `%s' to device...", targetpath.toUtf8().data()));
@@ -149,6 +169,9 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
     }
     foreach (QString file_name, list_files)
     {
+        if (should_stop && should_stop())
+            return false;
+
         idx++;
         QString targetpath = afcpath + "/" + dirpath.relativeFilePath(file_name);
         auto afc_callback = [&](uint32_t uploaded_bytes, uint32_t total_bytes)
@@ -158,7 +181,7 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
                                                                  BytesToString(total_bytes).toUtf8().data(),
                                                                  targetpath.toUtf8().data()));
         };
-        int result = afc_upload_file(afc, file_name, targetpath, afc_callback);
+        int result = afc_upload_file(afc, file_name, targetpath, afc_callback, should_stop);
         if (result != 0)
         {
             if (callback) callback(idx, total, QString::asprintf("Can't send `%s' to device : afc error code %d", targetpath.toUtf8().data(), result));
@@ -168,8 +191,12 @@ bool DeviceBridge::afc_upload_dir(afc_client_t &afc, const QString &path, const 
     return true;
 }
 
-int DeviceBridge::afc_count_recursive(afc_client_t afc, const char *path)
+int DeviceBridge::afc_count_recursive(afc_client_t afc, const char *path, std::function<bool()> should_stop)
 {
+    if (should_stop && should_stop()) {
+        return 0;
+    }
+
     char **file_list = NULL;
     int count = 0;
 
@@ -178,6 +205,10 @@ int DeviceBridge::afc_count_recursive(afc_client_t afc, const char *path)
     }
 
     for (int i = 0; file_list[i]; i++) {
+        if (should_stop && should_stop()) {
+            break;
+        }
+
         if (strcmp(file_list[i], ".") == 0 || strcmp(file_list[i], "..") == 0) continue;
 
         char full_path[2048];
@@ -202,15 +233,19 @@ int DeviceBridge::afc_count_recursive(afc_client_t afc, const char *path)
 
         count++;
         if (is_dir) {
-            count += afc_count_recursive(afc, full_path);
+            count += afc_count_recursive(afc, full_path, should_stop);
         }
     }
     afc_dictionary_free(file_list);
     return count;
 }
 
-void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path, int* visited, int total, std::function<void(int,int)> progress_cb)
+void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path, int* visited, int total, std::function<void(int,int)> progress_cb, std::function<bool()> should_stop)
 {
+    if (should_stop && should_stop()) {
+        return;
+    }
+
     char **file_list = NULL;
 
     if (afc_read_directory(afc, path, &file_list) != AFC_E_SUCCESS || !file_list) {
@@ -218,6 +253,10 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path, in
     }
 
     for (int i = 0; file_list[i]; i++) {
+        if (should_stop && should_stop()) {
+            break;
+        }
+
         if (strcmp(file_list[i], ".") == 0 || strcmp(file_list[i], "..") == 0) continue;
 
         char full_path[2048];
@@ -258,7 +297,7 @@ void DeviceBridge::afc_traverse_recursive(afc_client_t afc, const char *path, in
         }
 
         if (is_dir) {
-            afc_traverse_recursive(afc, full_path, visited, total, progress_cb);
+            afc_traverse_recursive(afc, full_path, visited, total, progress_cb, should_stop);
         }
     }
     afc_dictionary_free(file_list);
