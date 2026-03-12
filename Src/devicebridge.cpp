@@ -104,6 +104,7 @@ void DeviceBridge::ResetConnection()
     m_remoteAddress.clear();
     StopDebugging();
     StopSyslog();
+    StopOSTrace();
 
     for (auto& client : m_clients.keys())
     {

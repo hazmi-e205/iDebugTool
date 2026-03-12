@@ -30,6 +30,8 @@ void MainWindow::SetupSyslogUI()
     ui->maxShownLogs->setText(QString::number(m_maxCachedLogs));
     ui->pidEdit->addItems(QStringList() << "By user apps only" << "Related to user apps");
     ui->pidEdit->setCurrentIndex(0);
+    ui->logTypeEdit->addItems(QStringList() << "syslog" << "ostrace");
+    ui->logTypeEdit->setCurrentIndex(0);
     DeviceBridge::Get()->LogsFilterByString(ui->searchEdit->text());
     DeviceBridge::Get()->LogsExcludeByString(ui->excludeEdit->text());
     DeviceBridge::Get()->LogsFilterByPID(ui->pidEdit->currentText());
@@ -115,13 +117,21 @@ void MainWindow::OnStartLogging()
     if (ui->startLogBtn->text().contains("start", Qt::CaseInsensitive))
     {
         DeviceBridge::Get()->CaptureSystemLogs(true);
-        DeviceBridge::Get()->StartSyslog();
+        QString relayType = ui->logTypeEdit->currentText().trimmed().toLower();
+        if (relayType == "ostrace")
+            DeviceBridge::Get()->StartOSTrace();
+        else
+            DeviceBridge::Get()->StartSyslog();
+
+        ui->logTypeEdit->setEnabled(false);
         ui->startLogBtn->setText("Stop Logging");
     }
     else
     {
         DeviceBridge::Get()->CaptureSystemLogs(false);
         DeviceBridge::Get()->StopSyslog();
+        DeviceBridge::Get()->StopOSTrace();
+        ui->logTypeEdit->setEnabled(true);
         ui->startLogBtn->setText("Start Logging");
     }
 }

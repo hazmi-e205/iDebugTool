@@ -13,6 +13,7 @@
 #include "libimobiledevice/screenshotr.h"
 #include "libimobiledevice/service.h"
 #include "libimobiledevice/syslog_relay.h"
+#include "libimobiledevice/ostrace.h"
 #include <instruments/instruments.h>
 #include "utils.h"
 
@@ -36,6 +37,7 @@ public:
     house_arrest_client_t house_arrest;
     instproxy_client_t installer;
     syslog_relay_client_t syslog;
+    ostrace_client_t ostrace;
     debugserver_client_t debugger;
     diagnostics_relay_client_t diagnostics;
     screenshotr_client_t screenshot;

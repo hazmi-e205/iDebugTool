@@ -11,6 +11,7 @@ DeviceClient::DeviceClient()
     , house_arrest(nullptr)
     , installer(nullptr)
     , syslog(nullptr)
+    , ostrace(nullptr)
     , debugger(nullptr)
     , diagnostics(nullptr)
     , screenshot(nullptr)
@@ -133,6 +134,13 @@ DeviceClient::~DeviceClient()
         syslog_relay_stop_capture(syslog);
         syslog_relay_client_free(syslog);
         syslog = nullptr;
+    }
+
+    if (ostrace)
+    {
+        ostrace_stop_activity(ostrace);
+        ostrace_client_free(ostrace);
+        ostrace = nullptr;
     }
 
     if (debugger)

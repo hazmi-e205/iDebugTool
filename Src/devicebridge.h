@@ -11,6 +11,7 @@
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice-glue/utils.h>
 #include <libimobiledevice/syslog_relay.h>
+#include <libimobiledevice/ostrace.h>
 #include <libimobiledevice/diagnostics_relay.h>
 #include <libimobiledevice/installation_proxy.h>
 #include <libimobiledevice/afc.h>
@@ -93,11 +94,17 @@ enum MobileOperation {
     INSTALL_APP,
     UNINSTALL_APP,
     SYSLOG,
+    OSTRACE,
     DEBUGGER,
     SYSTEM_MONITOR,
     FPS_MONITOR,
     GET_PROCESS,
     GET_ATTRIBUTES
+};
+
+enum SystemLogsRelay {
+    SYSLOG_RELAY_SERVICE,
+    OSTRACE_RELAY_SERVICE
 };
 
 class DeviceBridge : public QObject
@@ -230,8 +237,11 @@ signals:
 
      //SyslogBridge
  public:
+     void StartSystemLogs(SystemLogsRelay relayType);
      void StartSyslog();
+     void StartOSTrace();
      void StopSyslog();
+     void StopOSTrace();
      void ClearCachedLogs();
      void CaptureSystemLogs(bool enable);
      bool IsSystemLogsCaptured();
@@ -245,6 +255,7 @@ signals:
      static QStringList GetPIDOptions(QMap<QString, QJsonDocument>& installed_apps);
  private:
      static void SystemLogsCallback(char c, void *user_data);
+     static void OSTraceCallback(const void* buf, size_t len, void *user_data);
      void TriggerSystemLogsReceived(LogPacket log);
      LogFilterThread* m_logHandler;
  signals:

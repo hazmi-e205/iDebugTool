@@ -3840,6 +3840,16 @@ color: rgb(255, 255, 255);</string>
                 </widget>
                </item>
                <item>
+                <widget class="QComboBox" name="logTypeEdit">
+                 <property name="minimumSize">
+                  <size>
+                   <width>120</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="startLogBtn">
                  <property name="text">
                   <string>Start Logging</string>
