@@ -41,7 +41,7 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
             ui->outputEdit->appendPlainText(messages);
             if (percentage == 100) {
                 ui->installBtn->setEnabled(true);
-                RefreshPIDandBundleID();
+                RefreshPIDandBundleID(false);
             }
         }
         break;
@@ -49,7 +49,7 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
     case InstallerMode::CMD_UNINSTALL:
         if (percentage == 100)
         {
-            RefreshPIDandBundleID();
+            RefreshPIDandBundleID(false);
             QMessageBox::information(this, "Uninstall Success!", bundleId + " uninstalled.", QMessageBox::Ok);
         }
         break;
