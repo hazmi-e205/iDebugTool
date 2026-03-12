@@ -78,8 +78,7 @@ lockdownd_service_descriptor_t DeviceBridge::GetService(MobileOperation operatio
 }
 
 DeviceBridge::DeviceBridge()
-    : m_device(nullptr)
-    , m_logHandler(new LogFilterThread())
+    : m_logHandler(new LogFilterThread())
     , m_debugHandler(new DebuggerFilterThread())
 {
     connect(m_logHandler, SIGNAL(FilterComplete(QString)), this, SIGNAL(SystemLogsReceived2(QString)));
@@ -134,13 +133,6 @@ void DeviceBridge::ResetConnection()
     }
     m_clients.clear();
     m_cancelFlags.clear();
-
-    if(m_device)
-    {
-        //Quick fix: crash when try to connect unpaired device
-        idevice_free(m_device);
-        m_device = nullptr;
-    }
     emit DeviceStatus(ConnectionStatus::DISCONNECTED, m_currentUdid, m_isRemote);
 }
 
@@ -150,8 +142,8 @@ void DeviceBridge::ConnectToDevice(const std::function<void()>& configureConnect
         emit ProcessStatusChanged(0, "Reset previous connection...");
         ResetConnection();
 
-        emit ProcessStatusChanged(10, m_isRemote ? QString("Connecting to %1:%2...").arg(m_remoteAddress.ipAddress, m_remoteAddress.port) : QString("Connecting to %1...").arg(m_currentUdid));
         configureConnection();
+        emit ProcessStatusChanged(10, m_isRemote ? QString("Connecting to %1 port %2 ...").arg(m_remoteAddress.ipAddress).arg(m_remoteAddress.port) : QString("Connecting to %1 ...").arg(m_currentUdid));
         if (!CreateClient(MobileOperation::DEVICE_INFO))
             return;
 
@@ -212,63 +204,6 @@ void DeviceBridge::UpdateDeviceInfo()
 QJsonDocument DeviceBridge::GetDeviceInfo(QString udid)
 {
     return m_deviceInfo[udid.isEmpty() ? m_currentUdid : udid];
-}
-
-void DeviceBridge::StartLockdown(bool condition, lockdownd_client_t& client, QStringList service_ids, const std::function<void (QString&, lockdownd_service_descriptor_t&)> &function, bool clear_lockdownd)
-{
-    if (!condition)
-        return;
-
-    lockdownd_error_t err = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-    if (client == nullptr)
-    {
-        err = m_isRemote ? lockdownd_client_new_with_handshake_remote(m_device, &client, TOOL_NAME) : lockdownd_client_new_with_handshake(m_device, &client, TOOL_NAME);
-        if (LOCKDOWN_E_SUCCESS != err)
-        {
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Create lockdownd handshake failed!");
-            client = nullptr;
-            return;
-        }
-    }
-
-    if (service_ids.size() > 0)
-        err = lockdownd_error_t::LOCKDOWN_E_UNKNOWN_ERROR;
-
-    lockdownd_service_descriptor_t service = nullptr;
-    QString service_id;
-    for ( const auto& svc_id : service_ids)
-    {
-        service_id = svc_id;
-        err = lockdownd_start_service(client, svc_id.toUtf8().data(), &service);
-        if(err == LOCKDOWN_E_SUCCESS) { break; }
-    }
-
-    switch (err)
-    {
-        case LOCKDOWN_E_SUCCESS:
-            function(service_id, service);
-            lockdownd_service_descriptor_free(service);
-            if (clear_lockdownd && !client) {
-                lockdownd_client_free(client);
-                client = nullptr;
-            }
-            break;
-
-        case LOCKDOWN_E_PASSWORD_PROTECTED:
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Device is passcode protected, enter passcode on the device to continue.");
-            break;
-
-        case LOCKDOWN_E_SSL_ERROR:
-            if (m_isRemote)
-                ConnectToDevice(m_remoteAddress.ipAddress, m_remoteAddress.port);
-            else
-                ConnectToDevice(m_currentUdid);
-            break;
-
-        default:
-            emit MessagesReceived(MessagesType::MSG_ERROR, "ERROR: Could not connect to " + service_id + " lockdownd: " + QString::number(err));
-            break;
-    }
 }
 
 void DeviceBridge::TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid)

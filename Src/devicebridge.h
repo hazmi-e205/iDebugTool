@@ -135,13 +135,11 @@ private:
     void ConnectToDevice(const std::function<void()>& configureConnection);
 
     void UpdateDeviceInfo();
-    void StartLockdown(bool condition, lockdownd_client_t& client, QStringList service_ids, const std::function<void(QString& service_id, lockdownd_service_descriptor_t& service)>& function, bool clear_lockdownd = true);
     void TriggerUpdateDevices(idevice_event_type eventType, idevice_connection_type connectionType, QString udid);
 
     static void DeviceEventCallback(const idevice_event_t* event, void* userdata);
     static bool m_destroyed;
 
-    idevice_t m_device;
     QMap<MobileOperation,std::shared_ptr<DeviceClient>> m_clients;
     QMap<MobileOperation,std::shared_ptr<std::atomic_bool>> m_cancelFlags;
     QMap<QString, QJsonDocument> m_deviceInfo;
