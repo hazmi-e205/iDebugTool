@@ -33,6 +33,7 @@ void MainWindow::OnInstallerStatusChanged(InstallerMode command, QString bundleI
 {
     switch (command)
     {
+    case InstallerMode::CMD_UPGRADE:
     case InstallerMode::CMD_INSTALL:
         {
             QString messages = (percentage >= 0 ? ("(" + QString::number(percentage) + "%) ") : "") + message;

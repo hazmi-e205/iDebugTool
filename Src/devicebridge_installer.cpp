@@ -334,7 +334,7 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
         emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Installing " + QString(bundleidentifier));
         instproxy_install(installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     } else {
-        emit InstallerStatusChanged(InstallerMode::CMD_INSTALL, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
+        emit InstallerStatusChanged(InstallerMode::CMD_UPGRADE, bundleidentifier, 51, "Upgrading " + QString(bundleidentifier));
         instproxy_upgrade(installer, pkgname.toUtf8().data(), client_opts, InstallerCallback, NULL);
     }
     instproxy_client_options_free(client_opts);
@@ -342,8 +342,13 @@ void DeviceBridge::install_app(instproxy_client_t& installer, afc_client_t &afc,
 
 void DeviceBridge::TriggetInstallerStatus(QJsonDocument command, QJsonDocument status)
 {
-    InstallerMode pCommand = command["Command"].toString() == "Install" ? InstallerMode::CMD_INSTALL : InstallerMode::CMD_UNINSTALL;
-    QString pBundleId = pCommand == InstallerMode::CMD_INSTALL ? command["ClientOptions"]["CFBundleIdentifier"].toString() : command["ApplicationIdentifier"].toString();
+    InstallerMode pCommand = InstallerMode::CMD_UNINSTALL;
+    if (command["Command"].toString() == "Install")
+        pCommand = InstallerMode::CMD_INSTALL;
+    else if (command["Command"].toString() == "Upgrade")
+        pCommand = InstallerMode::CMD_UPGRADE;
+
+    QString pBundleId = pCommand == InstallerMode::CMD_UNINSTALL ? command["ApplicationIdentifier"].toString() : command["ClientOptions"]["CFBundleIdentifier"].toString();
 
     int percentage = 0;
     QString pMessage = status["Status"].toString();
