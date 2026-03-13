@@ -477,6 +477,18 @@ color: rgb(255, 255, 255);</string>
                                           <verstretch>0</verstretch>
                                          </sizepolicy>
                                         </property>
+                                        <property name="minimumSize">
+                                         <size>
+                                          <width>90</width>
+                                          <height>0</height>
+                                         </size>
+                                        </property>
+                                        <property name="maximumSize">
+                                         <size>
+                                          <width>90</width>
+                                          <height>16777215</height>
+                                         </size>
+                                        </property>
                                         <layout class="QVBoxLayout" name="verticalLayout_6">
                                          <property name="spacing">
                                           <number>6</number>
@@ -494,6 +506,28 @@ color: rgb(255, 255, 255);</string>
                                           <number>0</number>
                                          </property>
                                          <item>
+                                          <widget class="QLabel" name="label_model">
+                                           <property name="sizePolicy">
+                                            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                                             <horstretch>0</horstretch>
+                                             <verstretch>0</verstretch>
+                                            </sizepolicy>
+                                           </property>
+                                           <property name="font">
+                                            <font>
+                                             <pointsize>9</pointsize>
+                                             <bold>true</bold>
+                                            </font>
+                                           </property>
+                                           <property name="text">
+                                            <string>Model</string>
+                                           </property>
+                                           <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+                                           </property>
+                                          </widget>
+                                         </item>
+                                         <item>
                                           <widget class="QLabel" name="label_5">
                                            <property name="sizePolicy">
                                             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -510,24 +544,8 @@ color: rgb(255, 255, 255);</string>
                                            <property name="text">
                                             <string>Product Type</string>
                                            </property>
-                                          </widget>
-                                         </item>
-                                         <item>
-                                          <widget class="QLabel" name="label_6">
-                                           <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-                                             <horstretch>0</horstretch>
-                                             <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                           </property>
-                                           <property name="font">
-                                            <font>
-                                             <pointsize>9</pointsize>
-                                             <bold>true</bold>
-                                            </font>
-                                           </property>
-                                           <property name="text">
-                                            <string>OS Name</string>
+                                           <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignVCenter</set>
                                            </property>
                                           </widget>
                                          </item>
@@ -548,6 +566,9 @@ color: rgb(255, 255, 255);</string>
                                            <property name="text">
                                             <string>OS Version</string>
                                            </property>
+                                           <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+                                           </property>
                                           </widget>
                                          </item>
                                          <item>
@@ -566,6 +587,9 @@ color: rgb(255, 255, 255);</string>
                                            </property>
                                            <property name="text">
                                             <string>CPU Arch</string>
+                                           </property>
+                                           <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignVCenter</set>
                                            </property>
                                           </widget>
                                          </item>
@@ -586,6 +610,9 @@ color: rgb(255, 255, 255);</string>
                                            <property name="text">
                                             <string>UDID</string>
                                            </property>
+                                           <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignVCenter</set>
+                                           </property>
                                           </widget>
                                          </item>
                                         </layout>
@@ -601,7 +628,7 @@ color: rgb(255, 255, 255);</string>
                                         </property>
                                         <layout class="QVBoxLayout" name="verticalLayout_8">
                                          <property name="spacing">
-                                          <number>4</number>
+                                          <number>6</number>
                                          </property>
                                          <property name="leftMargin">
                                           <number>0</number>
@@ -616,7 +643,7 @@ color: rgb(255, 255, 255);</string>
                                           <number>0</number>
                                          </property>
                                          <item>
-                                          <widget class="QLabel" name="ProductType">
+                                          <widget class="QLabel" name="Model">
                                            <property name="text">
                                             <string>....</string>
                                            </property>
@@ -626,7 +653,7 @@ color: rgb(255, 255, 255);</string>
                                           </widget>
                                          </item>
                                          <item>
-                                          <widget class="QLabel" name="OSName">
+                                          <widget class="QLabel" name="ProductType">
                                            <property name="text">
                                             <string>....</string>
                                            </property>

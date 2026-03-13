@@ -3,6 +3,7 @@
 #include "userconfigs.h"
 #include "utils.h"
 #include "usbmuxd.h"
+#include "appledb.h"
 #include <QMessageBox>
 
 void MainWindow::SetupDevicesUI()
@@ -24,6 +25,7 @@ void MainWindow::SetupDevicesUI()
         connect(DeviceBridge::Get(), SIGNAL(ProcessStatusChanged(int,QString)), this, SLOT(OnProcessStatusChanged(int,QString)));
         RefreshSocketList();
     }
+
     m_devicesModel->setHorizontalHeaderItem(0, new QStandardItem("UDID"));
     m_devicesModel->setHorizontalHeaderItem(1, new QStandardItem("DeviceName"));
     m_devicesModel->setHorizontalHeaderItem(2, new QStandardItem("Connection"));
@@ -41,9 +43,26 @@ void MainWindow::OnSystemInfoClicked()
 void MainWindow::UpdateInfoWidget()
 {
     auto deviceinfo = DeviceBridge::Get()->GetDeviceInfo();
-    ui->ProductType->setText(deviceinfo["ProductType"].toString());
-    ui->OSName->setText(deviceinfo["ProductName"].toString());
-    ui->OSVersion->setText(deviceinfo["ProductVersion"].toString());
+    const QString productType = deviceinfo["ProductType"].toString();
+    ui->ProductType->setText(productType);
+    ui->Model->setText(m_appleDb->ResolveProductType(productType, [this, productType](const QString& resolved)
+    {
+        if (!DeviceBridge::Get()->IsConnected())
+            return;
+
+        const QString latestProductType = DeviceBridge::Get()->GetDeviceInfo()["ProductType"].toString();
+        if (latestProductType == productType)
+            ui->Model->setText(resolved);
+    }));
+    const QString osName = deviceinfo["ProductName"].toString();
+    const QString osVersion = deviceinfo["ProductVersion"].toString();
+    if (!osName.isEmpty() && !osVersion.isEmpty())
+        ui->OSVersion->setText(QString("%1 %2").arg(osName, osVersion));
+    else if (!osVersion.isEmpty())
+        ui->OSVersion->setText(osVersion);
+    else
+        ui->OSVersion->setText(osName);
+
     ui->CPUArch->setText(deviceinfo["CPUArchitecture"].toString());
     ui->UDID->setText(deviceinfo["UniqueDeviceID"].toString());
 }
@@ -113,8 +132,8 @@ void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRe
     }
     else
     {
+        ui->Model->clear();
         ui->ProductType->clear();
-        ui->OSName->clear();
         ui->OSVersion->clear();
         ui->CPUArch->clear();
         ui->UDID->clear();

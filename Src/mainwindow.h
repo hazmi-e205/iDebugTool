@@ -25,6 +25,7 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class AppInfo;
+class AppleDB;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -50,6 +51,7 @@ private:
     ProxyDialog *m_proxyDialog;
     AboutDialog *m_aboutDialog;
     QMutex m_mutex;
+    AppleDB* m_appleDb;
 
 private slots:
     void OnTopSplitterMoved(int pos, int index);

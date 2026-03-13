@@ -3,6 +3,7 @@
 #include <iostream>
 #include "utils.h"
 #include "appinfo.h"
+#include "appledb.h"
 #include "userconfigs.h"
 #include "crashsymbolicator.h"
 #include "asyncmanager.h"
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_textDialog(new TextViewer(this))
     , m_proxyDialog(new ProxyDialog(this))
     , m_aboutDialog(new AboutDialog(&m_appInfo, this))
+    , m_appleDb(new AppleDB(this))
     , m_loadingDevice(new LoadingDialog(this))
     , m_devicesModel(nullptr)
     , m_maxCachedLogs(UserConfigs::Get()->GetData("MaxShownLogs", "1000").toUInt())
@@ -36,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_imageMounter(new ImageMounter(this))
 {
     ui->setupUi(this);
+    m_appleDb->EnsureDownloadedAtLaunch();
 
     AsyncManager::Get()->Init(4);
     QMainWindow::setWindowTitle(m_appInfo->GetFullname());
@@ -193,6 +196,7 @@ MainWindow::~MainWindow()
     delete m_imageMounter;
     delete m_proxyDialog;
     delete m_aboutDialog;
+    delete m_appleDb;
     delete m_loadingDevice;
     delete m_loadingCodesign;
     delete m_loadingSymbolicate;
