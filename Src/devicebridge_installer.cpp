@@ -158,7 +158,6 @@ void DeviceBridge::InstallApp(InstallerMode cmd, QString path)
         }
 
         install_app(client->installer, client->afc, cmd, path, should_stop);
-        RemoveClient(op);
     });
 }
 
