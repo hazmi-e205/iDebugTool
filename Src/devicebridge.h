@@ -294,7 +294,8 @@ signals:
      void GetProcessList();
      void StartFPS(unsigned int interval_ms);
      void StopFPS();
- signals:
+  signals:
+     void InstrumentLogReceived(QString logs);
 };
 
 #endif // DEVICEBRIDGE_H

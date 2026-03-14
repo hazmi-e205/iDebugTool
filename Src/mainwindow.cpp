@@ -66,6 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupFileManagerUI();
     SetupToolboxUI();
     SetupDebuggerUI();
+    SetupInstrumentUI();
 
     ui->installDrop->installEventFilter(m_eventFilter);
     ui->bundleIds->installEventFilter(m_eventFilter);
@@ -120,10 +121,16 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->clearOutputBtn
                    << ui->saveOutputBtn
                    << ui->startLogBtn
-                   << ui->startDebugBtn
-                   << ui->saveDebugBtn
-                   << ui->clearDebugBtn
-                   << ui->saveSymbolicatedBtn);
+                    << ui->startDebugBtn
+                    << ui->saveDebugBtn
+                    << ui->clearDebugBtn
+                    << ui->saveSymbolicatedBtn
+                    << ui->instrumentLoadSystemAttrsBtn
+                    << ui->instrumentLoadProcessAttrsBtn
+                    << ui->instrumentMonitorBtn
+                    << ui->instrumentGetProcessListBtn
+                    << ui->instrumentFpsBtn
+                    << ui->instrumentClearLogBtn);
 
     MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>()
                    << ui->refreshFileBtn
@@ -160,7 +167,9 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->excludeDbgEdit
                    << ui->envEdit
                    << ui->argsEdit
-                   << ui->searchFileEdit);
+                   << ui->searchFileEdit
+                   << ui->instrumentMonitorInterval
+                   << ui->instrumentFpsInterval);
 
     MassStylesheet(STYLE_TYPE::ROUNDED_COMBOBOX_LIGHT, QList<QWidget*>()
                    << ui->bundleIds

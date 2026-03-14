@@ -196,5 +196,17 @@ private slots:
     void OnDebuggerFilterStatus(bool isfiltering);
     void OnDebuggerFilterChanged(QString text);
     void OnDebuggerExcludeChanged(QString text);
+
+    //Instrument UI
+private:
+    void SetupInstrumentUI();
+private slots:
+    void OnInstrumentLoadSystemAttrsClicked();
+    void OnInstrumentLoadProcessAttrsClicked();
+    void OnInstrumentStartStopMonitorClicked();
+    void OnInstrumentGetProcessListClicked();
+    void OnInstrumentStartStopFpsClicked();
+    void OnInstrumentClearLogClicked();
+    void OnInstrumentLogReceived(QString logs);
 };
 #endif // MAINWINDOW_H
