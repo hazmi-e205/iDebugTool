@@ -61,13 +61,14 @@ DeviceClient::DeviceClient(QString udid, QStringList service_ids, QStringList se
 
 DeviceClient::DeviceClient(RemoteAddress address, QStringList service_ids, QStringList service_ids_2) : DeviceClient()
 {
-    device_error = idevice_new_remote(&device, address.ipAddress.toStdString().c_str(), address.port);
+    // Sonic Cloud remote usbmux endpoint (not iOS 17+ RSD tunnel port).
+    device_error = idevice_new_sonic_gidevice(&device, address.ipAddress.toStdString().c_str(), address.port);
     if (device_error != idevice_error_t::IDEVICE_E_SUCCESS) {
         qDebug() << "New device error : " << device_error;
         return;
     }
 
-    lockdownd_error = lockdownd_client_new_with_handshake_remote(device, &client, TOOL_NAME);
+    lockdownd_error = lockdownd_client_new_with_handshake_sonic_gidevice(device, &client, TOOL_NAME);
     if (lockdownd_error != lockdownd_error_t::LOCKDOWN_E_SUCCESS) {
         qDebug() << "New lockdownd client error : " << lockdownd_error;
         return;

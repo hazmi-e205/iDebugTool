@@ -2,13 +2,16 @@ diff --git a/include/libimobiledevice/libimobiledevice.h b/include/libimobiledev
 index bc57778..65e6ce6 100644
 --- a/include/libimobiledevice/libimobiledevice.h
 +++ b/include/libimobiledevice/libimobiledevice.h
-@@ -258,6 +258,22 @@ LIBIMOBILEDEVICE_API idevice_error_t idevice_new(idevice_t *device, const char *
+@@ -258,6 +258,25 @@ LIBIMOBILEDEVICE_API idevice_error_t idevice_new(idevice_t *device, const char *
   */
  LIBIMOBILEDEVICE_API idevice_error_t idevice_new_with_options(idevice_t *device, const char *udid, enum idevice_options options);
  
 +/**
-+ * Creates an idevice_t structure by connecting to a remote usbmux proxy
-+ * (e.g. sonic-gidevice Share server) at the given IP/port.
++ * Creates an idevice_t structure by connecting to a Sonic Cloud remote
++ * usbmux proxy (e.g. sonic-gidevice Share server) at the given IP/port.
++ *
++ * This API is not related to iOS 17+ RSD tunnel ports; it is specifically
++ * for Sonic Cloud remote-device connectivity over usbmux proxying.
 + *
 + * @note The resulting idevice_t structure has to be freed with
 + * idevice_free() if it is no longer used.
@@ -20,7 +23,7 @@ index bc57778..65e6ce6 100644
 + *
 + * @return IDEVICE_E_SUCCESS if ok, otherwise an error code.
 + */
-+LIBIMOBILEDEVICE_API idevice_error_t idevice_new_remote(idevice_t *device, const char *ip_address, uint16_t port);
++LIBIMOBILEDEVICE_API idevice_error_t idevice_new_sonic_gidevice(idevice_t *device, const char *ip_address, uint16_t port);
 +
  /**
   * Cleans up an idevice structure, then frees the structure itself.
@@ -29,7 +32,7 @@ diff --git a/include/libimobiledevice/lockdown.h b/include/libimobiledevice/lock
 index 21669ef..103c5b2 100644
 --- a/include/libimobiledevice/lockdown.h
 +++ b/include/libimobiledevice/lockdown.h
-@@ -150,6 +150,17 @@ LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new(idevice_t device, lo
+@@ -150,6 +150,20 @@ LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new(idevice_t device, lo
   *  LOCKDOWN_E_INVALID_CONF if configuration data is wrong
   */
  LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new_with_handshake(idevice_t device, lockdownd_client_t *client, const char *label);
@@ -37,13 +40,16 @@ index 21669ef..103c5b2 100644
 + * Creates a lockdownd client and performs a handshake using an existing
 + * pair record, without attempting a new pairing.
 + *
++ * This API is not related to iOS 17+ RSD tunnel ports; it is intended for
++ * Sonic Cloud remote-device connectivity via sonic-gidevice/usbmux proxy.
++ *
 + * @param device The device to connect to.
 + * @param client Pointer that will be filled with a new client on success.
 + * @param label  The label to use for the lockdownd session.
 + *
 + * @return LOCKDOWN_E_SUCCESS on success, or a LOCKDOWN_E_* error code otherwise.
 + */
-+LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new_with_handshake_remote(idevice_t device, lockdownd_client_t *client, const char *label);
++LIBIMOBILEDEVICE_API lockdownd_error_t lockdownd_client_new_with_handshake_sonic_gidevice(idevice_t device, lockdownd_client_t *client, const char *label);
  
  /**
   * Closes the lockdownd client session if one is running and frees up the
@@ -389,7 +395,7 @@ index 0af27fd..aed714a 100644
  	return idevice_new_with_options(device, udid, 0);
  }
  
-+idevice_error_t idevice_new_remote(idevice_t *device, const char *ip_address, uint16_t port)
++idevice_error_t idevice_new_sonic_gidevice(idevice_t *device, const char *ip_address, uint16_t port)
 +{
 +	if (!device || !ip_address || port == 0) {
 +		return IDEVICE_E_INVALID_ARG;
@@ -561,7 +567,7 @@ index 32389c9..7b01d09 100644
  	return ret;
  }
  
-+lockdownd_error_t lockdownd_client_new_with_handshake_remote(idevice_t device, lockdownd_client_t *client, const char *label)
++lockdownd_error_t lockdownd_client_new_with_handshake_sonic_gidevice(idevice_t device, lockdownd_client_t *client, const char *label)
 +{
 +	if (!client) {
 +		return LOCKDOWN_E_INVALID_ARG;
