@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QJsonArray>
 #include "simplerequest.h"
+#include "personalizedimage.h"
 
 namespace Ui {
 class ImageMounter;
@@ -23,7 +24,8 @@ private:
     enum class DOWNLOAD_TYPE
     {
         ARCHIVED_IMAGE,
-        DIRECT_FILES
+        DIRECT_FILES,
+        PERSONALIZED_IMAGE
     };
     void DownloadImage(DOWNLOAD_TYPE downloadtype);
 
@@ -44,6 +46,11 @@ private:
     QString m_downloadurl, m_downloadout;
     DOWNLOAD_TYPE m_downloadtype;
     bool m_isCloseAction;
+    bool m_personalizedForceDownload;
+    PersonalizedImage m_personalizedImage;
+
+    void UpdateOnlineSelectionUI(const QString& productVersion);
+    void StartPersonalizedDownload(bool forceDownload);
 
 protected slots:
     void OnImageClicked();

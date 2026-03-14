@@ -4,6 +4,7 @@
 #include <QSaveFile>
 #include <QMessageBox>
 #include <QJsonObject>
+#include <QDir>
 #include <ui_imagemounter.h>
 #include <zip.h>
 #include "utils.h"
@@ -15,6 +16,7 @@ ImageMounter::ImageMounter(QWidget *parent)
   , m_downloadState(DOWNLOAD_STATE::IDLE)
   , m_request(nullptr)
   , m_isCloseAction(false)
+  , m_personalizedForceDownload(false)
 {
     ui->setupUi(this);
     setWindowModality(Qt::WindowModality::WindowModal);
@@ -47,6 +49,9 @@ void ImageMounter::RefreshUI(bool fetchImages)
 {
     QString OSVersion = DeviceBridge::Get()->GetDeviceInfo()["ProductVersion"].toString();
     ui->OSVersion->setText(OSVersion);
+    const bool usePersonalized = m_personalizedImage.ShouldUsePersonalizedImage(OSVersion);
+    UpdateOnlineSelectionUI(OSVersion);
+
     auto mounted = DeviceBridge::Get()->GetMountedImages();
     if (mounted.length() > 0)
     {
@@ -65,8 +70,9 @@ void ImageMounter::RefreshUI(bool fetchImages)
     {
         ui->onlineTab->setEnabled(true);
         ui->tabWidget->setCurrentWidget(ui->onlineTab);
-        if (fetchImages)
+        if (fetchImages && !usePersonalized)
         {
+            ui->repoBox->clear();
             for (const auto& owner : m_repoJson.object().keys())
             {
                 ui->logField->append("Fetch from '" + m_repoJson[owner].toObject()["git_url"].toString() + "'...");
@@ -98,11 +104,47 @@ void ImageMounter::RefreshUI(bool fetchImages)
                 });
             }
         }
+        else if (usePersonalized)
+        {
+            ui->imageStatus->setText(m_personalizedImage.UiHint());
+        }
     }
     else
     {
         ui->onlineTab->setEnabled(false);
         ui->tabWidget->setCurrentWidget(ui->offlineTab);
+    }
+}
+
+void ImageMounter::UpdateOnlineSelectionUI(const QString& productVersion)
+{
+    const bool usePersonalized = m_personalizedImage.ShouldUsePersonalizedImage(productVersion);
+
+    if (usePersonalized)
+    {
+        const bool oldRepoSignals = ui->repoBox->blockSignals(true);
+        ui->repoBox->clear();
+        ui->repoBox->addItem(m_personalizedImage.RepoOwner());
+        ui->repoBox->setCurrentIndex(0);
+        ui->repoBox->setEnabled(false);
+        ui->repoBox->blockSignals(oldRepoSignals);
+
+        ui->imageBox->clear();
+        ui->imageBox->addItem(m_personalizedImage.UiImageVersion());
+        ui->imageBox->setCurrentIndex(0);
+        ui->imageBox->setEnabled(false);
+        ui->imageStatus->setText(m_personalizedImage.UiHint());
+    }
+    else
+    {
+        ui->repoBox->setEnabled(true);
+        ui->imageBox->setEnabled(true);
+        if (ui->repoBox->count() == 1 && ui->repoBox->itemText(0) == m_personalizedImage.RepoOwner())
+        {
+            ui->repoBox->clear();
+            ui->imageBox->clear();
+            ui->imageStatus->clear();
+        }
     }
 }
 
@@ -157,11 +199,19 @@ void ImageMounter::DownloadImage(DOWNLOAD_TYPE downloadtype)
             m_downloadState = DOWNLOAD_STATE::DOWNLOAD;
         else if (downloadtype == DOWNLOAD_TYPE::DIRECT_FILES)
             m_downloadState = DOWNLOAD_STATE::FETCH;
+        else if (downloadtype == DOWNLOAD_TYPE::PERSONALIZED_IMAGE)
+            m_downloadState = DOWNLOAD_STATE::DOWNLOAD;
     }
 
     switch (m_downloadState)
     {
     case DOWNLOAD_STATE::FETCH:
+        if (downloadtype == DOWNLOAD_TYPE::PERSONALIZED_IMAGE)
+        {
+            m_downloadState = DOWNLOAD_STATE::DOWNLOAD;
+            DownloadImage(downloadtype);
+            break;
+        }
         ui->logField->append("Get image url from repository...");
         m_request->Get(m_repoJson[repo_owner].toObject()["images"].toObject()[selected_version].toString(), [this, repo_owner, selected_version](QNetworkReply::NetworkError responseCode, QJsonDocument ResponseData){
             if (responseCode == QNetworkReply::NetworkError::NoError)
@@ -197,7 +247,21 @@ void ImageMounter::DownloadImage(DOWNLOAD_TYPE downloadtype)
                 m_downloadUrls.remove(location);
             }
         }
-        ui->logField->append("Download " + (m_downloadout.endsWith(".dmg") ? QString("image") : "signature") + " file from repository...");
+        else if (downloadtype == DOWNLOAD_TYPE::PERSONALIZED_IMAGE)
+        {
+            if (m_downloadUrls.isEmpty())
+            {
+                ChangeDownloadState(DOWNLOAD_STATE::DONE);
+                break;
+            }
+            const QString location = m_downloadUrls.firstKey();
+            m_downloadout = location;
+            m_downloadurl = m_downloadUrls.take(location);
+        }
+        if (downloadtype == DOWNLOAD_TYPE::PERSONALIZED_IMAGE)
+            ui->logField->append("Download personalized file from repository...");
+        else
+            ui->logField->append("Download " + (m_downloadout.endsWith(".dmg") ? QString("image") : "signature") + " file from repository...");
         m_request->Download(m_downloadurl);
         break;
     }
@@ -248,6 +312,27 @@ void ImageMounter::OnDownloadMountClicked()
         return;
     }
 
+    const QString productVersion = DeviceBridge::Get()->GetDeviceInfo()["ProductVersion"].toString();
+    if (m_personalizedImage.ShouldUsePersonalizedImage(productVersion))
+    {
+        const QString productType = DeviceBridge::Get()->GetDeviceInfo()["ProductType"].toString();
+        bool productTypeFound = true;
+        if (m_personalizedImage.HasReadyImage(productType, productTypeFound))
+        {
+            DeviceBridge::Get()->MountImage(m_personalizedImage.ImageDir(), "");
+            RefreshUI(false);
+            return;
+        }
+        if (!productTypeFound)
+        {
+            ui->logField->append("Product type is not in current personalized image list. Force download required...");
+            StartPersonalizedDownload(true);
+            return;
+        }
+        StartPersonalizedDownload(false);
+        return;
+    }
+
     if (ui->imageBox->currentText().isEmpty())
         return;
 
@@ -283,6 +368,14 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
 
     case SimpleRequest::RequestState::STATE_FINISH:
     {
+        if (error != QNetworkReply::NetworkError::NoError)
+        {
+            ui->logField->append("Download error: " + QVariant::fromValue(error).toString());
+            m_downloadState = DOWNLOAD_STATE::IDLE;
+            m_downloadUrls.clear();
+            break;
+        }
+
         if (m_downloadtype == DOWNLOAD_TYPE::ARCHIVED_IMAGE)
         {
             ui->logField->append("Image Package downloaded.");
@@ -314,13 +407,85 @@ void ImageMounter::OnDownloadResponse(SimpleRequest::RequestState req_state, int
             file.commit();
             ChangeDownloadState(m_downloadUrls.isEmpty() ? DOWNLOAD_STATE::DONE : DOWNLOAD_STATE::DOWNLOAD);
         }
+        else if (m_downloadtype == DOWNLOAD_TYPE::PERSONALIZED_IMAGE)
+        {
+            QFileInfo file_info(m_downloadout);
+            ui->logField->append("Downloaded: " + file_info.fileName());
+            QDir().mkpath(file_info.filePath().remove(file_info.fileName()));
+            QSaveFile file(m_downloadout);
+            if (!file.open(QIODevice::WriteOnly))
+            {
+                ui->logField->append("Error: Failed to write downloaded file: " + m_downloadout);
+                m_downloadState = DOWNLOAD_STATE::IDLE;
+                break;
+            }
+            file.write(data.data(), data.size());
+            if (!file.commit())
+            {
+                ui->logField->append("Error: Failed to commit downloaded file: " + m_downloadout);
+                m_downloadState = DOWNLOAD_STATE::IDLE;
+                break;
+            }
+
+            if (QFileInfo(m_downloadout).fileName() == QFileInfo(m_personalizedImage.ManifestPath()).fileName())
+            {
+                QString productType = DeviceBridge::Get()->GetDeviceInfo()["ProductType"].toString();
+                QString errorMessage;
+                PersonalizedImage::PrepareResult prepareResult = m_personalizedImage.PrepareDownloads(
+                    productType, m_personalizedForceDownload, m_downloadUrls, errorMessage);
+                if (prepareResult != PersonalizedImage::PrepareResult::OK)
+                {
+                    if (prepareResult == PersonalizedImage::PrepareResult::RETRY_WITH_FORCE_DOWNLOAD)
+                    {
+                        StartPersonalizedDownload(true);
+                        break;
+                    }
+                    if (!errorMessage.isEmpty())
+                        ui->logField->append(errorMessage);
+                    if (prepareResult == PersonalizedImage::PrepareResult::MODEL_NOT_FOUND)
+                        QMessageBox::critical(this, "Error", errorMessage, QMessageBox::Ok);
+                    m_downloadState = DOWNLOAD_STATE::IDLE;
+                    break;
+                }
+            }
+            ChangeDownloadState(m_downloadUrls.isEmpty() ? DOWNLOAD_STATE::DONE : DOWNLOAD_STATE::DOWNLOAD);
+        }
         break;
     }
     case SimpleRequest::RequestState::STATE_ERROR:
         ui->logField->append("Download error: " + QVariant::fromValue(error).toString());
+        m_downloadState = DOWNLOAD_STATE::IDLE;
+        m_downloadUrls.clear();
         break;
 
     default:
         break;
     }
+}
+
+void ImageMounter::StartPersonalizedDownload(bool forceDownload)
+{
+    m_personalizedForceDownload = forceDownload;
+    m_downloadtype = DOWNLOAD_TYPE::PERSONALIZED_IMAGE;
+    m_downloadState = DOWNLOAD_STATE::DOWNLOAD;
+    QString productType = DeviceBridge::Get()->GetDeviceInfo()["ProductType"].toString();
+    QString errorMessage;
+    PersonalizedImage::PrepareResult prepareResult = m_personalizedImage.PrepareDownloads(
+        productType, forceDownload, m_downloadUrls, errorMessage);
+    if (prepareResult != PersonalizedImage::PrepareResult::OK)
+    {
+        if (prepareResult == PersonalizedImage::PrepareResult::RETRY_WITH_FORCE_DOWNLOAD)
+        {
+            StartPersonalizedDownload(true);
+            return;
+        }
+        if (!errorMessage.isEmpty())
+            ui->logField->append(errorMessage);
+        if (prepareResult == PersonalizedImage::PrepareResult::MODEL_NOT_FOUND)
+            QMessageBox::critical(this, "Error", errorMessage, QMessageBox::Ok);
+        m_downloadState = DOWNLOAD_STATE::IDLE;
+        return;
+    }
+
+    DownloadImage(DOWNLOAD_TYPE::PERSONALIZED_IMAGE);
 }
