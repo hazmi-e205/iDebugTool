@@ -91,6 +91,7 @@ enum MobileOperation {
     NEW_FOLDER,
     PUSH_FILE,
     PULL_FILE,
+    PREVIEW_FILE,
     GET_APPS,
     INSTALL_APP,
     UNINSTALL_APP,
@@ -210,6 +211,7 @@ signals:
          int childFileCount = 0;
      };
      void GetAccessibleStorage(QString startPath = "/", QString bundleId = "", bool partialUpdate = false);
+     void FetchFilePreview(QString devicePath, QString bundleId = "");
      void PushToStorage(QString localPath, QString devicePath, QString bundleId = "");
     void PushMultipleToStorage(QStringList localPaths, QString deviceFolderPath, QString bundleId = "");
      void PullFromStorage(QString devicePath, QString localPath, QString bundleId = "");
@@ -222,8 +224,9 @@ signals:
      void afc_list_directory_shallow(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr, std::function<bool()> should_stop = nullptr, int* outDirCount = nullptr, int* outFileCount = nullptr);
      void afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc, std::shared_ptr<DeviceClient> client, std::shared_ptr<std::atomic_bool> cancel_flag)> action, const QString& bundleId = "");
      QMap<QString, FileProperty> m_accessibleStorage;
- signals:
+signals:
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents, QString startPath, bool partialUpdate);
+     void FilePreviewReceived(QString devicePath, QString localPath, bool success, QString errorMessage);
      void FileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
 
      //InstallerBridge

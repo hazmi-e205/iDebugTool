@@ -1,6 +1,8 @@
 #include "devicebridge.h"
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QUuid>
 #include <cstring>
 
 
@@ -65,6 +67,35 @@ void DeviceBridge::GetAccessibleStorage(QString startPath, QString bundleId, boo
 
         emit FileManagerChanged(GenericStatus::SUCCESS, FileOperation::FETCH, 100, bundleId);
         emit AccessibleStorageReceived(m_accessibleStorage, normalizedPath, partialUpdate);
+    }, bundleId);
+}
+
+void DeviceBridge::FetchFilePreview(QString devicePath, QString bundleId)
+{
+    afc_filemanager_action(MobileOperation::PREVIEW_FILE, [=, this](afc_client_t& afc, std::shared_ptr<DeviceClient>, std::shared_ptr<std::atomic_bool> cancel_flag){
+        auto should_stop = [cancel_flag]() { return cancel_flag && cancel_flag->load(); };
+        QString previewDir = QDir::tempPath() + "/iDebugToolPreviews";
+        QDir().mkpath(previewDir);
+
+        QString suffix = QFileInfo(devicePath).suffix();
+        QString localPath = previewDir + "/" + QUuid::createUuid().toString(QUuid::WithoutBraces);
+        if (!suffix.isEmpty())
+            localPath += "." + suffix;
+
+        int result = afc_download_file(afc, devicePath, localPath, nullptr, should_stop);
+        if (result == -3 || should_stop()) {
+            QFile::remove(localPath);
+            emit FilePreviewReceived(devicePath, "", false, "Cancelled");
+            return;
+        }
+
+        if (result != 0) {
+            QFile::remove(localPath);
+            emit FilePreviewReceived(devicePath, "", false, QString::number(result));
+            return;
+        }
+
+        emit FilePreviewReceived(devicePath, localPath, true, "");
     }, bundleId);
 }
 

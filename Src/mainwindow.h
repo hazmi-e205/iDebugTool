@@ -26,6 +26,9 @@ QT_END_NAMESPACE
 
 class AppInfo;
 class AppleDB;
+class QLabel;
+class QItemSelection;
+class QWidget;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -154,6 +157,15 @@ private:
     QString m_currentFileManagerBundleId;
     QMap<QString, QSet<QString>> m_expandedPathsByBundle;
     QMap<QString, QSet<QString>> m_loadedFileManagerDirsByBundle;
+    QWidget *m_fileDetailsPanel;
+    QLabel *m_filePreviewLabel;
+    QLabel *m_fileDetailNameLabel;
+    QLabel *m_fileDetailPathLabel;
+    QLabel *m_fileDetailTypeLabel;
+    QLabel *m_fileDetailSizeLabel;
+    QLabel *m_fileDetailChildrenLabel;
+    QString m_pendingPreviewPath;
+    QString m_currentPreviewLocalPath;
     void SetupFileManagerUI();
     void FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder = true);
     void ResetFileBrowser();
@@ -165,6 +177,10 @@ private:
     QStandardItem* FindFileManagerItemByPath(const QString& path);
     void PopulateFileManagerDirectory(const QString& directoryPath);
     void AddDirectoryPlaceholderIfNeeded(QStandardItem* directoryItem, const DeviceBridge::FileProperty& prop);
+    void SetupFileDetailsPanel();
+    void UpdateFileDetailsPanel(const QString& path);
+    void ClearFilePreview(const QString& message = QString());
+    void UpdateFilePreview(const QString& devicePath, const QString& localPath);
 private slots:
     void OnStorageChanged(QString storage);
     void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents, QString startPath, bool partialUpdate);
@@ -177,6 +193,8 @@ private slots:
     void OnRenameFileClicked();
     void OnMakeFolderClicked();
     void OnFileFilterChanged(QString filter);
+    void OnFileBrowserSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void OnFilePreviewReceived(QString devicePath, QString localPath, bool success, QString errorMessage);
 
     //Toolbox UI
 private:
