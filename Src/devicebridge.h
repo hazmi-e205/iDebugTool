@@ -101,7 +101,9 @@ enum MobileOperation {
     SYSTEM_MONITOR,
     FPS_MONITOR,
     GET_PROCESS,
-    GET_ATTRIBUTES
+    GET_ATTRIBUTES,
+    LAUNCH_APP,
+    KILL_APP
 };
 
 enum SystemLogsRelay {
@@ -295,6 +297,8 @@ signals:
      void StartMonitor(unsigned int interval_ms, QStringList system_attr, QStringList process_attr);
      void StopMonitor();
      void GetProcessList();
+     void LaunchApp(QString bundleId, bool killExisting = true);
+     void KillApp(int64_t pid);
      void StartFPS(unsigned int interval_ms);
      void StopFPS();
   signals:

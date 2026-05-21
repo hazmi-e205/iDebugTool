@@ -3926,6 +3926,71 @@ color: rgb(255, 255, 255);</string>
                  </widget>
                 </item>
                 <item>
+                 <spacer name="horizontalSpacer_7">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item>
+                 <widget class="QLabel" name="instrumentLaunchLabel">
+                  <property name="text">
+                   <string>Bundle ID</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="instrumentLaunchBundleId">
+                  <property name="placeholderText">
+                   <string>com.example.app</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="instrumentLaunchKillExisting">
+                  <property name="text">
+                   <string>Kill Existing</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="instrumentLaunchAppBtn">
+                  <property name="text">
+                   <string>Launch App</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="instrumentKillLabel">
+                  <property name="text">
+                   <string>PID</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="instrumentKillPid">
+                  <property name="placeholderText">
+                   <string>0</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="instrumentKillAppBtn">
+                  <property name="text">
+                   <string>Kill App</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QPushButton" name="instrumentClearLogBtn">
                   <property name="text">
                    <string>Clear Log</string>

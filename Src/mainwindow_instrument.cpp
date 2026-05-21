@@ -20,6 +20,8 @@ void MainWindow::SetupInstrumentUI()
     connect(ui->instrumentLoadProcessAttrsBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentLoadProcessAttrsClicked()));
     connect(ui->instrumentMonitorBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentStartStopMonitorClicked()));
     connect(ui->instrumentGetProcessListBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentGetProcessListClicked()));
+    connect(ui->instrumentLaunchAppBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentLaunchAppClicked()));
+    connect(ui->instrumentKillAppBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentKillAppClicked()));
     connect(ui->instrumentFpsBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentStartStopFpsClicked()));
     connect(ui->instrumentClearLogBtn, SIGNAL(pressed()), this, SLOT(OnInstrumentClearLogClicked()));
     connect(DeviceBridge::Get(), SIGNAL(InstrumentLogReceived(QString)), this, SLOT(OnInstrumentLogReceived(QString)));
@@ -76,6 +78,33 @@ void MainWindow::OnInstrumentGetProcessListClicked()
 {
     DeviceBridge::Get()->GetProcessList();
     ui->instrumentLogEdit->appendPlainText("Requested process list");
+}
+
+void MainWindow::OnInstrumentLaunchAppClicked()
+{
+    const QString bundleId = ui->instrumentLaunchBundleId->text().trimmed();
+    if (bundleId.isEmpty())
+    {
+        ui->instrumentLogEdit->appendPlainText("ERROR: Bundle ID is required to launch an app.");
+        return;
+    }
+    const bool killExisting = ui->instrumentLaunchKillExisting->isChecked();
+    DeviceBridge::Get()->LaunchApp(bundleId, killExisting);
+    ui->instrumentLogEdit->appendPlainText(
+        QString("Launching app: %1 (killExisting=%2)").arg(bundleId).arg(killExisting ? "true" : "false"));
+}
+
+void MainWindow::OnInstrumentKillAppClicked()
+{
+    bool ok = false;
+    const int64_t pid = ui->instrumentKillPid->text().trimmed().toLongLong(&ok);
+    if (!ok || pid <= 0)
+    {
+        ui->instrumentLogEdit->appendPlainText("ERROR: Invalid PID. Enter a positive integer.");
+        return;
+    }
+    DeviceBridge::Get()->KillApp(pid);
+    ui->instrumentLogEdit->appendPlainText(QString("Killing process PID: %1").arg(pid));
 }
 
 void MainWindow::OnInstrumentStartStopFpsClicked()

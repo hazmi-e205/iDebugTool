@@ -211,6 +211,8 @@ private slots:
     void OnInstrumentLoadProcessAttrsClicked();
     void OnInstrumentStartStopMonitorClicked();
     void OnInstrumentGetProcessListClicked();
+    void OnInstrumentLaunchAppClicked();
+    void OnInstrumentKillAppClicked();
     void OnInstrumentStartStopFpsClicked();
     void OnInstrumentClearLogClicked();
     void OnInstrumentLogReceived(QString logs);

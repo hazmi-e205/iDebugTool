@@ -143,3 +143,54 @@ void DeviceBridge::StopFPS()
         m_clients[op]->instrument->FPS().Stop();
     RemoveClient(op);
 }
+
+void DeviceBridge::LaunchApp(QString bundleId, bool killExisting)
+{
+    MobileOperation op = MobileOperation::LAUNCH_APP;
+    if (!CreateClient(op))
+        return;
+
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        emit InstrumentLogReceived("ERROR: Failed to create Instruments connection");
+        RemoveClient(op);
+        return;
+    }
+
+    int64_t outPid = 0;
+    Error err = m_clients[op]->instrument->Process().LaunchApp(bundleId.toStdString(), {}, {}, killExisting, outPid);
+    if (err == Error::Success) {
+        emit InstrumentLogReceived(QString("Launched: %1 (PID: %2)").arg(bundleId).arg(outPid));
+        qDebug() << "Launched:" << bundleId << "PID:" << outPid;
+    } else {
+        emit InstrumentLogReceived(QString("ERROR: LaunchApp failed with error: %1").arg(static_cast<int>(err)));
+        qDebug() << "ERROR: LaunchApp failed with error:" << static_cast<int>(err);
+    }
+
+    RemoveClient(op);
+}
+
+void DeviceBridge::KillApp(int64_t pid)
+{
+    MobileOperation op = MobileOperation::KILL_APP;
+    if (!CreateClient(op))
+        return;
+
+    m_clients[op]->instrument = Instruments::Create(m_clients[op]->device, m_clients[op]->client);
+    if (!m_clients[op]->instrument) {
+        emit InstrumentLogReceived("ERROR: Failed to create Instruments connection");
+        RemoveClient(op);
+        return;
+    }
+
+    Error err = m_clients[op]->instrument->Process().KillProcess(pid);
+    if (err == Error::Success) {
+        emit InstrumentLogReceived(QString("Killed PID: %1").arg(pid));
+        qDebug() << "Killed PID:" << pid;
+    } else {
+        emit InstrumentLogReceived(QString("ERROR: KillProcess failed with error: %1").arg(static_cast<int>(err)));
+        qDebug() << "ERROR: KillProcess failed with error:" << static_cast<int>(err);
+    }
+
+    RemoveClient(op);
+}
