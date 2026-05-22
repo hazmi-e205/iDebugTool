@@ -2,7 +2,6 @@
 #include "qmessagebox.h"
 #include "ui_mainwindow.h"
 #include "utils.h"
-#include "windowsthumbnail.h"
 #include <QJsonObject>
 #include <QFileInfo>
 #include <QFile>
@@ -10,51 +9,11 @@
 #include <QInputDialog>
 #include <QDir>
 #include <QRegularExpression>
-#include <QBoxLayout>
-#include <QFrame>
-#include <QGridLayout>
-#include <QImageReader>
-#include <QItemSelection>
-#include <QLabel>
 #include <QSizePolicy>
-#include <QSplitter>
 #include <algorithm>
 
 namespace {
 constexpr int kPlaceholderRole = Qt::UserRole + 10;
-const QSize kPreviewSize(220, 160);
-
-bool IsImagePath(const QString& path)
-{
-    const QString ext = QFileInfo(path).suffix().toLower();
-    static const QSet<QString> imageExts = {
-        "jpg", "jpeg", "png", "bmp", "gif", "tif", "tiff", "webp", "heic", "heif"
-    };
-    return imageExts.contains(ext);
-}
-
-bool IsVideoPath(const QString& path)
-{
-    const QString ext = QFileInfo(path).suffix().toLower();
-    static const QSet<QString> videoExts = {
-        "mov", "mp4", "m4v", "avi", "mkv", "wmv", "3gp", "3g2"
-    };
-    return videoExts.contains(ext);
-}
-
-QString FileKindText(const QString& path, bool isDirectory)
-{
-    if (isDirectory)
-        return "Folder";
-    if (IsImagePath(path))
-        return "Image";
-    if (IsVideoPath(path))
-        return "Video";
-
-    QString suffix = QFileInfo(path).suffix().toUpper();
-    return suffix.isEmpty() ? "File" : suffix + " File";
-}
-
 }
 
 void MainWindow::CacheHeaderSizes(QHeaderView *header, int &nameWidth, int &sizeWidth)
@@ -108,8 +67,6 @@ void MainWindow::SetupFileManagerUI()
             m_fileManagerNameWidth = nameWidth;
             m_fileManagerSizeWidth = totalWidth - nameWidth;
         }
-        SetupFileDetailsPanel();
-        connect(ui->fileBrowserTree->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(OnFileBrowserSelectionChanged(QItemSelection,QItemSelection)));
         ResetFileBrowser();
         m_loadingFileOperation->close();
     }
@@ -123,79 +80,7 @@ void MainWindow::SetupFileManagerUI()
     connect(ui->searchFileEdit, SIGNAL(textChanged(QString)), this, SLOT(OnFileFilterChanged(QString)));
     connect(ui->fileBrowserTree, SIGNAL(expanded(QModelIndex)), this, SLOT(OnFileBrowserExpanded(QModelIndex)));
     connect(DeviceBridge::Get(), SIGNAL(AccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty>,QString,bool)), this, SLOT(OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty>,QString,bool)));
-    connect(DeviceBridge::Get(), SIGNAL(FilePreviewReceived(QString,QString,bool,QString)), this, SLOT(OnFilePreviewReceived(QString,QString,bool,QString)));
     connect(DeviceBridge::Get(), SIGNAL(FileManagerChanged(GenericStatus, FileOperation, int, QString)), this, SLOT(OnFileManagerChanged(GenericStatus, FileOperation, int, QString)));
-}
-
-void MainWindow::SetupFileDetailsPanel()
-{
-    if (m_fileDetailsPanel)
-        return;
-
-    QBoxLayout *parentLayout = qobject_cast<QBoxLayout*>(ui->fileBrowserTree->parentWidget()->layout());
-    if (!parentLayout)
-        return;
-
-    QSplitter *splitter = new QSplitter(Qt::Horizontal, ui->fileBrowserTree->parentWidget());
-    int treeIndex = parentLayout->indexOf(ui->fileBrowserTree);
-    parentLayout->removeWidget(ui->fileBrowserTree);
-    splitter->addWidget(ui->fileBrowserTree);
-
-    m_fileDetailsPanel = new QFrame(splitter);
-    m_fileDetailsPanel->setMinimumWidth(260);
-    m_fileDetailsPanel->setMaximumWidth(380);
-    m_fileDetailsPanel->setObjectName("fileDetailsPanel");
-    m_fileDetailsPanel->setStyleSheet("#fileDetailsPanel { background: rgb(248, 250, 252); border-left: 1px solid rgb(220, 226, 232); }");
-
-    QVBoxLayout *detailsLayout = new QVBoxLayout(m_fileDetailsPanel);
-    detailsLayout->setContentsMargins(12, 12, 12, 12);
-    detailsLayout->setSpacing(10);
-
-    QLabel *titleLabel = new QLabel("Details", m_fileDetailsPanel);
-    QFont titleFont = titleLabel->font();
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
-    detailsLayout->addWidget(titleLabel);
-
-    m_filePreviewLabel = new QLabel("Select a file", m_fileDetailsPanel);
-    m_filePreviewLabel->setAlignment(Qt::AlignCenter);
-    m_filePreviewLabel->setMinimumSize(kPreviewSize);
-    m_filePreviewLabel->setMaximumHeight(kPreviewSize.height());
-    m_filePreviewLabel->setStyleSheet("background: white; border: 1px solid rgb(220, 226, 232); color: rgb(90, 100, 112);");
-    detailsLayout->addWidget(m_filePreviewLabel);
-
-    QGridLayout *grid = new QGridLayout();
-    grid->setColumnStretch(1, 1);
-    grid->setHorizontalSpacing(10);
-    grid->setVerticalSpacing(7);
-
-    auto addRow = [&](int row, const QString& title, QLabel **valueLabel) {
-        QLabel *label = new QLabel(title, m_fileDetailsPanel);
-        label->setStyleSheet("color: rgb(90, 100, 112);");
-        *valueLabel = new QLabel("-", m_fileDetailsPanel);
-        (*valueLabel)->setWordWrap(true);
-        (*valueLabel)->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        grid->addWidget(label, row, 0, Qt::AlignTop);
-        grid->addWidget(*valueLabel, row, 1);
-    };
-
-    addRow(0, "Name", &m_fileDetailNameLabel);
-    addRow(1, "Type", &m_fileDetailTypeLabel);
-    addRow(2, "Size", &m_fileDetailSizeLabel);
-    addRow(3, "Items", &m_fileDetailChildrenLabel);
-    addRow(4, "Path", &m_fileDetailPathLabel);
-    detailsLayout->addLayout(grid);
-    detailsLayout->addStretch(1);
-
-    splitter->addWidget(m_fileDetailsPanel);
-    splitter->setStretchFactor(0, 1);
-    splitter->setStretchFactor(1, 0);
-    splitter->setSizes(QList<int>() << 700 << 280);
-
-    if (treeIndex >= 0)
-        parentLayout->insertWidget(treeIndex, splitter);
-    else
-        parentLayout->addWidget(splitter);
 }
 
 void MainWindow::FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder)
@@ -247,7 +132,6 @@ void MainWindow::ResetFileBrowser()
     m_fileManagerModel->appendRow(QList<QStandardItem*>() << rootItem << rootSizeItem);
 
     RestoreHeaderSizes(ui->fileBrowserTree->header(), m_fileManagerNameWidth, m_fileManagerSizeWidth);
-    UpdateFileDetailsPanel(QString());
 }
 
 void MainWindow::SaveExpandedPaths(const QString& bundleId)
@@ -765,126 +649,3 @@ void MainWindow::OnFileFilterChanged(QString filter)
     }
 }
 
-void MainWindow::ClearFilePreview(const QString& message)
-{
-    m_pendingPreviewPath.clear();
-    if (!m_currentPreviewLocalPath.isEmpty()) {
-        QFile::remove(m_currentPreviewLocalPath);
-        m_currentPreviewLocalPath.clear();
-    }
-
-    if (!m_filePreviewLabel)
-        return;
-
-    m_filePreviewLabel->setPixmap(QPixmap());
-    m_filePreviewLabel->setText(message.isEmpty() ? "No preview" : message);
-}
-
-void MainWindow::UpdateFileDetailsPanel(const QString& path)
-{
-    if (!m_fileDetailsPanel)
-        return;
-
-    if (path.isEmpty() || !m_cachedFiles.contains(path)) {
-        if (m_fileDetailNameLabel) m_fileDetailNameLabel->setText("-");
-        if (m_fileDetailPathLabel) m_fileDetailPathLabel->setText("-");
-        if (m_fileDetailTypeLabel) m_fileDetailTypeLabel->setText("-");
-        if (m_fileDetailSizeLabel) m_fileDetailSizeLabel->setText("-");
-        if (m_fileDetailChildrenLabel) m_fileDetailChildrenLabel->setText("-");
-        ClearFilePreview("Select a file");
-        return;
-    }
-
-    const DeviceBridge::FileProperty prop = m_cachedFiles.value(path);
-    QFileInfo info(path);
-    QString name = info.fileName().isEmpty() ? path : info.fileName();
-
-    if (m_fileDetailNameLabel) m_fileDetailNameLabel->setText(name);
-    if (m_fileDetailPathLabel) m_fileDetailPathLabel->setText(path);
-    if (m_fileDetailTypeLabel) m_fileDetailTypeLabel->setText(FileKindText(path, prop.isDirectory));
-    if (m_fileDetailSizeLabel) m_fileDetailSizeLabel->setText(prop.isDirectory ? "-" : BytesToString(prop.sizeInBytes));
-    if (m_fileDetailChildrenLabel) {
-        m_fileDetailChildrenLabel->setText(prop.isDirectory
-            ? QString("%1 folders, %2 files").arg(prop.childDirectoryCount).arg(prop.childFileCount)
-            : "-");
-    }
-
-    if (prop.isDirectory) {
-        ClearFilePreview("Folder");
-        return;
-    }
-
-    if (!IsImagePath(path) && !IsVideoPath(path)) {
-        ClearFilePreview("No preview");
-        return;
-    }
-
-    ClearFilePreview("Loading preview...");
-    m_pendingPreviewPath = path;
-
-    QString storage = ui->storageOption->currentText();
-    storage = storage.contains("User's Data", Qt::CaseInsensitive) ? "" : storage;
-    DeviceBridge::Get()->FetchFilePreview(path, storage);
-}
-
-void MainWindow::UpdateFilePreview(const QString& devicePath, const QString& localPath)
-{
-    if (!m_filePreviewLabel)
-        return;
-
-    QPixmap pixmap;
-    if (IsImagePath(devicePath)) {
-        QImageReader reader(localPath);
-        reader.setAutoTransform(true);
-        QImage image = reader.read();
-        if (!image.isNull())
-            pixmap = QPixmap::fromImage(image);
-    }
-    else if (IsVideoPath(devicePath)) {
-        pixmap = LoadFfmpegVideoThumbnail(localPath, kPreviewSize);
-    }
-
-    if (pixmap.isNull())
-        pixmap = LoadWindowsShellThumbnail(localPath, kPreviewSize);
-
-    if (pixmap.isNull()) {
-        m_filePreviewLabel->setPixmap(QPixmap());
-        m_filePreviewLabel->setText("Preview unavailable");
-        return;
-    }
-
-    m_filePreviewLabel->setText(QString());
-    m_filePreviewLabel->setPixmap(pixmap.scaled(kPreviewSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-}
-
-void MainWindow::OnFileBrowserSelectionChanged(const QItemSelection&, const QItemSelection&)
-{
-    QModelIndex index = ui->fileBrowserTree->currentIndex();
-    if (index.isValid() && index.column() != 0)
-        index = index.sibling(index.row(), 0);
-
-    QString path = index.isValid() ? index.data(Qt::UserRole).toString() : QString();
-    UpdateFileDetailsPanel(path);
-}
-
-void MainWindow::OnFilePreviewReceived(QString devicePath, QString localPath, bool success, QString errorMessage)
-{
-    if (devicePath != m_pendingPreviewPath) {
-        if (!localPath.isEmpty())
-            QFile::remove(localPath);
-        return;
-    }
-
-    m_pendingPreviewPath.clear();
-    if (!m_currentPreviewLocalPath.isEmpty())
-        QFile::remove(m_currentPreviewLocalPath);
-    m_currentPreviewLocalPath.clear();
-
-    if (!success) {
-        ClearFilePreview(errorMessage.isEmpty() ? "Preview unavailable" : "Preview failed");
-        return;
-    }
-
-    m_currentPreviewLocalPath = localPath;
-    UpdateFilePreview(devicePath, localPath);
-}

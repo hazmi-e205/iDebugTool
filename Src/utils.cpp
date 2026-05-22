@@ -155,6 +155,8 @@ QString GetDirectory(DIRECTORY_TYPE dirtype)
         return QCoreApplication::applicationDirPath() + "/LocalData/Recodesigned/";
     case DIRECTORY_TYPE::ZSIGN_TEMP:
         return QCoreApplication::applicationDirPath() + "/LocalData/ZSignTemp/";
+    case DIRECTORY_TYPE::THUMBNAIL:
+        return QCoreApplication::applicationDirPath() + "/LocalData/Thumbnail/";
     default:
         break;
     }

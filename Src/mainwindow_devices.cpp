@@ -138,6 +138,10 @@ void MainWindow::OnDeviceStatus(ConnectionStatus status, QString udid, bool isRe
         ui->CPUArch->clear();
         ui->UDID->clear();
         ResetFileBrowser();
+        if (m_mediaModel)
+            m_mediaModel->clear();
+        m_mediaThumbToOriginal.clear();
+        m_mediaCurrentDeviceUdid.clear();
         if (isRemote)
             ui->socketBtn->setText("Connect");
     }

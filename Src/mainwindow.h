@@ -157,15 +157,6 @@ private:
     QString m_currentFileManagerBundleId;
     QMap<QString, QSet<QString>> m_expandedPathsByBundle;
     QMap<QString, QSet<QString>> m_loadedFileManagerDirsByBundle;
-    QWidget *m_fileDetailsPanel;
-    QLabel *m_filePreviewLabel;
-    QLabel *m_fileDetailNameLabel;
-    QLabel *m_fileDetailPathLabel;
-    QLabel *m_fileDetailTypeLabel;
-    QLabel *m_fileDetailSizeLabel;
-    QLabel *m_fileDetailChildrenLabel;
-    QString m_pendingPreviewPath;
-    QString m_currentPreviewLocalPath;
     void SetupFileManagerUI();
     void FileManagerAction(std::function<void(QString&,QString&)> action, bool asFolder = true);
     void ResetFileBrowser();
@@ -177,10 +168,6 @@ private:
     QStandardItem* FindFileManagerItemByPath(const QString& path);
     void PopulateFileManagerDirectory(const QString& directoryPath);
     void AddDirectoryPlaceholderIfNeeded(QStandardItem* directoryItem, const DeviceBridge::FileProperty& prop);
-    void SetupFileDetailsPanel();
-    void UpdateFileDetailsPanel(const QString& path);
-    void ClearFilePreview(const QString& message = QString());
-    void UpdateFilePreview(const QString& devicePath, const QString& localPath);
 private slots:
     void OnStorageChanged(QString storage);
     void OnAccessibleStorageReceived(QMap<QString, DeviceBridge::FileProperty> contents, QString startPath, bool partialUpdate);
@@ -193,8 +180,32 @@ private slots:
     void OnRenameFileClicked();
     void OnMakeFolderClicked();
     void OnFileFilterChanged(QString filter);
-    void OnFileBrowserSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
-    void OnFilePreviewReceived(QString devicePath, QString localPath, bool success, QString errorMessage);
+
+    //Media Manager UI
+public:
+    enum class MediaSortOrder { NewestFirst, OldestFirst };
+private:
+    QStandardItemModel *m_mediaModel = nullptr;
+    QHash<QString, QString> m_mediaThumbToOriginal; // thumb device path -> original media path
+    QString m_mediaCurrentDeviceUdid;
+    bool m_mediaEnumerating = false;
+    MediaSortOrder m_mediaSortOrder = MediaSortOrder::NewestFirst;
+    void SetupMediaManagerUI();
+    void RequestMediaEnumeration();
+    QString MediaCacheKey(const QString& devicePath) const;
+    QString MediaCacheThumbPath(const QString& devicePath) const;
+    QString MediaCacheFullPath(const QString& devicePath) const;
+    QStringList SelectedMediaDevicePaths() const;
+    void ApplyMediaSort();
+private slots:
+    void OnMediaRefreshClicked();
+    void OnMediaOpenClicked();
+    void OnMediaDownloadClicked();
+    void OnMediaDeleteClicked();
+    void OnMediaSortChanged(int index);
+    void OnMediaItemDoubleClicked(const QModelIndex& index);
+    void OnMediaFilesEnumerated(QList<DeviceBridge::MediaEntry> entries);
+    void OnMediaFileFetched(QString devicePath, QString localPath, bool success);
 
     //Toolbox UI
 private:

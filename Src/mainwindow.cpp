@@ -35,13 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
     , m_loadingFileOperation(new LoadingDialog(this))
     , m_fileManagerNameWidth(-1)
     , m_fileManagerSizeWidth(-1)
-    , m_fileDetailsPanel(nullptr)
-    , m_filePreviewLabel(nullptr)
-    , m_fileDetailNameLabel(nullptr)
-    , m_fileDetailPathLabel(nullptr)
-    , m_fileDetailTypeLabel(nullptr)
-    , m_fileDetailSizeLabel(nullptr)
-    , m_fileDetailChildrenLabel(nullptr)
     , m_imageMounter(new ImageMounter(this))
 {
     ui->setupUi(this);
@@ -71,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupRecodesignerUI();
     SetupCrashlogsUI();
     SetupFileManagerUI();
+    SetupMediaManagerUI();
     SetupToolboxUI();
     SetupDebuggerUI();
     SetupInstrumentUI();
@@ -137,7 +131,11 @@ MainWindow::MainWindow(QWidget *parent)
                     << ui->instrumentMonitorBtn
                     << ui->instrumentGetProcessListBtn
                     << ui->instrumentFpsBtn
-                    << ui->instrumentClearLogBtn);
+                    << ui->instrumentClearLogBtn
+                    << ui->mediaRefreshBtn
+                    << ui->mediaOpenBtn
+                    << ui->mediaDownloadBtn
+                    << ui->mediaDeleteBtn);
 
     MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>()
                    << ui->refreshFileBtn
@@ -190,7 +188,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->threadEdit
                    << ui->storageOption
                    << ui->remoteType
-                   << ui->logTypeEdit);
+                   << ui->logTypeEdit
+                   << ui->mediaSortCombo);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);
@@ -220,8 +219,6 @@ MainWindow::~MainWindow()
     if (m_fileManagerModel)
         m_fileManagerModel->clear();
     delete m_fileManagerModel;
-    if (!m_currentPreviewLocalPath.isEmpty())
-        QFile::remove(m_currentPreviewLocalPath);
     AsyncManager::Destroy();
     delete ui;
 }

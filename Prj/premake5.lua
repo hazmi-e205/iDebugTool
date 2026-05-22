@@ -84,7 +84,6 @@ project "iDebugTool"
         "../Externals/picotls/include",
         "../Externals/lwip/src/include",
         "../Externals/libinstruments/include",
-        "../Prebuilt/ffmpeg/include",
     }
 
     links
@@ -129,18 +128,8 @@ project "iDebugTool"
     if IsWindows() then
         defines { "_WINDOWS" }
 
-        local ffmpeg = "$$PWD/../../../Prebuilt/ffmpeg/bin"
-        prelinkcommands {"python " .. copyext .. " .dll " .. ffmpeg .. " " .. copydst}
-
-        libdirs { "../Prebuilt/ffmpeg/lib" }
-
         links
         {
-            "avformat",
-            "avcodec",
-            "avutil",
-            "swscale",
-            "swresample",
             "Iphlpapi",
             "Ws2_32",
             "Ole32",
