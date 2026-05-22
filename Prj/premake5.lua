@@ -133,8 +133,6 @@ project "iDebugTool"
             "Iphlpapi",
             "Ws2_32",
             "Ole32",
-            "Gdi32",
-            "Shell32",
             "Bcrypt",
             "setupapi",
             "mingw-patch",

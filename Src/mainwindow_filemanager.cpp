@@ -4,12 +4,10 @@
 #include "utils.h"
 #include <QJsonObject>
 #include <QFileInfo>
-#include <QFile>
 #include <QStyle>
 #include <QInputDialog>
 #include <QDir>
 #include <QRegularExpression>
-#include <QSizePolicy>
 #include <algorithm>
 
 namespace {
@@ -35,20 +33,16 @@ void MainWindow::RestoreHeaderSizes(QHeaderView *header, int nameWidth, int size
         return;
 
     header->setSectionResizeMode(QHeaderView::Interactive);
-    header->setStretchLastSection(true);
-    if (nameWidth > 0) {
+    header->setStretchLastSection(false);
+    if (nameWidth > 0 && sizeWidth > 0) {
         header->resizeSection(0, nameWidth);
-        //header->resizeSection(1, sizeWidth);
+        header->resizeSection(1, sizeWidth);
     }
 }
 
 void MainWindow::SetupFileManagerUI()
 {
     if (!m_fileManagerModel) {
-        ui->widget_32->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        if (ui->widget_32->layout())
-            ui->widget_32->setMaximumHeight(ui->widget_32->layout()->sizeHint().height());
-
         m_fileManagerModel = new QStandardItemModel();
         m_fileManagerModel->setHorizontalHeaderLabels(QStringList() << "Name" << "Size");
         ui->fileBrowserTree->setModel(m_fileManagerModel);
@@ -59,7 +53,7 @@ void MainWindow::SetupFileManagerUI()
         ui->fileBrowserTree->setExpandsOnDoubleClick(true);
         ui->fileBrowserTree->header()->setSectionResizeMode(QHeaderView::Interactive);
         ui->fileBrowserTree->header()->setStretchLastSection(false);
-        int totalWidth = 500; // hardcoded since getting total width not accurate
+        int totalWidth = 700; // hardcoded since getting total width not accurate
         if (totalWidth > 0) {
             int nameWidth = (totalWidth * 3) / 4;
             ui->fileBrowserTree->header()->resizeSection(0, nameWidth);
@@ -648,4 +642,3 @@ void MainWindow::OnFileFilterChanged(QString filter)
         ui->fileBrowserTree->setRowHidden(row, QModelIndex(), !match);
     }
 }
-

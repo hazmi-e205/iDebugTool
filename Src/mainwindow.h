@@ -26,9 +26,6 @@ QT_END_NAMESPACE
 
 class AppInfo;
 class AppleDB;
-class QLabel;
-class QItemSelection;
-class QWidget;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

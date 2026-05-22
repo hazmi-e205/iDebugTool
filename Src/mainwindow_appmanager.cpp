@@ -81,15 +81,9 @@ void MainWindow::RefreshPIDandBundleID(bool async)
     ui->bundleIds->clear();
     ui->bundleIds->addItems(m_installedApps.keys());
 
-    QString previousStorage = ui->storageOption->currentText();
     ui->storageOption->clear();
     ui->storageOption->addItem("User's Data");
     ui->storageOption->addItems(m_installedApps.keys());
-    int restoreIndex = previousStorage.isEmpty() ? -1 : ui->storageOption->findText(previousStorage);
-    if (restoreIndex >= 0)
-        ui->storageOption->setCurrentIndex(restoreIndex);
-    if (ui->storageOption->currentText() != previousStorage)
-        OnStorageChanged(ui->storageOption->currentText());
 
     QString old_string = ui->pidEdit->currentText();
     ui->pidEdit->clear();
