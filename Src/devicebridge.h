@@ -20,7 +20,6 @@
 #include <libimobiledevice/mobile_image_mounter.h>
 #include <libimobiledevice/screenshotr.h>
 #include <libimobiledevice/service.h>
-#include <libimobiledevice/debugserver.h>
 #include <libimobiledevice/house_arrest.h>
 #include "debuggerfilterthread.h"
 #include "logpacket.h"
@@ -280,8 +279,6 @@ public:
      void DebuggerFilter(QString text_or_regex, QString exclude_text);
      void DebuggerReloadFilter();
 private:
-     void CloseDebugger();
-     debugserver_error_t DebugServerHandleResponse(debugserver_client_t client, char** response, int* exit_status);
      DebuggerFilterThread *m_debugHandler;
 signals:
      void DebuggerReceived(QString messages, bool stopped = false);
