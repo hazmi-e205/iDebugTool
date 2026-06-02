@@ -184,15 +184,15 @@ public:
 private:
     QStandardItemModel *m_mediaModel = nullptr;
     QHash<QString, QString> m_mediaThumbToOriginal; // thumb device path -> original media path
-    QString m_mediaCurrentDeviceUdid;
+    QSet<QString> m_pendingMediaOpens;              // device paths waiting to be opened after fetch
     bool m_mediaEnumerating = false;
     MediaSortOrder m_mediaSortOrder = MediaSortOrder::NewestFirst;
     void SetupMediaManagerUI();
-    void RequestMediaEnumeration();
     QString MediaCacheKey(const QString& devicePath) const;
     QString MediaCacheThumbPath(const QString& devicePath) const;
     QString MediaCacheFullPath(const QString& devicePath) const;
     QStringList SelectedMediaDevicePaths() const;
+    void OpenMediaPaths(const QStringList& devicePaths);
     void ApplyMediaSort();
 private slots:
     void OnMediaRefreshClicked();

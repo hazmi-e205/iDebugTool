@@ -108,11 +108,8 @@ void MainWindow::SetupMediaManagerUI()
 
 QString MainWindow::MediaCacheKey(const QString& devicePath) const
 {
-    QString udid = m_mediaCurrentDeviceUdid.isEmpty()
-        ? DeviceBridge::Get()->GetCurrentUdid()
-        : m_mediaCurrentDeviceUdid;
-    QByteArray hash = QCryptographicHash::hash((udid + "|" + devicePath).toUtf8(), QCryptographicHash::Sha1);
-    return hash.toHex();
+    const QString udid = DeviceBridge::Get()->GetCurrentUdid();
+    return QCryptographicHash::hash((udid + "|" + devicePath).toUtf8(), QCryptographicHash::Sha1).toHex();
 }
 
 QString MainWindow::MediaCacheThumbPath(const QString& devicePath) const
@@ -128,26 +125,21 @@ QString MainWindow::MediaCacheFullPath(const QString& devicePath) const
     return p;
 }
 
-void MainWindow::RequestMediaEnumeration()
+void MainWindow::OnMediaRefreshClicked()
 {
     if (m_mediaEnumerating)
         return;
-    m_mediaCurrentDeviceUdid = DeviceBridge::Get()->GetCurrentUdid();
-    if (m_mediaCurrentDeviceUdid.isEmpty()) {
+    if (DeviceBridge::Get()->GetCurrentUdid().isEmpty()) {
         ui->statusbar->showMessage("No device connected");
         return;
     }
     m_mediaThumbToOriginal.clear();
+    m_pendingMediaOpens.clear();
     if (m_mediaModel)
         m_mediaModel->clear();
     m_mediaEnumerating = true;
     ui->statusbar->showMessage("Scanning DCIM...");
-    DeviceBridge::Get()->EnumerateMediaFiles("/DCIM/");
-}
-
-void MainWindow::OnMediaRefreshClicked()
-{
-    RequestMediaEnumeration();
+    DeviceBridge::Get()->EnumerateMediaFiles();
 }
 
 QStringList MainWindow::SelectedMediaDevicePaths() const
@@ -240,24 +232,44 @@ void MainWindow::OnMediaSortChanged(int index)
 
 void MainWindow::OnMediaFileFetched(QString devicePath, QString localPath, bool success)
 {
-    // devicePath here is the PhotoData thumb path. Look up the original media
-    // path to find the tile it belongs to.
-    auto it = m_mediaThumbToOriginal.constFind(devicePath);
-    if (it == m_mediaThumbToOriginal.constEnd()) {
-        // Either it was a double-click full-file fetch (handled elsewhere via
-        // one-shot connection), or it's stale from a previous refresh.
+    // Pending open from double-click or Open button?
+    if (m_pendingMediaOpens.remove(devicePath)) {
+        if (success && !localPath.isEmpty())
+            QDesktopServices::openUrl(QUrl::fromLocalFile(localPath));
+        else
+            ui->statusbar->showMessage("Failed to fetch " + QFileInfo(devicePath).fileName());
         return;
     }
-    const QString originalPath = it.value();
 
-    if (success && !localPath.isEmpty() && m_mediaModel) {
-        for (int i = 0; i < m_mediaModel->rowCount(); ++i) {
-            QStandardItem* item = m_mediaModel->item(i);
-            if (!item || item->data(kMediaRoleDevicePath).toString() != originalPath)
-                continue;
+    // Otherwise it's a PhotoData thumb fetch — look up which tile it belongs to.
+    auto it = m_mediaThumbToOriginal.constFind(devicePath);
+    if (it == m_mediaThumbToOriginal.constEnd() || !success || localPath.isEmpty() || !m_mediaModel)
+        return;
+    const QString originalPath = it.value();
+    for (int i = 0; i < m_mediaModel->rowCount(); ++i) {
+        QStandardItem* item = m_mediaModel->item(i);
+        if (item && item->data(kMediaRoleDevicePath).toString() == originalPath) {
             ApplyThumbnailToItem(item, localPath);
             break;
         }
+    }
+}
+
+void MainWindow::OpenMediaPaths(const QStringList& devicePaths)
+{
+    QList<QPair<QString, QString>> toFetch;
+    for (const QString& devicePath : devicePaths) {
+        const QString fullCache = MediaCacheFullPath(devicePath);
+        if (QFileInfo::exists(fullCache)) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(fullCache));
+        } else {
+            m_pendingMediaOpens.insert(devicePath);
+            toFetch.append({devicePath, fullCache});
+        }
+    }
+    if (!toFetch.isEmpty()) {
+        ui->statusbar->showMessage(QString("Fetching %1 file(s)...").arg(toFetch.size()));
+        DeviceBridge::Get()->FetchMediaFiles(toFetch);
     }
 }
 
@@ -266,36 +278,7 @@ void MainWindow::OnMediaItemDoubleClicked(const QModelIndex& index)
     if (!index.isValid() || !m_mediaModel) return;
     QStandardItem* it = m_mediaModel->itemFromIndex(index);
     if (!it) return;
-
-    const QString devicePath = it->data(kMediaRoleDevicePath).toString();
-    const QString fullCache = MediaCacheFullPath(devicePath);
-
-    auto openIt = [fullCache, this]() {
-        if (QFileInfo::exists(fullCache))
-            QDesktopServices::openUrl(QUrl::fromLocalFile(fullCache));
-        else
-            ui->statusbar->showMessage("Failed to fetch media file");
-    };
-
-    if (QFileInfo::exists(fullCache)) {
-        openIt();
-        return;
-    }
-
-    ui->statusbar->showMessage("Fetching " + QFileInfo(devicePath).fileName() + "...");
-
-    // One-shot connection that opens the file when fetch completes.
-    QMetaObject::Connection* conn = new QMetaObject::Connection;
-    *conn = connect(DeviceBridge::Get(), &DeviceBridge::MediaFileFetched, this,
-        [this, devicePath, openIt, conn](const QString& dp, const QString& /*lp*/, bool success) {
-            if (dp != devicePath) return;
-            QObject::disconnect(*conn);
-            delete conn;
-            if (success) openIt();
-            else ui->statusbar->showMessage("Failed to fetch media file");
-        });
-
-    DeviceBridge::Get()->FetchMediaFiles({{devicePath, fullCache}});
+    OpenMediaPaths({it->data(kMediaRoleDevicePath).toString()});
 }
 
 void MainWindow::OnMediaOpenClicked()
@@ -305,45 +288,7 @@ void MainWindow::OnMediaOpenClicked()
         ui->statusbar->showMessage("Select one or more items first");
         return;
     }
-
-    QList<QPair<QString, QString>> toFetch;
-    QStringList toOpenNow;
-    for (const QString& devicePath : paths) {
-        const QString fullCache = MediaCacheFullPath(devicePath);
-        if (QFileInfo::exists(fullCache))
-            toOpenNow.append(fullCache);
-        else
-            toFetch.append({devicePath, fullCache});
-    }
-
-    for (const QString& local : toOpenNow)
-        QDesktopServices::openUrl(QUrl::fromLocalFile(local));
-
-    if (toFetch.isEmpty())
-        return;
-
-    ui->statusbar->showMessage(QString("Fetching %1 file(s)...").arg(toFetch.size()));
-
-    // Track which device paths still need to open after their fetch completes.
-    auto pending = std::make_shared<QSet<QString>>();
-    for (const auto& p : toFetch)
-        pending->insert(p.first);
-
-    QMetaObject::Connection* conn = new QMetaObject::Connection;
-    *conn = connect(DeviceBridge::Get(), &DeviceBridge::MediaFileFetched, this,
-        [this, pending, conn](const QString& dp, const QString& lp, bool success) {
-            if (!pending->contains(dp))
-                return;
-            pending->remove(dp);
-            if (success && !lp.isEmpty())
-                QDesktopServices::openUrl(QUrl::fromLocalFile(lp));
-            if (pending->isEmpty()) {
-                QObject::disconnect(*conn);
-                delete conn;
-            }
-        });
-
-    DeviceBridge::Get()->FetchMediaFiles(toFetch);
+    OpenMediaPaths(paths);
 }
 
 void MainWindow::OnMediaDownloadClicked()
@@ -366,7 +311,7 @@ void MainWindow::OnMediaDownloadClicked()
         pairs.append({devicePath, QDir(destDir).filePath(fileName)});
     }
 
-    DeviceBridge::Get()->PullMultipleFromStorage(pairs, "");
+    DeviceBridge::Get()->PullMultipleFromStorage(pairs);
 }
 
 void MainWindow::OnMediaDeleteClicked()
@@ -386,7 +331,7 @@ void MainWindow::OnMediaDeleteClicked()
                               QMessageBox::No) != QMessageBox::Yes)
         return;
 
-    DeviceBridge::Get()->DeleteMultipleFromStorage(paths, "");
+    DeviceBridge::Get()->DeleteMultipleFromStorage(paths);
 
     // Optimistically remove from the model; a full refresh would also work but
     // this is snappier feedback.

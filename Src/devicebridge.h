@@ -228,7 +228,7 @@ signals:
          qint64 modTimeNs = 0;    // st_mtime from AFC, nanoseconds since epoch
          bool isVideo = false;
      };
-     void EnumerateMediaFiles(QString rootPath = "/DCIM/");
+     void EnumerateMediaFiles();
      void FetchMediaFiles(QList<QPair<QString,QString>> requests); // (devicePath, localPath) pairs
  private:
      void afc_list_directory_shallow(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr, std::function<bool()> should_stop = nullptr, int* outDirCount = nullptr, int* outFileCount = nullptr);
