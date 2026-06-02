@@ -3784,6 +3784,16 @@ color: rgb(255, 255, 255);</string>
                  </widget>
                 </item>
                 <item>
+                 <widget class="QPushButton" name="mediaClearCacheBtn">
+                  <property name="text">
+                   <string>Clear Cache</string>
+                  </property>
+                  <property name="toolTip">
+                   <string>Delete all cached media thumbnails from local disk</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QPushButton" name="mediaOpenBtn">
                   <property name="text">
                    <string>Open</string>

@@ -196,6 +196,7 @@ private:
     void ApplyMediaSort();
 private slots:
     void OnMediaRefreshClicked();
+    void OnMediaClearCacheClicked();
     void OnMediaOpenClicked();
     void OnMediaDownloadClicked();
     void OnMediaDeleteClicked();

@@ -95,8 +95,9 @@ void MainWindow::SetupMediaManagerUI()
     ui->mediaListView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->mediaListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    connect(ui->mediaRefreshBtn,  &QPushButton::clicked, this, &MainWindow::OnMediaRefreshClicked);
-    connect(ui->mediaOpenBtn,     &QPushButton::clicked, this, &MainWindow::OnMediaOpenClicked);
+    connect(ui->mediaRefreshBtn,    &QPushButton::clicked, this, &MainWindow::OnMediaRefreshClicked);
+    connect(ui->mediaClearCacheBtn, &QPushButton::clicked, this, &MainWindow::OnMediaClearCacheClicked);
+    connect(ui->mediaOpenBtn,       &QPushButton::clicked, this, &MainWindow::OnMediaOpenClicked);
     connect(ui->mediaDownloadBtn, &QPushButton::clicked, this, &MainWindow::OnMediaDownloadClicked);
     connect(ui->mediaDeleteBtn,   &QPushButton::clicked, this, &MainWindow::OnMediaDeleteClicked);
     connect(ui->mediaSortCombo,   QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::OnMediaSortChanged);
@@ -123,6 +124,22 @@ QString MainWindow::MediaCacheFullPath(const QString& devicePath) const
     QString p = GetDirectory(DIRECTORY_TYPE::TEMP) + "media_" + MediaCacheKey(devicePath);
     if (!suffix.isEmpty()) p += "." + suffix;
     return p;
+}
+
+void MainWindow::OnMediaClearCacheClicked()
+{
+    QDir thumbDir(GetDirectory(DIRECTORY_TYPE::THUMBNAIL));
+    if (!thumbDir.exists()) {
+        ui->statusbar->showMessage("No cache to clear");
+        return;
+    }
+    int removed = 0;
+    const QFileInfoList entries = thumbDir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot);
+    for (const QFileInfo& fi : entries) {
+        if (QFile::remove(fi.absoluteFilePath()))
+            ++removed;
+    }
+    ui->statusbar->showMessage(QString("Cleared %1 cached thumbnails").arg(removed));
 }
 
 void MainWindow::OnMediaRefreshClicked()

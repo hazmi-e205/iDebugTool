@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
                     << ui->instrumentFpsBtn
                     << ui->instrumentClearLogBtn
                     << ui->mediaRefreshBtn
+                    << ui->mediaClearCacheBtn
                     << ui->mediaOpenBtn
                     << ui->mediaDownloadBtn
                     << ui->mediaDeleteBtn);
