@@ -1,13 +1,13 @@
 {
     "project": "iDebugTool",
     "version": "2.0.0",
-    "status": "beta3",
+    "status": "beta4",
     "dependencies": [
         {
             "project": "libimobiledevice",
             "url": "https://github.com/libimobiledevice/libimobiledevice",
             "branch": "master",
-            "revision": "c4f111800d2b08d6c65ec075ad49c4a60e9e4309",
+            "revision": "fa0f79190142bc309307967c058f89c1b36eb6b8",
             "path": "Externals/libimobiledevice",
             "use_submodules": false
         },
@@ -23,7 +23,7 @@
             "project": "libimobiledevice-glue",
             "url": "https://github.com/libimobiledevice/libimobiledevice-glue",
             "branch": "master",
-            "revision": "da770a7687f35fbb981db4d7b47b1b032cd5c2c7",
+            "revision": "10ddafa16458a012bcbd3e83a6ab36a032dc84d8",
             "path": "Externals/libimobiledevice-glue",
             "use_submodules": false
         },
@@ -31,7 +31,7 @@
             "project": "libplist",
             "url": "https://github.com/libimobiledevice/libplist",
             "branch": "master",
-            "revision": "15164ebe870590376b2286b09dc97890a07dd373",
+            "revision": "fe3dc34dc3484006e12b403f7ceb06f0ad40b6f4",
             "path": "Externals/libplist",
             "use_submodules": false
         },
@@ -39,7 +39,7 @@
             "project": "libinstruments",
             "url": "https://github.com/hazmi-e205/libinstruments",
             "branch": "main",
-            "revision": "596f0b2bbfefc9ce943a082c582f20726f058971",
+            "revision": "93c2b364ccf5c538d8177764c8b709b5133b20cb",
             "path": "Externals/libinstruments",
             "use_submodules": false
         },
