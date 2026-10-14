@@ -89,6 +89,23 @@ void WalkForMedia(afc_client_t afc, const QString& path, QList<DeviceBridge::Med
     }
     afc_dictionary_free(list);
 }
+
+QString FindThumbnailPath(afc_client_t afc, const QString& devicePath)
+{
+    const QString thumbDir = "/PhotoData/Thumbnails/V2" + devicePath;
+    char** list = nullptr;
+    if (afc_read_directory(afc, thumbDir.toUtf8().constData(), &list) != AFC_E_SUCCESS || !list)
+        return QString();
+
+    QString result;
+    for (int i = 0; list[i] && result.isEmpty(); ++i) {
+        const QString name = QString::fromUtf8(list[i]);
+        if (name.endsWith(".jpg", Qt::CaseInsensitive))
+            result = thumbDir + "/" + name;
+    }
+    afc_dictionary_free(list);
+    return result;
+}
 } // namespace
 
 void DeviceBridge::EnumerateMediaFiles()
@@ -104,9 +121,14 @@ void DeviceBridge::EnumerateMediaFiles()
             return;
         }
 
-        // Direct path construction: /PhotoData/Thumbnails/V2 + originalPath + /5005.JPG.
-        for (MediaEntry& e : entries)
-            e.thumbDevicePath = "/PhotoData/Thumbnails/V2" + e.devicePath + "/5005.JPG";
+        // Thumbnails live under /PhotoData/Thumbnails/V2 + originalPath; the file name varies by iOS version.
+        for (MediaEntry& e : entries) {
+            if (should_stop()) {
+                emit MediaFilesEnumerated({});
+                return;
+            }
+            e.thumbDevicePath = FindThumbnailPath(afc, e.devicePath);
+        }
 
         emit MediaFilesEnumerated(entries);
     });
