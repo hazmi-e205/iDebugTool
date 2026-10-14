@@ -3778,39 +3778,104 @@ color: rgb(255, 255, 255);</string>
                <layout class="QHBoxLayout" name="horizontalLayout_mediaToolbar">
                 <item>
                  <widget class="QPushButton" name="mediaRefreshBtn">
-                  <property name="text">
-                   <string>Refresh</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="mediaClearCacheBtn">
-                  <property name="text">
-                   <string>Clear Cache</string>
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
                   </property>
                   <property name="toolTip">
-                   <string>Delete all cached media thumbnails from local disk</string>
+                   <string>Refresh media list</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/restart.png</normaloff>:/res/Assets/restart.png</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>18</width>
+                    <height>18</height>
+                   </size>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QPushButton" name="mediaOpenBtn">
+                  <property name="toolTip">
+                   <string>Open selected media with the default app</string>
+                  </property>
                   <property name="text">
                    <string>Open</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/upload.png</normaloff>:/res/Assets/upload.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QPushButton" name="mediaDownloadBtn">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>Pull selected media to your computer</string>
+                  </property>
                   <property name="text">
-                   <string>Download</string>
+                   <string>Pull</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/download.png</normaloff>:/res/Assets/download.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
                 <item>
                  <widget class="QPushButton" name="mediaDeleteBtn">
+                  <property name="toolTip">
+                   <string>Delete selected media from the device</string>
+                  </property>
                   <property name="text">
                    <string>Delete</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/trash.png</normaloff>:/res/Assets/trash.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="mediaClearCacheBtn">
+                  <property name="toolTip">
+                   <string>Delete all cached media thumbnails from local disk</string>
+                  </property>
+                  <property name="text">
+                   <string>Clear Cache</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../Prj/Qt-windows/iDebugTool/resources.qrc">
+                    <normaloff>:/res/Assets/trash.png</normaloff>:/res/Assets/trash.png</iconset>
+                  </property>
+                  <property name="flat">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>

@@ -131,14 +131,14 @@ MainWindow::MainWindow(QWidget *parent)
                     << ui->instrumentMonitorBtn
                     << ui->instrumentGetProcessListBtn
                     << ui->instrumentFpsBtn
-                    << ui->instrumentClearLogBtn
-                    << ui->mediaRefreshBtn
-                    << ui->mediaClearCacheBtn
-                    << ui->mediaOpenBtn
-                    << ui->mediaDownloadBtn
-                    << ui->mediaDeleteBtn);
+                    << ui->instrumentClearLogBtn);
 
     MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>()
+                   << ui->mediaRefreshBtn
+                   << ui->mediaOpenBtn
+                   << ui->mediaDownloadBtn
+                   << ui->mediaDeleteBtn
+                   << ui->mediaClearCacheBtn
                    << ui->refreshFileBtn
                    << ui->pullFileBtn
                    << ui->pushFileBtn
