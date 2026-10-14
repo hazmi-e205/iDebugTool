@@ -91,6 +91,7 @@ enum MobileOperation {
     NEW_FOLDER,
     PUSH_FILE,
     PULL_FILE,
+    PREVIEW_FILE,
     GET_APPS,
     INSTALL_APP,
     UNINSTALL_APP,
@@ -218,6 +219,17 @@ signals:
      void DeleteMultipleFromStorage(QStringList devicePaths, QString bundleId = "");
      void MakeDirectoryToStorage(QString devicePath, QString bundleId = "");
      void RenameToStorage(QString oldPath, QString newPath, QString bundleId = "");
+
+     // MediaManager
+     struct MediaEntry {
+         QString devicePath;
+         QString thumbDevicePath; // empty if no precomputed thumb on device
+         quint64 sizeInBytes = 0;
+         qint64 modTimeNs = 0;    // st_mtime from AFC, nanoseconds since epoch
+         bool isVideo = false;
+     };
+     void EnumerateMediaFiles();
+     void FetchMediaFiles(QList<QPair<QString,QString>> requests); // (devicePath, localPath) pairs
  private:
      void afc_list_directory_shallow(afc_client_t afc, const char* path, int* visited = nullptr, int total = 0, std::function<void(int,int)> progress_cb = nullptr, std::function<bool()> should_stop = nullptr, int* outDirCount = nullptr, int* outFileCount = nullptr);
      void afc_filemanager_action(MobileOperation op, std::function<void(afc_client_t &afc, std::shared_ptr<DeviceClient> client, std::shared_ptr<std::atomic_bool> cancel_flag)> action, const QString& bundleId = "");
@@ -225,6 +237,8 @@ signals:
  signals:
      void AccessibleStorageReceived(QMap<QString, FileProperty> contents, QString startPath, bool partialUpdate);
      void FileManagerChanged(GenericStatus status, FileOperation operation, int percentage, QString message);
+     void MediaFilesEnumerated(QList<DeviceBridge::MediaEntry> entries);
+     void MediaFileFetched(QString devicePath, QString localPath, bool success);
 
      //InstallerBridge
  public:
@@ -301,5 +315,8 @@ signals:
   signals:
      void InstrumentLogReceived(QString logs);
 };
+
+Q_DECLARE_METATYPE(DeviceBridge::MediaEntry)
+Q_DECLARE_METATYPE(QList<DeviceBridge::MediaEntry>)
 
 #endif // DEVICEBRIDGE_H

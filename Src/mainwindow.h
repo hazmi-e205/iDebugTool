@@ -178,6 +178,33 @@ private slots:
     void OnMakeFolderClicked();
     void OnFileFilterChanged(QString filter);
 
+    //Media Manager UI
+public:
+    enum class MediaSortOrder { NewestFirst, OldestFirst };
+private:
+    QStandardItemModel *m_mediaModel = nullptr;
+    QHash<QString, QString> m_mediaThumbToOriginal; // thumb device path -> original media path
+    QSet<QString> m_pendingMediaOpens;              // device paths waiting to be opened after fetch
+    bool m_mediaEnumerating = false;
+    MediaSortOrder m_mediaSortOrder = MediaSortOrder::NewestFirst;
+    void SetupMediaManagerUI();
+    QString MediaCacheKey(const QString& devicePath) const;
+    QString MediaCacheThumbPath(const QString& devicePath) const;
+    QString MediaCacheFullPath(const QString& devicePath) const;
+    QStringList SelectedMediaDevicePaths() const;
+    void OpenMediaPaths(const QStringList& devicePaths);
+    void ApplyMediaSort();
+private slots:
+    void OnMediaRefreshClicked();
+    void OnMediaClearCacheClicked();
+    void OnMediaOpenClicked();
+    void OnMediaDownloadClicked();
+    void OnMediaDeleteClicked();
+    void OnMediaSortChanged(int index);
+    void OnMediaItemDoubleClicked(const QModelIndex& index);
+    void OnMediaFilesEnumerated(QList<DeviceBridge::MediaEntry> entries);
+    void OnMediaFileFetched(QString devicePath, QString localPath, bool success);
+
     //Toolbox UI
 private:
     ImageMounter *m_imageMounter;

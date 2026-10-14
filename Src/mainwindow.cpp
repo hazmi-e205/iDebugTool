@@ -64,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupRecodesignerUI();
     SetupCrashlogsUI();
     SetupFileManagerUI();
+    SetupMediaManagerUI();
     SetupToolboxUI();
     SetupDebuggerUI();
     SetupInstrumentUI();
@@ -133,6 +134,11 @@ MainWindow::MainWindow(QWidget *parent)
                     << ui->instrumentClearLogBtn);
 
     MassStylesheet(STYLE_TYPE::FLAT_BUTTON, QList<QWidget*>()
+                   << ui->mediaRefreshBtn
+                   << ui->mediaOpenBtn
+                   << ui->mediaDownloadBtn
+                   << ui->mediaDeleteBtn
+                   << ui->mediaClearCacheBtn
                    << ui->refreshFileBtn
                    << ui->pullFileBtn
                    << ui->pushFileBtn
@@ -183,7 +189,8 @@ MainWindow::MainWindow(QWidget *parent)
                    << ui->threadEdit
                    << ui->storageOption
                    << ui->remoteType
-                   << ui->logTypeEdit);
+                   << ui->logTypeEdit
+                   << ui->mediaSortCombo);
 
     DecorateSplitter(ui->splitter, 1);
     DecorateSplitter(ui->topSplitter, 1);

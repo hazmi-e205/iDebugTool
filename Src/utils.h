@@ -36,7 +36,8 @@ enum DIRECTORY_TYPE
     CRASHLOGS,
     SYMBOLICATED,
     ZSIGN_TEMP,
-    RECODESIGNED
+    RECODESIGNED,
+    THUMBNAIL
 };
 QString GetDirectory(DIRECTORY_TYPE dirtype);
 QString GetBaseDirectory(QString inpath);
