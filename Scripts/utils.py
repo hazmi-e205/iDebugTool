@@ -145,11 +145,25 @@ class Git:
         shellout(["git", "remote", "update", "origin", "--prune"], path, **kwargs)
 
     @staticmethod
+    def fetch(path, **kwargs):
+        # Unlike 'git pull' this works on a detached HEAD, and --tags --force also picks up tags added or moved on the remote
+        return shellout(["git", "fetch", "--all", "--tags", "--force", "--prune"], path, **kwargs)
+
+    @staticmethod
+    def is_tag(path, name):
+        return shellout(["git", "rev-parse", "-q", "--verify", "refs/tags/" + name + "^{commit}"], path) == 0
+
+    @staticmethod
     def checkout(path, location, revision="", **kwargs):
+        if Git.is_tag(path, location):
+            # The tag is the pin, so a revision is ignored. Use the full ref so a same-named local branch can't shadow the tag
+            return shellout(["git", "checkout", "-f", "--detach", "refs/tags/" + location], path, **kwargs)
         if len(revision) > 0:
-            shellout(["git", "checkout", "-B", location, revision], path, **kwargs)
-        else:
-            shellout(["git", "checkout", "-f", location], path, **kwargs)
+            return shellout(["git", "checkout", "-f", "-B", location, revision], path, **kwargs)
+        if shellout(["git", "rev-parse", "-q", "--verify", "refs/remotes/origin/" + location], path) == 0:
+            # Follow the remote branch, the local one is stale because fetch doesn't move it
+            return shellout(["git", "checkout", "-f", "-B", location, "origin/" + location], path, **kwargs)
+        return shellout(["git", "checkout", "-f", location], path, **kwargs)
 
     @staticmethod
     def update_submodules(path, **kwargs):

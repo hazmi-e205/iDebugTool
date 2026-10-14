@@ -135,9 +135,10 @@ def UpdateExternal(repoItem):
         utils.Git.reset(external_path, printout=is_debug)
         cprint(repo_str + "Git switch origin...", 'yellow', attrs=['reverse', 'blink'])
         utils.Git.switch_origin(external_path, repoItem["url"], printout=is_debug)
-        cprint(repo_str + "Git pull...", 'yellow', attrs=['reverse', 'blink'])
-        utils.Git.pull(external_path, printout=is_debug)
-        cprint(repo_str + "Git pull ended", 'yellow', attrs=['reverse', 'blink'])
+        cprint(repo_str + "Git fetch...", 'yellow', attrs=['reverse', 'blink'])
+        if utils.Git.fetch(external_path, printout=is_debug) != 0:
+            cprint(repo_str + "Git fetch failed, tags/branches may be out of date (run with --debug for details)", 'red', attrs=['reverse', 'blink'])
+        cprint(repo_str + "Git fetch ended", 'yellow', attrs=['reverse', 'blink'])
     else:
         if os.path.exists(external_path):
             cprint(repo_str + "Delete trash directory...", 'yellow', attrs=['reverse', 'blink'])
@@ -148,15 +149,19 @@ def UpdateExternal(repoItem):
 
     if local_exist or utils.string_not_empty(revision):
         cprint(repo_str + "Git checkout to '" + repoItem["branch"] + (":" + revision if utils.string_not_empty(revision) else "") + "'...", 'yellow', attrs=['reverse', 'blink'])
+        checkout_result = 0
         if revision.lower() == "latest":
-            utils.Git.checkout(external_path, repoItem["branch"], printout=is_debug)
+            checkout_result = utils.Git.checkout(external_path, repoItem["branch"], printout=is_debug)
             SaveRevisionInfo(repoItem["project"])
         elif revision.lower() == "current":
             SaveRevisionInfo(repoItem["project"])
-            utils.Git.checkout(external_path, repoItem["branch"], utils.Git.get_revision(external_path), printout=is_debug)
+            checkout_result = utils.Git.checkout(external_path, repoItem["branch"], utils.Git.get_revision(external_path), printout=is_debug)
         else:
-            utils.Git.checkout(external_path, repoItem["branch"], revision, printout=is_debug)
-        cprint(repo_str + "Git checkout ended", 'yellow', attrs=['reverse', 'blink'])
+            checkout_result = utils.Git.checkout(external_path, repoItem["branch"], revision, printout=is_debug)
+        if checkout_result != 0:
+            cprint(repo_str + "Git checkout failed, is '" + repoItem["branch"] + "' a valid branch/tag? (run with --debug for details)", 'red', attrs=['reverse', 'blink'])
+        else:
+            cprint(repo_str + "Git checkout ended", 'yellow', attrs=['reverse', 'blink'])
 
     if use_submodules:
         cprint(repo_str + "Git submodules update...", 'yellow', attrs=['reverse', 'blink'])
